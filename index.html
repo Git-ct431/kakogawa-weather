@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加古川市 気象情報ダッシュボード</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background-color: #f4f6f8; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { font-size: 1.3rem; color: #1e293b; margin-bottom: 4px; }
+        .update-time { font-size: 0.8rem; color: #64748b; margin-bottom: 16px; }
+        .card { background: white; padding: 16px; margin-bottom: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card h2 { font-size: 1rem; margin-top: 0; color: #334155; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
+        .overview-text { font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; color: #334155; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.85rem; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
+        th { background-color: #f8fafc; color: #475569; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>加古川市の気象情報</h1>
+        <div class="update-time">最終更新：<span id="load-time">読み込み中...</span></div>
+
+        <div class="card">
+            <h2>気象概況（兵庫県・気象台発表）</h2>
+            <div id="overview-container" class="overview-text">読み込み中...</div>
+        </div>
+
+        <div class="card">
+            <h2>3時間ごとの天気予報</h2>
+            <div style="overflow-x: auto;">
+                <table id="forecast-table">
+                    <thead>
+                        <tr>
+                            <th>日時</th>
+                            <th>天気</th>
+                            <th>気温</th>
+                            <th>降水</th>
+                            <th>風速</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="5">読み込み中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchWeather() {
+            try {
+                document.getElementById('load-time').innerText = new Date().toLocaleString('ja-JP');
+
+                // 1. 気象概況データの取得
+                const resOverview = await fetch('https://www.jma.go.jp/bosai/forecast/data/overview_forecast/280000.json');
+                if (resOverview.ok) {
+                    const text = await resOverview.text();
+                    document.getElementById('overview-container').innerText = text;
+                }
+
+                // 2. 天気予報データの取得
+                const resForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
+                if (resForecast.ok) {
+                    const data = await resForecast.json();
+                    const timeSeries = data[0].timeSeries;
+                    const timeDefines = timeSeries[0].timeDefines;
+                    const areaWeather = timeSeries[0].areas[0];
+                    const areaPop = timeSeries[1].areas[0];
+                    const areaTemp = timeSeries[2] ? timeSeries[2].areas[0] : null;
+
+                    let html = '';
+                    for (let i = 0; i < timeDefines.length; i++) {
+                        const d = new Date(timeDefines[i]);
+                        const timeStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:00`;
+                        const weather = areaWeather.weathers[i] || '-';
+                        const wind = areaWeather.winds[i] || '-';
+                        const pop = (areaPop && areaPop.pops[i]) ? areaPop.pops[i] + '%' : '-';
+                        let temp = (areaTemp && areaTemp.temps && areaTemp.temps[i]) ? areaTemp.temps[i] + '℃' : '-';
+
+                        html += `<tr><td>${timeStr}</td><td>${weather}</td><td>${temp}</td><td>${pop}</td><td>${wind}</td></tr>`;
+                    }
+                    document.querySelector('#forecast-table tbody').innerHTML = html;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        fetchWeather();
+        // 10分ごとに自動更新
+        setInterval(fetchWeather, 600000);
+    </script>
+</body>
+</html>
