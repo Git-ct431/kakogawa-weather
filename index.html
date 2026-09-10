@@ -752,10 +752,22 @@
                 if (resJmaForecast.ok) {
                     const jmaData = await resJmaForecast.json();
                     
-                    // 天気概況テキストの取得と設定
-                    if (jmaData[1] && jmaData[1].text) {
-                        const overviewText = jmaData[1].text;
-                        document.getElementById('overview-container').innerHTML = overviewText.replace(/\n/g, '<br>');
+                    // 天気概況テキストの安全な取得と設定
+                    let overviewText = "";
+                    if (Array.isArray(jmaData)) {
+                        for (let i = 0; i < jmaData.length; i++) {
+                            if (jmaData[i] && typeof jmaData[i].text === 'string') {
+                                overviewText = jmaData[i].text;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    const overviewContainer = document.getElementById('overview-container');
+                    if (overviewText) {
+                        overviewContainer.innerHTML = overviewText.replace(/\n/g, '<br>');
+                    } else {
+                        overviewContainer.innerText = '天気概況データが見つかりませんでした。';
                     }
 
                     const timeSeriesWeathers = jmaData[0].timeSeries[0];
