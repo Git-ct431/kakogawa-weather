@@ -72,7 +72,6 @@
             border: 1px solid #dcdcdc;
         }
 
-        /* 7日間天気用のテーブルスタイル（3日間天気と共通化・自動幅） */
         .daily-table {
             width: auto;
             border-collapse: collapse;
@@ -139,7 +138,6 @@
 
         .transit-box { font-size: 0.9rem; color: #334155; background-color: #eff6ff; padding: 8px; border-radius: 6px; border: 1px solid #bfdbfe; line-height: 1.5; }
 
-        /* ページ切り替え用のスタイル */
         .page-content { display: none; }
         .page-content.active { display: block; }
 
@@ -214,7 +212,7 @@
             </div>
         </div>
 
-        <!-- ページ 2：7日間の天気（1日1行） -->
+        <!-- ページ 2：7日間の天気 -->
         <div id="page-2" class="page-content">
             <div class="header-card">
                 <h1>加古川市の天気 (7日間・2ページ目)</h1>
@@ -252,11 +250,11 @@
                 <div class="time-info">ここに3ページ目のコンテンツが入ります。</div>
             </div>
             <div class="card" style="padding: 40px; text-align: center; color: #64748b;">
-                3ページ目の内容エリアです。自由に変更できます。
+                3ページ目の内容エリアです。
             </div>
         </div>
 
-        <!-- ページ 4：データソース情報 -->
+        <!-- ページ 4 -->
         <div id="page-4" class="page-content">
             <div class="header-card">
                 <h1>データソース情報</h1>
@@ -285,7 +283,6 @@
             </div>
         </div>
 
-        <!-- ページ下部の切り替えボタン -->
         <div class="pagination-container">
             <button id="nav-btn" class="nav-button" onclick="switchPage()">ページ2へ</button>
         </div>
@@ -448,7 +445,6 @@
             }
         }
 
-        // 1ページ目用の3時間ごとテーブル生成
         function generateTableHtml(jmaWeatherTexts, meteoData, daysCount) {
             const times = meteoData.hourly.time;
             const temps = meteoData.hourly.temperature_2m;
@@ -526,9 +522,9 @@
                     let tempStyle = getTempBackgroundColor(tempNum);
                     if (tempNum === 0) tempStyle += '; color: #94a3b8;';
 
-                    let windNum = (avgWind != null && !isNaN(avgWind)) ? avgWind : null;
+                    let avgWindNum = (avgWind != null && !isNaN(avgWind)) ? avgWind : null;
                     let valWind = formatInteger(avgWind);
-                    let windStyle = getWindBackgroundColor(windNum);
+                    let windStyle = getWindBackgroundColor(avgWindNum);
                     
                     let popNum = formatPopValue(maxPop);
                     let valPop = (popNum !== '--') ? String(popNum) : '--';
@@ -568,7 +564,6 @@
             return forecastHtml;
         }
 
-        // 2ページ目用の7日間（1日1行）テーブル生成（曜日から括弧を除外）
         function generateDailyTableHtml(jmaWeatherTexts, meteoData) {
             const times = meteoData.hourly.time;
             const temps = meteoData.hourly.temperature_2m;
@@ -633,7 +628,7 @@
                     <tr class="${rowClass}">
                         <td style="background-color: #F3F3F3; font-weight: bold; white-space: nowrap;">${m}.${d} ${w}</td>
                         <td style="background-color: #F3F3F3;">${weatherText}</td>
-                        <td style="text-align: right; ${tempStyle}">${tempStr}</td>
+                        <td style="text-align: right; ${tempStr !== '--' ? tempStyle : ''}">${tempStr}</td>
                         <td style="text-align: right; ${windStyle}">${valWind}</td>
                         <td style="text-align: right; ${popStyle}">${valPop}</td>
                         <td style="text-align: right; ${rainStyle}">${valRain}</td>
@@ -644,105 +639,111 @@
         }
 
         async function fetchDashboardData() {
+            const nowStr = formatCustomDate(new Date());
+            document.getElementById('page-update-time-1').innerText = nowStr;
+            document.getElementById('source-update-time-1').innerText = nowStr;
+            document.getElementById('page-update-time-2').innerText = nowStr;
+            document.getElementById('source-update-time-2').innerText = nowStr;
+            document.getElementById('page-update-time-4').innerText = nowStr;
+
+            // 各タスクを独立して並行処理または個別安全実行し、メインの天気が必ず動くようにする
+            fetchTransitInfo();
+
+            // 1. 警報情報の取得（独立したトライ・キャッチ）
             try {
-                const nowStr = formatCustomDate(new Date());
-                document.getElementById('page-update-time-1').innerText = nowStr;
-                document.getElementById('source-update-time-1').innerText = nowStr;
-                document.getElementById('page-update-time-2').innerText = nowStr;
-                document.getElementById('source-update-time-2').innerText = nowStr;
-                document.getElementById('page-update-time-4').innerText = nowStr;
+                const resWarning = await fetch('https://www.jma.go.jp/bosai/warning/data/r8/280000.json');
+                if (resWarning.ok) {
+                    const warnArray = await resWarning.json();
+                    let hyogoWarnings = new Set();
+                    let hyogoAdvisories = new Set();
+                    let kakogawaWarnings = [];
+                    let kakogawaAdvisories = [];
 
-                fetchTransitInfo();
+                    warnArray.forEach(report => {
+                        if (report.warning && report.warning.class20Items) {
+                            report.warning.class20Items.forEach(item => {
+                                if (item.kinds) {
+                                    item.kinds.forEach(k => {
+                                        if ((k.status === '発表' || k.status === '継続') && k.code) {
+                                            const name = getWarningName(k.code);
+                                            const warningCheck = isWarning(k.code);
 
-                try {
-                    const resWarning = await fetch('https://www.jma.go.jp/bosai/warning/data/r8/280000.json');
-                    if (resWarning.ok) {
-                        const warnArray = await resWarning.json();
-                        let hyogoWarnings = new Set();
-                        let hyogoAdvisories = new Set();
-                        let kakogawaWarnings = [];
-                        let kakogawaAdvisories = [];
+                                            if (warningCheck) {
+                                                hyogoWarnings.add(name);
+                                            } else {
+                                                hyogoAdvisories.add(name);
+                                            }
 
-                        warnArray.forEach(report => {
-                            if (report.warning && report.warning.class20Items) {
-                                report.warning.class20Items.forEach(item => {
-                                    if (item.kinds) {
-                                        item.kinds.forEach(k => {
-                                            if ((k.status === '発表' || k.status === '継続') && k.code) {
-                                                const name = getWarningName(k.code);
-                                                const warningCheck = isWarning(k.code);
-
+                                            if (item.areaCode === '2821000') {
                                                 if (warningCheck) {
-                                                    hyogoWarnings.add(name);
+                                                    kakogawaWarnings.push(name);
                                                 } else {
-                                                    hyogoAdvisories.add(name);
-                                                }
-
-                                                if (item.areaCode === '2821000') {
-                                                    if (warningCheck) {
-                                                        kakogawaWarnings.push(name);
-                                                    } else {
-                                                        kakogawaAdvisories.push(name);
-                                                    }
+                                                    kakogawaAdvisories.push(name);
                                                 }
                                             }
-                                        });
-                                    }
-                                });
-                            }
-                        });
-
-                        const hyogoContainer = document.getElementById('hyogo-warning-container');
-                        if (hyogoWarnings.size > 0 || hyogoAdvisories.size > 0) {
-                            let hyogoHtml = '';
-                            if (hyogoWarnings.size > 0) {
-                                hyogoHtml += `<div style="background-color: #fef2f2; border: 1px solid #f87171; padding: 6px; border-radius: 6px; color: #991b1b; margin-bottom: 4px;"><strong>⚠️ 警報:</strong> ${[...hyogoWarnings].join('、')}</div>`;
-                            }
-                            if (hyogoAdvisories.size > 0) {
-                                hyogoHtml += `<div style="background-color: #fefce8; border: 1px solid #facc15; padding: 6px; border-radius: 6px; color: #854d0e;"><strong>注意報:</strong> ${[...hyogoAdvisories].join('、')}</div>`;
-                            }
-                            hyogoContainer.innerHTML = hyogoHtml;
-                        } else {
-                            hyogoContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、兵庫県内に発表されている警報・注意報はありません。</div>`;
+                                        }
+                                    });
+                                }
+                            });
                         }
+                    });
 
-                        const kakogawaContainer = document.getElementById('kakogawa-warning-container');
-                        if (kakogawaWarnings.length > 0 || kakogawaAdvisories.length > 0) {
-                            let kakogawaHtml = '';
-                            if (kakogawaWarnings.length > 0) {
-                                kakogawaHtml += `<div style="background-color: #fef2f2; border: 1px solid #f87171; padding: 6px; border-radius: 6px; color: #991b1b; margin-bottom: 4px;"><strong>⚠️ 警報:</strong> ${[...new Set(kakogawaWarnings)].join('、')}</div>`;
-                            }
-                            if (kakogawaAdvisories.length > 0) {
-                                kakogawaHtml += `<div style="background-color: #fefce8; border: 1px solid #facc15; padding: 6px; border-radius: 6px; color: #854d0e;"><strong>注意報:</strong> ${[...new Set(kakogawaAdvisories)].join('、')}</div>`;
-                            }
-                            kakogawaContainer.innerHTML = kakogawaHtml;
-                        } else {
-                            kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、加古川市に発表されている警報・注意報はありません。</div>`;
+                    const hyogoContainer = document.getElementById('hyogo-warning-container');
+                    if (hyogoWarnings.size > 0 || hyogoAdvisories.size > 0) {
+                        let hyogoHtml = '';
+                        if (hyogoWarnings.size > 0) {
+                            hyogoHtml += `<div style="background-color: #fef2f2; border: 1px solid #f87171; padding: 6px; border-radius: 6px; color: #991b1b; margin-bottom: 4px;"><strong>⚠️ 警報:</strong> ${[...hyogoWarnings].join('、')}</div>`;
                         }
+                        if (hyogoAdvisories.size > 0) {
+                            hyogoHtml += `<div style="background-color: #fefce8; border: 1px solid #facc15; padding: 6px; border-radius: 6px; color: #854d0e;"><strong>注意報:</strong> ${[...hyogoAdvisories].join('、')}</div>`;
+                        }
+                        hyogoContainer.innerHTML = hyogoHtml;
+                    } else {
+                        hyogoContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、兵庫県内に発表されている警報・注意報はありません。</div>`;
                     }
-                } catch (warnErr) {
-                    console.error("警報情報の取得エラー:", warnErr);
-                }
 
-                let jmaWeatherTexts = [];
-                try {
-                    const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
-                    if (resJmaForecast.ok) {
-                        const jmaData = await resJmaForecast.json();
-                        const timeSeriesWeathers = jmaData[0].timeSeries[0];
-                        const areas = timeSeriesWeathers.areas;
-                        const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
-                        if (targetArea && targetArea.weatherCodes) {
-                            jmaWeatherTexts = targetArea.weatherCodes.map(code => getWeatherTextFromCode(code));
+                    const kakogawaContainer = document.getElementById('kakogawa-warning-container');
+                    if (kakogawaWarnings.length > 0 || kakogawaAdvisories.length > 0) {
+                        let kakogawaHtml = '';
+                        if (kakogawaWarnings.length > 0) {
+                            kakogawaHtml += `<div style="background-color: #fef2f2; border: 1px solid #f87171; padding: 6px; border-radius: 6px; color: #991b1b; margin-bottom: 4px;"><strong>⚠️ 警報:</strong> ${[...new Set(kakogawaWarnings)].join('、')}</div>`;
                         }
+                        if (kakogawaAdvisories.length > 0) {
+                            kakogawaHtml += `<div style="background-color: #fefce8; border: 1px solid #facc15; padding: 6px; border-radius: 6px; color: #854d0e;"><strong>注意報:</strong> ${[...new Set(kakogawaAdvisories)].join('、')}</div>`;
+                        }
+                        kakogawaContainer.innerHTML = kakogawaHtml;
+                    } else {
+                        kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、加古川市に発表されている警報・注意報はありません。</div>`;
                     }
-                } catch (err) {
-                    console.error("JMA天気コードの解析エラー:", err);
                 }
+            } catch (warnErr) {
+                console.error("警報情報の取得エラー:", warnErr);
+                document.getElementById('hyogo-warning-container').innerText = '警報情報の取得に失敗しました。';
+                document.getElementById('kakogawa-warning-container').innerText = '警報情報の取得に失敗しました。';
+            }
 
+            // 2. 気象庁の天気コードの取得
+            let jmaWeatherTexts = [];
+            try {
+                const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
+                if (resJmaForecast.ok) {
+                    const jmaData = await resJmaForecast.json();
+                    const timeSeriesWeathers = jmaData[0].timeSeries[0];
+                    const areas = timeSeriesWeathers.areas;
+                    const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
+                    if (targetArea && targetArea.weatherCodes) {
+                        jmaWeatherTexts = targetArea.weatherCodes.map(code => getWeatherTextFromCode(code));
+                    }
+                }
+            } catch (err) {
+                console.error("JMA天気コードの解析エラー:", err);
+            }
+
+            // 3. Open-Meteoデータの取得とテーブル描画（最も重要）
+            try {
                 const lat = 34.7658;
                 const lon = 134.8437;
-                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2Tokyo`;
+                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo`;
                 
                 const resMeteo = await fetch(meteoUrl);
                 if (resMeteo.ok) {
@@ -753,9 +754,13 @@
                     
                     // 2ページ目 (7日間・1日1行)
                     document.querySelector('#forecast-table-7days tbody').innerHTML = generateDailyTableHtml(jmaWeatherTexts, data);
+                } else {
+                    throw new Error("Open-Meteo API response not ok");
                 }
-            } catch (e) {
-                console.error("データ取得エラー:", e);
+            } catch (meteoErr) {
+                console.error("Open-Meteo データ取得エラー:", meteoErr);
+                document.querySelector('#forecast-table-1 tbody').innerHTML = `<tr><td colspan="6">天気データの取得に失敗しました。</td></tr>`;
+                document.querySelector('#forecast-table-7days tbody').innerHTML = `<tr><td colspan="6">天気データの取得に失敗しました。</td></tr>`;
             }
         }
 
