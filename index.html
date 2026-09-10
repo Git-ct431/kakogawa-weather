@@ -262,14 +262,14 @@
             return getAlertLevel(code) === '警報' || getAlertLevel(code) === '特別警報';
         }
 
-        function getWeatherInfoFromCode(codeStr) {
-            if (!codeStr) return { text: 'くもり', icon: '☁️' };
+        function getWeatherTextFromCode(codeStr) {
+            if (!codeStr) return '曇り';
             const firstChar = String(codeStr).charAt(0);
-            if (firstChar === '1') return { text: '晴れ', icon: '☀️' };
-            if (firstChar === '2') return { text: 'くもり', icon: '☁️' };
-            if (firstChar === '3') return { text: '雨', icon: '🌧️' };
-            if (firstChar === '4') return { text: '雪', icon: '❄️' };
-            return { text: 'くもり', icon: '☁️' };
+            if (firstChar === '1') return '晴れ';
+            if (firstChar === '2') return '曇り';
+            if (firstChar === '3') return '雨';
+            if (firstChar === '4') return '雪';
+            return '曇り';
         }
 
         async function fetchTransitInfo() {
@@ -372,7 +372,7 @@
                     }
                 }
 
-                let jmaWeatherInfos = [];
+                let jmaWeatherTexts = [];
                 const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
                 if (resJmaForecast.ok) {
                     const jmaData = await resJmaForecast.json();
@@ -381,7 +381,7 @@
                         const areas = timeSeriesWeathers.areas;
                         const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
                         if (targetArea && targetArea.weatherCodes) {
-                            jmaWeatherInfos = targetArea.weatherCodes.map(code => getWeatherInfoFromCode(code));
+                            jmaWeatherTexts = targetArea.weatherCodes.map(code => getWeatherTextFromCode(code));
                         }
                     } catch (err) {
                         console.error("JMA天気コードの解析エラー:", err);
@@ -427,14 +427,19 @@
                         const d = String(targetDate.getDate()).padStart(2, '0');
                         const w = weekdays[targetDate.getDay()];
                         
-                        const wInfo = jmaWeatherInfos[dayOffset] || { text: 'くもり', icon: '☁️' };
+                        const weatherText = jmaWeatherTexts[dayOffset] || '曇り';
+                        
+                        // 縦書き用に1文字ずつ <br> で結合
+                        let verticalWeatherHtml = '';
+                        for (let char of weatherText) {
+                            verticalWeatherHtml += `${char}<br>`;
+                        }
 
                         const dateStr = `
                             <span style="color: #64748b; font-size: 0.75rem; font-weight: normal;">${m}</span><br>
                             <strong>${d}</strong><br>
                             <strong>${w}</strong>
-                            <div style="margin-top: 4px; font-size: 1.15rem; line-height: 1;">${wInfo.icon}</div>
-                            <div style="font-size: 0.75rem; color: #475569; font-weight: normal; margin-top: 2px;">${wInfo.text}</div>
+                            <div style="margin-top: 4px; font-size: 0.85rem; font-weight: normal; line-height: 1.15; display: inline-block; color: #475569; letter-spacing: -0.5px;">${verticalWeatherHtml}</div>
                         `;
 
                         timeSlots.forEach((slot, slotIndex) => {
