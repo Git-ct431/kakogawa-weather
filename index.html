@@ -9,7 +9,7 @@
         html { font-size: 12px; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; padding: 12px; background-color: #f4f6f8; color: #333; font-size: 1rem; 
+            margin: 0; padding: 12px; padding-bottom: 70px; background-color: #f4f6f8; color: #333; font-size: 1rem; 
         }
         .container { max-width: 900px; margin: 0 auto; }
         .header-card, .card { 
@@ -141,19 +141,29 @@
         .page-content { display: none; }
         .page-content.active { display: block; }
 
+        /* ページ切り替えボタンを画面下に固定 (フロート配置) */
         .pagination-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(244, 246, 248, 0.9);
+            backdrop-filter: blur(4px);
+            padding: 10px 0;
             text-align: center;
-            margin: 16px 0;
+            box-shadow: 0 -2px 6px rgba(0,0,0,0.08);
+            z-index: 1000;
         }
         .nav-button {
             background-color: #2563eb;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 24px;
             font-size: 1rem;
+            font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
         }
         .nav-button:hover {
             background-color: #1d4ed8;
@@ -282,10 +292,10 @@
                 </ul>
             </div>
         </div>
+    </div>
 
-        <div class="pagination-container">
-            <button id="nav-btn" class="nav-button" onclick="switchPage()">ページ2へ</button>
-        </div>
+    <div class="pagination-container">
+        <button id="nav-btn" class="nav-button" onclick="switchPage()">ページ2へ</button>
     </div>
 
     <script>
@@ -646,10 +656,8 @@
             document.getElementById('source-update-time-2').innerText = nowStr;
             document.getElementById('page-update-time-4').innerText = nowStr;
 
-            // 各タスクを独立して並行処理または個別安全実行し、メインの天気が必ず動くようにする
             fetchTransitInfo();
 
-            // 1. 警報情報の取得（独立したトライ・キャッチ）
             try {
                 const resWarning = await fetch('https://www.jma.go.jp/bosai/warning/data/r8/280000.json');
                 if (resWarning.ok) {
@@ -722,7 +730,6 @@
                 document.getElementById('kakogawa-warning-container').innerText = '警報情報の取得に失敗しました。';
             }
 
-            // 2. 気象庁の天気コードの取得
             let jmaWeatherTexts = [];
             try {
                 const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
@@ -739,7 +746,6 @@
                 console.error("JMA天気コードの解析エラー:", err);
             }
 
-            // 3. Open-Meteoデータの取得とテーブル描画（最も重要）
             try {
                 const lat = 34.7658;
                 const lon = 134.8437;
@@ -748,11 +754,7 @@
                 const resMeteo = await fetch(meteoUrl);
                 if (resMeteo.ok) {
                     const data = await resMeteo.json();
-                    
-                    // 1ページ目 (3日間・時間別)
                     document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(jmaWeatherTexts, data, 3);
-                    
-                    // 2ページ目 (7日間・1日1行)
                     document.querySelector('#forecast-table-7days tbody').innerHTML = generateDailyTableHtml(jmaWeatherTexts, data);
                 } else {
                     throw new Error("Open-Meteo API response not ok");
