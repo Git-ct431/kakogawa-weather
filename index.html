@@ -72,30 +72,25 @@
             border: 1px solid #dcdcdc;
         }
 
-        /* 7日間天気用のテーブルスタイル（1日1行） */
+        /* 7日間天気用のテーブルスタイル（3日間天気と共通化・自動幅） */
         .daily-table {
-            width: 100%;
+            width: auto;
             border-collapse: collapse;
-            font-size: 0.9rem;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 0.85rem;
+            background-color: #F3F3F3;
         }
         .daily-table th, .daily-table td {
-            padding: 10px 12px;
+            padding: 4px 6px;
             text-align: center;
-            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+            background-color: #F3F3F3;
+            border: 1px solid #dcdcdc;
             white-space: nowrap;
         }
         .daily-table th {
-            background-color: #f8fafc;
+            background-color: #F3F3F3;
             color: #475569;
             font-weight: bold;
-            border-bottom: 2px solid #cbd5e1;
-        }
-        .daily-table tr:last-child td {
-            border-bottom: none;
         }
         .daily-table tr.past-day {
             position: relative;
@@ -229,17 +224,17 @@
                 </div>
             </div>
 
-            <div class="card" style="padding: 10px;">
+            <div class="card" style="padding: 10px; display: inline-block;">
                 <div style="overflow-x: auto;">
                     <table id="forecast-table-7days" class="daily-table">
                         <thead>
                             <tr>
-                                <th>日付</th>
-                                <th>天気</th>
-                                <th>気温</th>
-                                <th>風速</th>
-                                <th>雨率</th>
-                                <th>降水</th>
+                                <th style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
+                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">天気</th>
+                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">気温</th>
+                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">風速</th>
+                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">雨率</th>
+                                <th style="border-right: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">降水</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -591,25 +586,40 @@
                     }
                 }
 
-                let minT = dayTemps.length > 0 ? Math.round(Math.min(...dayTemps)) : '--';
-                let maxT = dayTemps.length > 0 ? Math.round(Math.max(...dayTemps)) : '--';
-                let tempStr = `${minT}-${maxT}`;
+                let minT = dayTemps.length > 0 ? Math.round(Math.min(...dayTemps)) : null;
+                let maxT = dayTemps.length > 0 ? Math.round(Math.max(...dayTemps)) : null;
+                let tempStr = (minT != null && maxT != null) ? `${minT}-${maxT}` : '--';
+                
+                // 気温の色は最高気温を基準にスタイリング
+                let tempNum = maxT;
+                let tempStyle = getTempBackgroundColor(tempNum);
+                if (tempNum === 0) tempStyle += '; color: #94a3b8;';
 
-                let avgWind = dayWinds.length > 0 ? Math.round(dayWinds.reduce((a, b) => a + b, 0) / dayWinds.length) : '--';
-                let maxPop = dayPops.length > 0 ? formatPopValue(Math.max(...dayPops)) : '--';
+                let avgWind = dayWinds.length > 0 ? Math.round(dayWinds.reduce((a, b) => a + b, 0) / dayWinds.length) : null;
+                let valWind = formatInteger(avgWind);
+                let windStyle = getWindBackgroundColor(avgWind);
+
+                let maxPopNum = dayPops.length > 0 ? formatPopValue(Math.max(...dayPops)) : null;
+                let valPop = (maxPopNum !== '--') ? String(maxPopNum) : '--';
+                let popStyle = getPopBackgroundColor(maxPopNum);
+                if (maxPopNum === 0) popStyle += '; color: #94a3b8;';
+
                 let rainNum = dayRainSum > 0 ? Math.round(dayRainSum) : 0;
+                let valRain = formatInteger(dayRainSum);
+                let rainStyle = getRainBackgroundColor(rainNum);
+                if (rainNum === 0) rainStyle += '; color: #94a3b8;';
 
                 const isPast = (dayOffset < 0);
                 const rowClass = isPast ? 'past-day' : '';
 
                 html += `
                     <tr class="${rowClass}">
-                        <td style="font-weight: bold; white-space: nowrap;">${m}.${d} (${w})</td>
-                        <td>${weatherText}</td>
-                        <td>${tempStr}</td>
-                        <td>${avgWind}</td>
-                        <td>${maxPop}</td>
-                        <td>${rainNum}</td>
+                        <td style="background-color: #F3F3F3; font-weight: bold; white-space: nowrap;">${m}.${d} ${w}</td>
+                        <td style="background-color: #F3F3F3;">${weatherText}</td>
+                        <td style="text-align: right; ${tempStyle}">${tempStr}</td>
+                        <td style="text-align: right; ${windStyle}">${valWind}</td>
+                        <td style="text-align: right; ${popStyle}">${valPop}</td>
+                        <td style="text-align: right; ${rainStyle}">${valRain}</td>
                     </tr>
                 `;
             }
