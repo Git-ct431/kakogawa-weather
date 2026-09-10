@@ -4,7 +4,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌤️</text></svg>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加古川の天気     改修中</title>
+    <title>加古川の天気</title>
     <style>
         html { font-size: 12px; }
         body { 
@@ -455,33 +455,6 @@
             return '曇り';
         }
 
-        async function fetchTransitInfo() {
-            const targetUrl = "https://transit.yahoo.co.jp/diainfo/273/0";
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-            const transitContainer = document.getElementById('transit-container');
-
-            try {
-                const response = await fetch(proxyUrl);
-                if (response.ok) {
-                    const data = await response.json();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(data.contents, 'text/html');
-                    
-                    const troubleElement = doc.querySelector('#mdServiceStatus .trouble, dd.trouble, #mdServiceStatus');
-                    if (troubleElement) {
-                        let statusText = troubleElement.innerText.trim();
-                        statusText = statusText.replace(/（([^）]+)掲載）/g, '<br><span style="font-size: 0.85rem; color: #64748b;">$1掲載</span>');
-                        transitContainer.innerHTML = `<div>${statusText}</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
-                    } else {
-                        transitContainer.innerHTML = `<div>平常運転（または詳細情報を取得できませんでした）</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
-                    }
-                }
-            } catch (e) {
-                console.error("運行情報の取得エラー:", e);
-                transitContainer.innerHTML = `<div>運行情報の取得に失敗しました（クリックして確認）</div>`;
-            }
-        }
-
         function generateTableHtml(jmaWeatherTexts, meteoData, daysCount) {
             const times = meteoData.hourly.time;
             const temps = meteoData.hourly.temperature_2m;
@@ -672,25 +645,36 @@
         }
 
         async function fetchDashboardData() {
-            const nowStr = formatCustomDate(new Date());
-            document.getElementById('page-update-time-1').innerText = nowStr;
-            document.getElementById('source-update-time-1').innerText = nowStr;
-            document.getElementById('page-update-time-2').innerText = nowStr;
-            document.getElementById('source-update-time-2').innerText = nowStr;
-            document.getElementById('page-update-time-3').innerText = nowStr;
-            document.getElementById('page-update-time-4').innerText = nowStr;
-
-            fetchTransitInfo();
-
             try {
-                const resWarning = await fetch('https://www.jma.go.jp/bosai/warning/data/r8/280000.json');
-                if (resWarning.ok) {
-                    const warnArray = await resWarning.json();
+                const response = await fetch('./data.json');
+                if (!response.ok) throw new Error("data.jsonの読み込みに失敗しました");
+                const data = await response.json();
+
+                const updateTime = data.updated_at || formatCustomDate(new Date());
+                document.getElementById('page-update-time-1').innerText = updateTime;
+                document.getElementById('source-update-time-1').innerText = updateTime;
+                document.getElementById('page-update-time-2').innerText = updateTime;
+                document.getElementById('source-update-time-2').innerText = updateTime;
+                document.getElementById('page-update-time-3').innerText = updateTime;
+                document.getElementById('page-update-time-4').innerText = updateTime;
+
+                // JR神戸線 運行情報の反映
+                const transitContainer = document.getElementById('transit-container');
+                if (data.transit_info) {
+                    let statusText = data.transit_info;
+                    statusText = statusText.replace(/（([^）]+)掲載）/g, '<br><span style="font-size: 0.85rem; color: #64748b;">$1掲載</span>');
+                    transitContainer.innerHTML = `<div>${statusText}</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
+                } else {
+                    transitContainer.innerHTML = `<div>平常運転（または詳細情報を取得できませんでした）</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
+                }
+
+                // 警報・注意報の反映
+                if (data.jma_warning) {
+                    const warnArray = data.jma_warning;
                     let hyogoWarnings = new Set();
                     let hyogoAdvisories = new Set();
                     let kakogawaWarnings = [];
                     let kakogawaAdvisories = [];
-
                     let areaAlerts = {};
 
                     warnArray.forEach(report => {
@@ -700,7 +684,6 @@
                                 if (!areaAlerts[areaName]) {
                                     areaAlerts[areaName] = { warnings: [], advisories: [] };
                                 }
-
                                 if (item.kinds) {
                                     item.kinds.forEach(k => {
                                         if ((k.status === '発表' || k.status === '継続') && k.code) {
@@ -729,7 +712,6 @@
                         }
                     });
 
-                    // 1ページ目の表示更新
                     const hyogoContainer = document.getElementById('hyogo-warning-container');
                     if (hyogoWarnings.size > 0 || hyogoAdvisories.size > 0) {
                         let hyogoHtml = '';
@@ -758,15 +740,14 @@
                         kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、加古川市に発表されている警報・注意報はありません。</div>`;
                     }
 
-                    // 3ページ目（一次細分区域別の色付き一覧ボード）の構築
                     const alertMapContainer = document.getElementById('alert-map-container');
                     const areaKeys = Object.keys(areaAlerts);
                     if (areaKeys.length > 0) {
                         let listHtml = '';
                         areaKeys.forEach(areaName => {
-                            const data = areaAlerts[areaName];
-                            const hasWarn = data.warnings.length > 0;
-                            const hasAdv = data.advisories.length > 0;
+                            const itemData = areaAlerts[areaName];
+                            const hasWarn = itemData.warnings.length > 0;
+                            const hasAdv = itemData.advisories.length > 0;
                             
                             let statusBadge = '';
                             let cardBg = '#f8fafc';
@@ -777,23 +758,19 @@
                                 statusBadge = `<span style="background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">警報発令中</span>`;
                                 cardBg = '#fff5f5';
                                 borderColor = '#fca5a5';
-                                titleColor = '#dc2626'; // エリア名の文字色を赤に変更
+                                titleColor = '#dc2626';
                             } else if (hasAdv) {
                                 statusBadge = `<span style="background-color: #fef9c3; color: #854d0e; border: 1px solid #facc15; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">注意報発表中</span>`;
                                 cardBg = '#fefde8';
                                 borderColor = '#fde047';
-                                titleColor = '#ca8a04'; // エリア名の文字色を黄色/オレンジ系に変更
+                                titleColor = '#ca8a04';
                             } else {
                                 statusBadge = `<span style="background-color: #f0fdf4; color: #166534; border: 1px solid #86efac; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">発表なし</span>`;
                             }
 
-                            let detailsHtml = '';
-                            if (hasWarn || hasAdv) {
-                                const allAlerts = [...new Set([...data.warnings, ...data.advisories])].join('、');
-                                detailsHtml = `<div style="margin-top: 6px; font-size: 0.85rem; color: #334155;">${allAlerts}</div>`;
-                            } else {
-                                detailsHtml = `<div style="margin-top: 6px; font-size: 0.85rem; color: #64748b;">気象警報・注意報は発表されていません</div>`;
-                            }
+                            let detailsHtml = (hasWarn || hasAdv) 
+                                ? `<div style="margin-top: 6px; font-size: 0.85rem; color: #334155;">${[...new Set([...itemData.warnings, ...itemData.advisories])].join('、')}</div>`
+                                : `<div style="margin-top: 6px; font-size: 0.85rem; color: #64748b;">気象警報・注意報は発表されていません</div>`;
 
                             listHtml += `
                                 <div style="background: ${cardBg}; border: 1px solid ${borderColor}; border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -810,19 +787,10 @@
                         alertMapContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; color: #166534;">現在、兵庫県内の各地域に発表されている警報・注意報はありません。</div>`;
                     }
                 }
-            } catch (warnErr) {
-                console.error("警報情報の取得エラー:", warnErr);
-                document.getElementById('hyogo-warning-container').innerText = '警報情報の取得に失敗しました。';
-                document.getElementById('kakogawa-warning-container').innerText = '警報情報の取得に失敗しました。';
-                document.getElementById('alert-map-container').innerHTML = `<div style="color: #991b1b;">警報データの取得に失敗しました。</div>`;
-            }
 
-            let jmaWeatherTexts = [];
-            try {
-                const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
-                if (resJmaForecast.ok) {
-                    const jmaData = await resJmaForecast.json();
-                    const timeSeriesWeathers = jmaData[0].timeSeries[0];
+                let jmaWeatherTexts = [];
+                if (data.jma_forecast) {
+                    const timeSeriesWeathers = data.jma_forecast[0].timeSeries[0];
                     const areas = timeSeriesWeathers.areas;
                     const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
                     if (targetArea && targetArea.weatherCodes) {
@@ -831,45 +799,28 @@
                 }
 
                 const overviewContainer = document.getElementById('overview-container');
-                const resOverview = await fetch('https://www.jma.go.jp/bosai/forecast/data/overview_forecast/280000.json');
-                if (resOverview.ok) {
-                    const overviewData = await resOverview.json();
-                    if (overviewData && typeof overviewData.text === 'string') {
-                        overviewContainer.innerHTML = overviewData.text.replace(/\n/g, '<br>');
-                    } else {
-                        overviewContainer.innerText = '天気概況データが見つかりませんでした。';
-                    }
+                if (data.jma_overview && typeof data.jma_overview.text === 'string') {
+                    overviewContainer.innerHTML = data.jma_overview.text.replace(/\n/g, '<br>');
                 } else {
-                    overviewContainer.innerText = '天気概況の取得に失敗しました。';
+                    overviewContainer.innerText = '天気概況データが見つかりませんでした。';
+                }
+
+                if (data.open_meteo) {
+                    document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(jmaWeatherTexts, data.open_meteo, 3);
+                    document.querySelector('#forecast-table-7days tbody').innerHTML = generateDailyTableHtml(jmaWeatherTexts, data.open_meteo);
+                } else {
+                    throw new Error("Open-Meteo data missing in data.json");
                 }
 
             } catch (err) {
-                console.error("JMA天気データの解析エラー:", err);
-                document.getElementById('overview-container').innerText = '天気概況の取得に失敗しました。';
-            }
-
-            try {
-                const lat = 34.7658;
-                const lon = 134.8437;
-                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo`;
-                
-                const resMeteo = await fetch(meteoUrl);
-                if (resMeteo.ok) {
-                    const data = await resMeteo.json();
-                    document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(jmaWeatherTexts, data, 3);
-                    document.querySelector('#forecast-table-7days tbody').innerHTML = generateDailyTableHtml(jmaWeatherTexts, data);
-                } else {
-                    throw new Error("Open-Meteo API response not ok");
-                }
-            } catch (meteoErr) {
-                console.error("Open-Meteo データ取得エラー:", meteoErr);
+                console.error("データ読み込みエラー:", err);
+                document.getElementById('overview-container').innerText = '天気データの読み込みに失敗しました。';
                 document.querySelector('#forecast-table-1 tbody').innerHTML = `<tr><td colspan="6">天気データの取得に失敗しました。</td></tr>`;
                 document.querySelector('#forecast-table-7days tbody').innerHTML = `<tr><td colspan="6">天気データの取得に失敗しました。</td></tr>`;
             }
         }
 
         fetchDashboardData();
-        setInterval(fetchDashboardData, 600000);
     </script>
 </body>
 </html>
