@@ -60,7 +60,7 @@
             background-color: #F3F3F3;
         }
         #forecast-table th, #forecast-table td { 
-            padding: 3px 5px; 
+            padding: 4px 6px; 
             text-align: center; 
             vertical-align: middle; 
             background-color: #F3F3F3;
@@ -83,13 +83,10 @@
         .date-cell { 
             background-color: #F3F3F3 !important; 
             white-space: nowrap; 
-            line-height: 1.2;
-            padding: 6px;
-            vertical-align: top !important;
-        }
-
-        #forecast-table .date-cell {
-            font-size: 0.85rem;
+            line-height: 1.3;
+            padding: 8px 6px;
+            vertical-align: middle !important;
+            text-align: center;
         }
 
         .past-slot td:not(.date-cell) {
@@ -265,6 +262,16 @@
             return getAlertLevel(code) === '警報' || getAlertLevel(code) === '特別警報';
         }
 
+        function getWeatherInfoFromCode(codeStr) {
+            if (!codeStr) return { text: 'くもり', icon: '☁️' };
+            const firstChar = String(codeStr).charAt(0);
+            if (firstChar === '1') return { text: '晴れ', icon: '☀️' };
+            if (firstChar === '2') return { text: 'くもり', icon: '☁️' };
+            if (firstChar === '3') return { text: '雨', icon: '🌧️' };
+            if (firstChar === '4') return { text: '雪', icon: '❄️' };
+            return { text: 'くもり', icon: '☁️' };
+        }
+
         async function fetchTransitInfo() {
             const targetUrl = "https://transit.yahoo.co.jp/diainfo/273/0";
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
@@ -299,7 +306,6 @@
 
                 fetchTransitInfo();
 
-                // 警報・注意報データの取得
                 const resWarning = await fetch('https://www.jma.go.jp/bosai/warning/data/r8/280000.json');
                 if (resWarning.ok) {
                     const warnArray = await resWarning.json();
@@ -366,27 +372,22 @@
                     }
                 }
 
-                // 気象庁の天気予報データ（weathersテキスト用）の取得
-                let jmaWeathers = [];
+                let jmaWeatherInfos = [];
                 const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
                 if (resJmaForecast.ok) {
                     const jmaData = await resJmaForecast.json();
                     try {
-                        // 兵庫県南部（areaCode "280010" など、または配列内から「南部」を探す）
                         const timeSeriesWeathers = jmaData[0].timeSeries[0];
                         const areas = timeSeriesWeathers.areas;
-                        // 加古川市が含まれる「南部」のエリアを探す（area.nameが「南部」または該当地域）
                         const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
-                        if (targetArea && targetArea.weathers) {
-                            // 空白を削除したweathersテキストの配列を作成
-                            jmaWeathers = targetArea.weathers.map(w => w.replace(/\s+/g, ''));
+                        if (targetArea && targetArea.weatherCodes) {
+                            jmaWeatherInfos = targetArea.weatherCodes.map(code => getWeatherInfoFromCode(code));
                         }
                     } catch (err) {
-                        console.error("JMA天気テキストの解析エラー:", err);
+                        console.error("JMA天気コードの解析エラー:", err);
                     }
                 }
 
-                // Open-Meteoデータの取得（気温・風速・降水確率・降水量用）
                 const lat = 34.7658;
                 const lon = 134.8437;
                 const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo`;
@@ -426,18 +427,15 @@
                         const d = String(targetDate.getDate()).padStart(2, '0');
                         const w = weekdays[targetDate.getDay()];
                         
-                        // 気象庁のweathersテキスト（weathers[0], weathers[1], weathers[2]）を割り当て
-                        let dailyWeatherText = jmaWeathers[dayOffset] || '曇り';
+                        const wInfo = jmaWeatherInfos[dayOffset] || { text: 'くもり', icon: '☁️' };
 
-                        let formattedWeatherHtml = '';
-                        for (let char of dailyWeatherText) {
-                            formattedWeatherHtml += `${char}<br>`;
-                        }
-                        if (formattedWeatherHtml.endsWith('<br>')) {
-                            formattedWeatherHtml = formattedWeatherHtml.slice(0, -4);
-                        }
-
-                        const dateStr = `<span style="color: #64748b; font-weight: normal;">${m}</span><br><strong>${d}</strong><br><strong>${w}</strong><br><br><span style="font-size: 0.8rem; font-weight: normal; line-height: 1.1; display: inline-block; color: #64748b;">${formattedWeatherHtml}</span>`;
+                        const dateStr = `
+                            <span style="color: #64748b; font-size: 0.75rem; font-weight: normal;">${m}</span><br>
+                            <strong>${d}</strong><br>
+                            <strong>${w}</strong>
+                            <div style="margin-top: 4px; font-size: 1.15rem; line-height: 1;">${wInfo.icon}</div>
+                            <div style="font-size: 0.75rem; color: #475569; font-weight: normal; margin-top: 2px;">${wInfo.text}</div>
+                        `;
 
                         timeSlots.forEach((slot, slotIndex) => {
                             let slotTemps = [];
