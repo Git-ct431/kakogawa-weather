@@ -72,6 +72,45 @@
             border: 1px solid #dcdcdc;
         }
 
+        /* 7日間天気用のテーブルスタイル（1日1行） */
+        .daily-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .daily-table th, .daily-table td {
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .daily-table th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: bold;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .daily-table tr:last-child td {
+            border-bottom: none;
+        }
+        .daily-table tr.past-day {
+            position: relative;
+        }
+        .daily-table tr.past-day td::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.55);
+            pointer-events: none;
+        }
+
         .vertical-header {
             writing-mode: vertical-rl;
             text-orientation: upright;
@@ -180,7 +219,7 @@
             </div>
         </div>
 
-        <!-- ページ 2：7日間の天気 -->
+        <!-- ページ 2：7日間の天気（1日1行） -->
         <div id="page-2" class="page-content">
             <div class="header-card">
                 <h1>加古川市の天気 (7日間・2ページ目)</h1>
@@ -190,25 +229,23 @@
                 </div>
             </div>
 
-            <div class="content-row">
-                <div class="forecast-col">
-                    <div style="overflow-x: auto;">
-                        <table id="forecast-table-7days" class="forecast-table">
-                            <thead>
-                                <tr>
-                                    <th class="vertical-header" style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">時間</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">気温</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">風速</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">雨率</th>
-                                    <th class="vertical-header" style="border-right: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">降水</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="6">読み込み中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="card" style="padding: 10px;">
+                <div style="overflow-x: auto;">
+                    <table id="forecast-table-7days" class="daily-table">
+                        <thead>
+                            <tr>
+                                <th>日付</th>
+                                <th>天気</th>
+                                <th>気温</th>
+                                <th>風速</th>
+                                <th>雨率</th>
+                                <th>降水</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6">読み込み中...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -398,6 +435,7 @@
             }
         }
 
+        // 1ページ目用の3時間ごとテーブル生成
         function generateTableHtml(jmaWeatherTexts, meteoData, daysCount) {
             const times = meteoData.hourly.time;
             const temps = meteoData.hourly.temperature_2m;
@@ -517,6 +555,67 @@
             return forecastHtml;
         }
 
+        // 2ページ目用の7日間（1日1行）テーブル生成
+        function generateDailyTableHtml(jmaWeatherTexts, meteoData) {
+            const times = meteoData.hourly.time;
+            const temps = meteoData.hourly.temperature_2m;
+            const winds = meteoData.hourly.wind_speed_10m;
+            const pops = meteoData.hourly.precipitation_probability;
+            const rains = meteoData.hourly.precipitation;
+
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const now = new Date();
+            let html = '';
+
+            for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+                const targetDate = new Date();
+                targetDate.setDate(now.getDate() + dayOffset);
+                
+                const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+                const d = String(targetDate.getDate()).padStart(2, '0');
+                const w = weekdays[targetDate.getDay()];
+                const weatherText = jmaWeatherTexts[dayOffset] || '曇り';
+
+                let dayTemps = [];
+                let dayWinds = [];
+                let dayPops = [];
+                let dayRainSum = 0;
+
+                for (let i = 0; i < times.length; i++) {
+                    const t = new Date(times[i]);
+                    if (t.getDate() === targetDate.getDate() && t.getMonth() === targetDate.getMonth()) {
+                        if (temps[i] != null) dayTemps.push(temps[i]);
+                        if (winds[i] != null) dayWinds.push(winds[i]);
+                        if (pops[i] != null) dayPops.push(pops[i]);
+                        if (rains[i] != null) dayRainSum += rains[i];
+                    }
+                }
+
+                let minT = dayTemps.length > 0 ? Math.round(Math.min(...dayTemps)) : '--';
+                let maxT = dayTemps.length > 0 ? Math.round(Math.max(...dayTemps)) : '--';
+                let tempStr = `${minT}-${maxT}`;
+
+                let avgWind = dayWinds.length > 0 ? Math.round(dayWinds.reduce((a, b) => a + b, 0) / dayWinds.length) : '--';
+                let maxPop = dayPops.length > 0 ? formatPopValue(Math.max(...dayPops)) : '--';
+                let rainNum = dayRainSum > 0 ? Math.round(dayRainSum) : 0;
+
+                const isPast = (dayOffset < 0);
+                const rowClass = isPast ? 'past-day' : '';
+
+                html += `
+                    <tr class="${rowClass}">
+                        <td style="font-weight: bold; white-space: nowrap;">${m}.${d} (${w})</td>
+                        <td>${weatherText}</td>
+                        <td>${tempStr}</td>
+                        <td>${avgWind}</td>
+                        <td>${maxPop}</td>
+                        <td>${rainNum}</td>
+                    </tr>
+                `;
+            }
+            return html;
+        }
+
         async function fetchDashboardData() {
             try {
                 const nowStr = formatCustomDate(new Date());
@@ -617,11 +716,11 @@
                 if (resMeteo.ok) {
                     const data = await resMeteo.json();
                     
-                    // 1ページ目 (3日間)
+                    // 1ページ目 (3日間・時間別)
                     document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(jmaWeatherTexts, data, 3);
                     
-                    // 2ページ目 (7日間)
-                    document.querySelector('#forecast-table-7days tbody').innerHTML = generateTableHtml(jmaWeatherTexts, data, 7);
+                    // 2ページ目 (7日間・1日1行)
+                    document.querySelector('#forecast-table-7days tbody').innerHTML = generateDailyTableHtml(jmaWeatherTexts, data);
                 }
             } catch (e) {
                 console.error("データ取得エラー:", e);
