@@ -566,14 +566,9 @@
                     if (rainNum === 0) rainStyle += '; color: #94a3b8;';
 
                     const isPast = (dayOffset < 0) || (dayOffset === 0 && slot.endH < currentHour);
-                    const isCurrentSlot = (dayOffset === 0) && (currentHour >= slot.startH && currentHour <= slot.endH);
 
                     let topBorder = slotIndex === 0 ? '1px solid #707070' : 'none';
                     let bottomBorder = slotIndex === timeSlots.length - 1 ? '1px solid #707070' : 'none';
-                    
-                    if (isCurrentSlot) {
-                        bottomBorder = '1.5px solid #2563eb';
-                    }
 
                     const rowClass = isPast ? 'past-slot' : '';
                     forecastHtml += `<tr class="${rowClass}">`;
