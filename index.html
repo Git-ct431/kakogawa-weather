@@ -268,27 +268,21 @@
             </div>
         </div>
 
-        <!-- ページ 3：警報・注意報マップ -->
+        <!-- ページ 3：警報・注意報アラートマップ（軽量リスト版） -->
         <div id="page-3" class="page-content">
             <div class="header-card">
-                <h1>警報・注意報マップ (3ページ目)</h1>
+                <h1>兵庫県 警報・注意報エリア一覧 (3ページ目)</h1>
                 <div class="time-info">
                     <div>ページ更新：<span id="page-update-time-3">読み込み中...</span></div>
                 </div>
             </div>
             <div class="card" style="padding: 16px;">
-                <h2>気象庁 警報・注意報（兵庫県エリアマップ）</h2>
-                <div style="font-size: 0.9rem; color: #475569; margin-bottom: 12px;">
-                    気象庁が提供する兵庫県の警報・注意報分布マップです。各地域の発表状況を確認できます。
+                <h2>一次細分区域別の発表状況</h2>
+                <div style="font-size: 0.9rem; color: #475569; margin-bottom: 14px;">
+                    気象庁が定義する兵庫県の一次細分区域ごとの警報・注意報の発表状況です。アラート発令時は文字色と背景が自動で強調されます。
                 </div>
-                <div style="text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px;">
-                    <!-- 気象庁の警報・注意報マップページへのリンクやiframe、またはプレースホルダー -->
-                    <div style="margin-bottom: 16px;">
-                        <iframe src="https://www.jma.go.jp/bosai/warning/#area_type=class20s&area_code=2821000" style="width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 4px;" title="気象庁 警報・注意報マップ"></iframe>
-                    </div>
-                    <div style="font-size: 0.85rem; color: #64748b;">
-                        ※ 上手く表示されない場合は、<a href="https://www.jma.go.jp/bosai/warning/#area_type=class20s&area_code=2821000" target="_blank" rel="noopener noreferrer" style="color: #2563eb;">気象庁ホームページ（警報・注意報）で直接確認 ↗</a>
-                    </div>
+                <div id="alert-map-container" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="color: #64748b; font-size: 0.9rem;">データを読み込んでいます...</div>
                 </div>
             </div>
         </div>
@@ -556,7 +550,6 @@
                         }
                     }
 
-                    // 気温は平均、風速・降水確率・降水量は最大値
                     let avgTemp = slotTemps.length > 0 ? slotTemps.reduce((a, b) => a + b, 0) / slotTemps.length : null;
                     let maxWind = slotWinds.length > 0 ? Math.max(...slotWinds) : null;
                     let maxPop = slotPops.length > 0 ? Math.max(...slotPops) : null;
@@ -698,9 +691,16 @@
                     let kakogawaWarnings = [];
                     let kakogawaAdvisories = [];
 
+                    let areaAlerts = {};
+
                     warnArray.forEach(report => {
                         if (report.warning && report.warning.class20Items) {
                             report.warning.class20Items.forEach(item => {
+                                const areaName = item.areaName || item.areaCode;
+                                if (!areaAlerts[areaName]) {
+                                    areaAlerts[areaName] = { warnings: [], advisories: [] };
+                                }
+
                                 if (item.kinds) {
                                     item.kinds.forEach(k => {
                                         if ((k.status === '発表' || k.status === '継続') && k.code) {
@@ -709,8 +709,10 @@
 
                                             if (warningCheck) {
                                                 hyogoWarnings.add(name);
+                                                areaAlerts[areaName].warnings.push(name);
                                             } else {
                                                 hyogoAdvisories.add(name);
+                                                areaAlerts[areaName].advisories.push(name);
                                             }
 
                                             if (item.areaCode === '2821000') {
@@ -727,6 +729,7 @@
                         }
                     });
 
+                    // 1ページ目の表示更新
                     const hyogoContainer = document.getElementById('hyogo-warning-container');
                     if (hyogoWarnings.size > 0 || hyogoAdvisories.size > 0) {
                         let hyogoHtml = '';
@@ -754,11 +757,64 @@
                     } else {
                         kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、加古川市に発表されている警報・注意報はありません。</div>`;
                     }
+
+                    // 3ページ目（一次細分区域別の色付き一覧ボード）の構築
+                    const alertMapContainer = document.getElementById('alert-map-container');
+                    const areaKeys = Object.keys(areaAlerts);
+                    if (areaKeys.length > 0) {
+                        let listHtml = '';
+                        areaKeys.forEach(areaName => {
+                            const data = areaAlerts[areaName];
+                            const hasWarn = data.warnings.length > 0;
+                            const hasAdv = data.advisories.length > 0;
+                            
+                            let statusBadge = '';
+                            let cardBg = '#f8fafc';
+                            let borderColor = '#cbd5e1';
+                            let titleColor = '#1e293b';
+
+                            if (hasWarn) {
+                                statusBadge = `<span style="background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">警報発令中</span>`;
+                                cardBg = '#fff5f5';
+                                borderColor = '#fca5a5';
+                                titleColor = '#dc2626'; // エリア名の文字色を赤に変更
+                            } else if (hasAdv) {
+                                statusBadge = `<span style="background-color: #fef9c3; color: #854d0e; border: 1px solid #facc15; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">注意報発表中</span>`;
+                                cardBg = '#fefde8';
+                                borderColor = '#fde047';
+                                titleColor = '#ca8a04'; // エリア名の文字色を黄色/オレンジ系に変更
+                            } else {
+                                statusBadge = `<span style="background-color: #f0fdf4; color: #166534; border: 1px solid #86efac; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem;">発表なし</span>`;
+                            }
+
+                            let detailsHtml = '';
+                            if (hasWarn || hasAdv) {
+                                const allAlerts = [...new Set([...data.warnings, ...data.advisories])].join('、');
+                                detailsHtml = `<div style="margin-top: 6px; font-size: 0.85rem; color: #334155;">${allAlerts}</div>`;
+                            } else {
+                                detailsHtml = `<div style="margin-top: 6px; font-size: 0.85rem; color: #64748b;">気象警報・注意報は発表されていません</div>`;
+                            }
+
+                            listHtml += `
+                                <div style="background: ${cardBg}; border: 1px solid ${borderColor}; border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: bold; font-size: 1.05rem; color: ${titleColor}; margin-bottom: 2px;">${areaName}</div>
+                                        ${detailsHtml}
+                                    </div>
+                                    <div>${statusBadge}</div>
+                                </div>
+                            `;
+                        });
+                        alertMapContainer.innerHTML = listHtml;
+                    } else {
+                        alertMapContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 12px; border-radius: 6px; color: #166534;">現在、兵庫県内の各地域に発表されている警報・注意報はありません。</div>`;
+                    }
                 }
             } catch (warnErr) {
                 console.error("警報情報の取得エラー:", warnErr);
                 document.getElementById('hyogo-warning-container').innerText = '警報情報の取得に失敗しました。';
                 document.getElementById('kakogawa-warning-container').innerText = '警報情報の取得に失敗しました。';
+                document.getElementById('alert-map-container').innerHTML = `<div style="color: #991b1b;">警報データの取得に失敗しました。</div>`;
             }
 
             let jmaWeatherTexts = [];
