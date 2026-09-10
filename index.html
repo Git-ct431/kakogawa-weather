@@ -85,7 +85,7 @@
             white-space: nowrap; 
             line-height: 1.3;
             padding: 8px 6px;
-            vertical-align: middle !important;
+            vertical-align: top !important; /* 全体を上揃え */
             text-align: center;
         }
 
@@ -368,7 +368,7 @@
                         }
                         kakogawaContainer.innerHTML = kakogawaHtml;
                     } else {
-                        kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、加古川市に発表されている警報・注意報はありません。</div>`;
+                        kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">现在、加古川市に発表されている警報・注意報はありません。</div>`;
                     }
                 }
 
@@ -435,11 +435,16 @@
                             verticalWeatherHtml += `${char}<br>`;
                         }
 
+                        // 日付・曜日を改行で並べ、横に縦書きの天気概況を配置
                         const dateStr = `
-                            <span style="color: #64748b; font-size: 0.75rem; font-weight: normal;">${m}</span><br>
-                            <strong>${d}</strong><br>
-                            <strong>${w}</strong>
-                            <div style="margin-top: 4px; font-size: 0.85rem; font-weight: normal; line-height: 1.15; display: inline-block; color: #475569; letter-spacing: -0.5px;">${verticalWeatherHtml}</div>
+                            <div style="display: flex; align-items: flex-start; justify-content: center; gap: 4px;">
+                                <div style="line-height: 1.2; text-align: center;">
+                                    <span style="color: #64748b; font-size: 0.75rem; font-weight: normal; display: block;">${m}</span>
+                                    <span style="font-size: 1rem; font-weight: bold; display: block;">${d}</span>
+                                    <span style="font-size: 0.9rem; font-weight: bold; display: block; margin-top: 2px;">${w}</span>
+                                </div>
+                                <div style="font-size: 0.85rem; font-weight: normal; line-height: 1.15; display: inline-block; color: #475569; letter-spacing: -0.5px; margin-top: 1px;">${verticalWeatherHtml}</div>
+                            </div>
                         `;
 
                         timeSlots.forEach((slot, slotIndex) => {
