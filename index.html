@@ -528,7 +528,7 @@
                     let slotTemps = [];
                     let slotWinds = [];
                     let slotPops = [];
-                    let slotRainsSum = 0;
+                    let slotRains = [];
 
                     for (let i = 0; i < times.length; i++) {
                         const t = new Date(times[i]);
@@ -538,30 +538,32 @@
                             if (temps[i] != null) slotTemps.push(temps[i]);
                             if (winds[i] != null) slotWinds.push(winds[i]);
                             if (pops[i] != null) slotPops.push(pops[i]);
-                            if (rains[i] != null) slotRainsSum += rains[i];
+                            if (rains[i] != null) slotRains.push(rains[i]);
                         }
                     }
 
+                    // 気温は平均、風速・降水確率・降水量は最大値
                     let avgTemp = slotTemps.length > 0 ? slotTemps.reduce((a, b) => a + b, 0) / slotTemps.length : null;
-                    let avgWind = slotWinds.length > 0 ? slotWinds.reduce((a, b) => a + b, 0) / slotWinds.length : null;
+                    let maxWind = slotWinds.length > 0 ? Math.max(...slotWinds) : null;
                     let maxPop = slotPops.length > 0 ? Math.max(...slotPops) : null;
+                    let maxRain = slotRains.length > 0 ? Math.max(...slotRains) : null;
 
                     let tempNum = (avgTemp != null && !isNaN(avgTemp)) ? Math.round(avgTemp) : null;
                     let valTemp = formatTwoDigits(avgTemp);
                     let tempStyle = getTempBackgroundColor(tempNum);
                     if (tempNum === 0) tempStyle += '; color: #94a3b8;';
 
-                    let avgWindNum = (avgWind != null && !isNaN(avgWind)) ? avgWind : null;
-                    let valWind = formatInteger(avgWind);
-                    let windStyle = getWindBackgroundColor(avgWindNum);
+                    let maxWindNum = (maxWind != null && !isNaN(maxWind)) ? maxWind : null;
+                    let valWind = formatInteger(maxWind);
+                    let windStyle = getWindBackgroundColor(maxWindNum);
                     
                     let popNum = formatPopValue(maxPop);
                     let valPop = (popNum !== '--') ? String(popNum) : '--';
                     let popStyle = getPopBackgroundColor(popNum);
                     if (popNum === 0) popStyle += '; color: #94a3b8;';
 
-                    let rainNum = (slotRainsSum != null && !isNaN(slotRainsSum)) ? Math.round(slotRainsSum) : null;
-                    let valRain = formatInteger(slotRainsSum);
+                    let rainNum = (maxRain != null && !isNaN(maxRain)) ? Math.round(maxRain) : null;
+                    let valRain = formatInteger(maxRain);
                     let rainStyle = getRainBackgroundColor(rainNum);
                     if (rainNum === 0) rainStyle += '; color: #94a3b8;';
 
@@ -746,7 +748,6 @@
 
             let jmaWeatherTexts = [];
             try {
-                // 1. 時系列データ（天気コード）を取得
                 const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
                 if (resJmaForecast.ok) {
                     const jmaData = await resJmaForecast.json();
@@ -758,7 +759,6 @@
                     }
                 }
 
-                // 2. 天気概況データを専用の概況エンドポイントから取得
                 const overviewContainer = document.getElementById('overview-container');
                 const resOverview = await fetch('https://www.jma.go.jp/bosai/forecast/data/overview_forecast/280000.json');
                 if (resOverview.ok) {
