@@ -361,9 +361,9 @@
         function getPopBackgroundColor(val) {
             if (val == null || isNaN(val) || val < 40) return 'background-color: #F3F3F3;';
             const ratio = Math.min(Math.max((val - 40) / 60, 0), 1);
-            const r = Math.round(243 + (74 - 243) * ratio);
-            const g = Math.round(243 + (134 - 243) * ratio);
-            const b = Math.round(243 + (232 - 243) * ratio);
+            const r = Math.round(222 + (74 - 222) * ratio);
+            const g = Math.round(228 + (134 - 228) * ratio);
+            const b = Math.round(241 + (232 - 241) * ratio);
             return `background-color: rgb(${r}, ${g}, ${b});`;
         }
 
