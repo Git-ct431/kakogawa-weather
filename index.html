@@ -268,14 +268,28 @@
             </div>
         </div>
 
-        <!-- ページ 3 -->
+        <!-- ページ 3：警報・注意報マップ -->
         <div id="page-3" class="page-content">
             <div class="header-card">
-                <h1>3ページ目</h1>
-                <div class="time-info">ここに3ページ目のコンテンツが入ります。</div>
+                <h1>警報・注意報マップ (3ページ目)</h1>
+                <div class="time-info">
+                    <div>ページ更新：<span id="page-update-time-3">読み込み中...</span></div>
+                </div>
             </div>
-            <div class="card" style="padding: 40px; text-align: center; color: #64748b;">
-                3ページ目の内容エリアです。
+            <div class="card" style="padding: 16px;">
+                <h2>気象庁 警報・注意報（兵庫県エリアマップ）</h2>
+                <div style="font-size: 0.9rem; color: #475569; margin-bottom: 12px;">
+                    気象庁が提供する兵庫県の警報・注意報分布マップです。各地域の発表状況を確認できます。
+                </div>
+                <div style="text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px;">
+                    <!-- 気象庁の警報・注意報マップページへのリンクやiframe、またはプレースホルダー -->
+                    <div style="margin-bottom: 16px;">
+                        <iframe src="https://www.jma.go.jp/bosai/warning/#area_type=class20s&area_code=2821000" style="width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 4px;" title="気象庁 警報・注意報マップ"></iframe>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b;">
+                        ※ 上手く表示されない場合は、<a href="https://www.jma.go.jp/bosai/warning/#area_type=class20s&area_code=2821000" target="_blank" rel="noopener noreferrer" style="color: #2563eb;">気象庁ホームページ（警報・注意報）で直接確認 ↗</a>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -670,6 +684,7 @@
             document.getElementById('source-update-time-1').innerText = nowStr;
             document.getElementById('page-update-time-2').innerText = nowStr;
             document.getElementById('source-update-time-2').innerText = nowStr;
+            document.getElementById('page-update-time-3').innerText = nowStr;
             document.getElementById('page-update-time-4').innerText = nowStr;
 
             fetchTransitInfo();
