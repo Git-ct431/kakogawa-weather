@@ -107,11 +107,6 @@
         }
 
         .transit-box { font-size: 0.9rem; color: #334155; background-color: #eff6ff; padding: 8px; border-radius: 6px; border: 1px solid #bfdbfe; line-height: 1.5; }
-
-        #weekly-table { width: auto; border-collapse: collapse; margin-top: 6px; font-size: 0.85rem; background-color: #F3F3F3; }
-        #weekly-table th, #weekly-table td { border: 1px solid #e2e8f0; padding: 4px 6px; text-align: center; vertical-align: middle; background-color: #F3F3F3; }
-        #weekly-table th { background-color: #F3F3F3; color: #475569; font-weight: bold; border: 1px solid #e2e8f0; }
-        #weekly-table .date-cell { background-color: #F3F3F3 !important; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -156,27 +151,6 @@
                     <a href="https://transit.yahoo.co.jp/diainfo/273/0" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
                         <div id="transit-container" class="transit-box" style="cursor: pointer;">読み込み中...</div>
                     </a>
-                </div>
-
-                <div class="card">
-                    <h2>4日天気</h2>
-                    <div style="overflow-x: auto;">
-                        <table id="weekly-table">
-                            <thead>
-                                <tr>
-                                    <th>日付</th>
-                                    <th>天気</th>
-                                    <th>気温</th>
-                                    <th>風速</th>
-                                    <th>雨率</th>
-                                    <th>降水</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="6">読み込み中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
         </div>
@@ -270,109 +244,76 @@
         }
 
         // 気象庁公式コード対応表（IIJ Engineering REST API v1準拠）
-        // https://doc01.pf.iij-engineering.co.jp/pub/sdkdoc/v1/ja_JP/restapi/rest_jmaweather2_ver1.html
         function getWarningName(code) {
             const codeMap = {
-                // 大雨
                 '10': 'レベル２大雨注意報',
                 '03': 'レベル３大雨警報',
                 '43': 'レベル４大雨危険警報',
                 '33': 'レベル５大雨特別警報',
-                // 土砂災害
                 '29': 'レベル２土砂災害注意報',
                 '09': 'レベル３土砂災害警報',
                 '49': 'レベル４土砂災害危険警報',
                 '39': 'レベル５土砂災害特別警報',
-                // 高潮
                 '19': 'レベル２高潮注意報',
                 '08': 'レベル３高潮警報',
                 '48': 'レベル４高潮危険警報',
                 '38': 'レベル５高潮特別警報',
-                // 風（暴風・強風）
                 '15': '強風注意報',
                 '05': '暴風警報',
                 '35': '暴風特別警報',
-                // 風雪・暴風雪
                 '13': '風雪注意報',
                 '02': '暴風雪警報',
                 '32': '暴風雪特別警報',
-                // 波浪
                 '16': '波浪注意報',
                 '07': '波浪警報',
                 '37': '波浪特別警報',
-                // 大雪
                 '12': '大雪注意報',
                 '06': '大雪警報',
                 '36': '大雪特別警報',
-                // 融雪
                 '17': '融雪注意報',
-                // 雷
                 '14': '雷注意報',
-                // 濃霧
                 '20': '濃霧注意報',
-                // 乾燥
                 '21': '乾燥注意報',
-                // なだれ
                 '22': 'なだれ注意報',
-                // 低温
                 '23': '低温注意報',
-                // 霜
                 '24': '霜注意報',
-                // 着氷
                 '25': '着氷注意報',
-                // 着雪
                 '26': '着雪注意報',
-                // その他
                 '27': 'その他の注意報'
             };
             return codeMap[code] || `警報(${code})`;
         }
 
-        // コードから警戒レベルを判定（気象庁公式体系）
-        // 警戒レベル：注意報、警報、特別警報の3段階
         function getAlertLevel(code) {
-            // 特別警報 - 最も速写で売上げ的、警戒レベル5相当
             const specialWarnings = [
-                '33', '43',             // 大雨特別警報
-                '39', '49',             // 土砂災害特別警報
-                '38', '48',             // 高潮特別警報
-                '32',                   // 暴風雪特別警報
-                '37',                   // 波浪特別警報
-                '36'                    // 大雪特別警報
+                '33', '43',
+                '39', '49',
+                '38', '48',
+                '32',
+                '37',
+                '36'
             ];
             
-            // 警報 - 警戒レベル3、一部レベル4時の警報
             const warnings = [
-                '03',                   // 大雨警報
-                '09',                   // 土砂災害警報
-                '08',                   // 高潮警報
-                '05',                   // 暴風警報
-                '02',                   // 暴風雪警報
-                '07',                   // 波浪警報
-                '06'                    // 大雪警報
+                '03',
+                '09',
+                '08',
+                '05',
+                '02',
+                '07',
+                '06'
             ];
             
-            // 日泊時夫は警報段階から把檪xや警報レベル4相当の警報を追加
-            // 11, 13, 15, 17 = 警报急場合もあり
-            // 憧死としはコードを子数値で公式計算しる
-            const codeNum = parseInt(code);
             if (specialWarnings.includes(code)) return '特別警報';
             if (warnings.includes(code)) return '警報';
             return '注意報';
         }
 
-        // 警報以上（警報、特別警報）かを判定
         function isWarning(code) {
             const level = getAlertLevel(code);
             return level === '警報' || level === '特別警報';
         }
 
-        // 特別警報かを判定
-        function isSpecialWarning(code) {
-            return getAlertLevel(code) === '特別警報';
-        }
-
-        // 運行情報の取得関数（CORSプロキシ経由）
         async function fetchTransitInfo() {
             const targetUrl = "https://transit.yahoo.co.jp/diainfo/273/0";
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
@@ -388,10 +329,7 @@
                     const troubleElement = doc.querySelector('#mdServiceStatus .trouble, dd.trouble, #mdServiceStatus');
                     if (troubleElement) {
                         let statusText = troubleElement.innerText.trim();
-                        
-                        // 括弧を外し、その前に改行を入れる置換処理
                         statusText = statusText.replace(/（([^）]+)掲載）/g, '<br><span style="font-size: 0.85rem; color: #64748b;">$1掲載</span>');
-
                         transitContainer.innerHTML = `<div>${statusText}</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
                     } else {
                         transitContainer.innerHTML = `<div>平常運転（または詳細情報を取得できませんでした）</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
@@ -408,7 +346,6 @@
                 document.getElementById('page-update-time').innerText = formatCustomDate(new Date());
                 document.getElementById('source-update-time').innerText = formatCustomDate(new Date());
 
-                // JR運行情報の取得を実行
                 fetchTransitInfo();
 
                 const resWarning = await fetch('https://www.jma.go.jp/bosai/warning/data/r8/280000.json');
@@ -422,7 +359,6 @@
                             report.warning.class20Items.forEach(item => {
                                 if (item.areaCode === '2821000' && item.kinds) {
                                     item.kinds.forEach(k => {
-                                        // 「発表」「継続」「解除」のいずれかで、コードが存在する場合
                                         if ((k.status === '発表' || k.status === '継続' || k.status === '解除') && k.code) {
                                             const name = getWarningName(k.code);
                                             if (isWarning(k.code)) {
@@ -572,53 +508,13 @@
                         });
                     }
                     document.querySelector('#forecast-table tbody').innerHTML = forecastHtml;
-
-                    const daily = data.daily;
-                    let weeklyHtml = '';
-                    for (let i = 3; i < daily.time.length; i++) {
-                        const dObj = new Date(daily.time[i]);
-                        const mm = String(dObj.getMonth() + 1).padStart(2, '0');
-                        const dd = String(dObj.getDate()).padStart(2, '0');
-                        const dStr = `${mm} ${dd} ${weekdays[dObj.getDay()]}`;
-                        
-                        const maxT = daily.temperature_2m_max ? Math.round(daily.temperature_2m_max[i]) : null;
-                        const minT = daily.temperature_2m_min ? Math.round(daily.temperature_2m_min[i]) : null;
-                        const tempStr = (maxT != null && minT != null) ? `${minT}-${maxT}` : '--';
-
-                        const windVal = daily.windspeed_10m_max ? Math.round(daily.windspeed_10m_max[i]) : null;
-                        const valWind = formatInteger(windVal);
-                        const windStyle = getWindBackgroundColor(windVal);
-
-                        const popVal = daily.precipitation_probability_max ? formatPopValue(daily.precipitation_probability_max[i]) : null;
-                        const valPop = (popVal != null && popVal !== '--') ? String(popVal) : '--';
-                        const popStyle = getPopBackgroundColor(popVal);
-
-                        const rainVal = daily.precipitation_sum ? Math.round(daily.precipitation_sum[i]) : null;
-                        const valRain = formatInteger(rainVal);
-                        const rainStyle = getRainBackgroundColor(rainVal);
-                        
-                        const weatherDesc = getWeatherDesc(daily.weather_code[i]);
-
-                        weeklyHtml += `<tr>
-                            <td class="date-cell">${dStr}</td>
-                            <td>${weatherDesc}</td>
-                            <td style="text-align: right; background-color: #F3F3F3;">${tempStr}</td>
-                            <td style="text-align: right; ${windStyle}">${valWind}</td>
-                            <td style="text-align: right; ${popStyle}">${valPop}</td>
-                            <td style="text-align: right; ${rainStyle}">${valRain}</td>
-                        </tr>`;
-                    }
-                    document.querySelector('#weekly-table tbody').innerHTML = weeklyHtml;
                 }
             } catch (e) {
                 console.error("データ取得エラー:", e);
             }
         }
 
-        // 初回読み込み時に実行
         fetchDashboardData();
-
-        // 10分（600,000ミリ秒）ごとに自動更新
         setInterval(fetchDashboardData, 600000);
     </script>
 </body>
