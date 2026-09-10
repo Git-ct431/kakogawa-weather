@@ -85,7 +85,7 @@
             white-space: nowrap; 
             line-height: 1.3;
             padding: 8px 6px;
-            vertical-align: top !important; /* 全体を上揃え */
+            vertical-align: top !important;
             text-align: center;
         }
 
@@ -104,59 +104,143 @@
         }
 
         .transit-box { font-size: 0.9rem; color: #334155; background-color: #eff6ff; padding: 8px; border-radius: 6px; border: 1px solid #bfdbfe; line-height: 1.5; }
+
+        /* ページ切り替え用のスタイル */
+        .page-content { display: none; }
+        .page-content.active { display: block; }
+
+        .pagination-container {
+            text-align: center;
+            margin: 16px 0;
+        }
+        .nav-button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .nav-button:hover {
+            background-color: #1d4ed8;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header-card">
-            <h1>加古川市の天気</h1>
-            <div class="time-info">
-                <div>ページ更新：<span id="page-update-time">読み込み中...</span></div>
-                <div>データ更新：<span id="source-update-time">読み込み中...</span></div>
+        <!-- ページ 1 -->
+        <div id="page-1" class="page-content active">
+            <div class="header-card">
+                <h1>加古川市の天気 (1ページ目)</h1>
+                <div class="time-info">
+                    <div>ページ更新：<span id="page-update-time">読み込み中...</span></div>
+                    <div>データ更新：<span id="source-update-time">読み込み中...</span></div>
+                </div>
+            </div>
+
+            <div class="content-row">
+                <div class="forecast-col">
+                    <div style="overflow-x: auto;">
+                        <table id="forecast-table">
+                            <thead>
+                                <tr>
+                                    <th class="vertical-header" style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">時間</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">気温</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">風速</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">雨率</th>
+                                    <th class="vertical-header" style="border-right: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">降水</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="6">読み込み中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="right-col">
+                    <div class="card">
+                        <h2>警報・注意報</h2>
+                        <div style="font-size: 0.85rem; color: #475569; margin-bottom: 4px; font-weight: bold;">兵庫県</div>
+                        <div id="hyogo-warning-container" class="plain-warning" style="margin-bottom: 10px;">読み込み中...</div>
+                        <div style="font-size: 0.85rem; color: #475569; margin-bottom: 4px; font-weight: bold;">加古川市</div>
+                        <div id="kakogawa-warning-container" class="plain-warning">読み込み中...</div>
+                    </div>
+
+                    <div class="card">
+                        <h2>JR神戸線 運行情報</h2>
+                        <a href="https://transit.yahoo.co.jp/diainfo/273/0" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
+                            <div id="transit-container" class="transit-box" style="cursor: pointer;">読み込み中...</div>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="content-row">
-            <div class="forecast-col">
-                <div style="overflow-x: auto;">
-                    <table id="forecast-table">
-                        <thead>
-                            <tr>
-                                <th class="vertical-header" style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
-                                <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">時間</th>
-                                <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">気温</th>
-                                <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">風速</th>
-                                <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">雨率</th>
-                                <th class="vertical-header" style="border-right: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">降水</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="6">読み込み中...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <!-- ページ 2 -->
+        <div id="page-2" class="page-content">
+            <div class="header-card">
+                <h1>2ページ目</h1>
+                <div class="time-info">ここに2ページ目のコンテンツが入ります。</div>
             </div>
-
-            <div class="right-col">
-                <div class="card">
-                    <h2>警報・注意報</h2>
-                    <div style="font-size: 0.85rem; color: #475569; margin-bottom: 4px; font-weight: bold;">兵庫県</div>
-                    <div id="hyogo-warning-container" class="plain-warning" style="margin-bottom: 10px;">読み込み中...</div>
-                    <div style="font-size: 0.85rem; color: #475569; margin-bottom: 4px; font-weight: bold;">加古川市</div>
-                    <div id="kakogawa-warning-container" class="plain-warning">読み込み中...</div>
-                </div>
-
-                <div class="card">
-                    <h2>JR神戸線 運行情報</h2>
-                    <a href="https://transit.yahoo.co.jp/diainfo/273/0" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
-                        <div id="transit-container" class="transit-box" style="cursor: pointer;">読み込み中...</div>
-                    </a>
-                </div>
+            <div class="card" style="padding: 40px; text-align: center; color: #64748b;">
+                2ページ目の内容エリアです。自由に変更できます。
             </div>
+        </div>
+
+        <!-- ページ 3 -->
+        <div id="page-3" class="page-content">
+            <div class="header-card">
+                <h1>3ページ目</h1>
+                <div class="time-info">ここに3ページ目のコンテンツが入ります。</div>
+            </div>
+            <div class="card" style="padding: 40px; text-align: center; color: #64748b;">
+                3ページ目の内容エリアです。自由に変更できます。
+            </div>
+        </div>
+
+        <!-- ページ 4 -->
+        <div id="page-4" class="page-content">
+            <div class="header-card">
+                <h1>4ページ目</h1>
+                <div class="time-info">ここに4ページ目のコンテンツが入ります。</div>
+            </div>
+            <div class="card" style="padding: 40px; text-align: center; color: #64748b;">
+                4ページ目の内容エリアです。自由に変更できます。
+            </div>
+        </div>
+
+        <!-- ページ下部の切り替えボタン -->
+        <div class="pagination-container">
+            <button id="nav-btn" class="nav-button" onclick="switchPage()">ページ2へ</button>
         </div>
     </div>
 
     <script>
+        let currentPage = 1;
+        const totalPages = 4;
+
+        function switchPage() {
+            // 現在のページを非表示
+            document.getElementById(`page-${currentPage}`).classList.remove('active');
+
+            // 次のページ番号を計算（4を超えたら1に戻る）
+            currentPage = currentPage >= totalPages ? 1 : currentPage + 1;
+
+            // 次のページを表示
+            document.getElementById(`page-${currentPage}`).classList.add('active');
+
+            // ボタンの表示を更新（次のページ番号を設定）
+            const nextTarget = currentPage >= totalPages ? 1 : currentPage + 1;
+            document.getElementById('nav-btn').innerText = `ページ${nextTarget}へ`;
+
+            // ページトップへスクロール
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function formatCustomDate(dateObj) {
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
             const d = String(dateObj.getDate()).padStart(2, '0');
@@ -429,13 +513,11 @@
                         
                         const weatherText = jmaWeatherTexts[dayOffset] || '曇り';
                         
-                        // 縦書き用に1文字ずつ <br> で結合
                         let verticalWeatherHtml = '';
                         for (let char of weatherText) {
                             verticalWeatherHtml += `${char}<br>`;
                         }
 
-                        // 日付・曜日を上の行に並べ、その下に縦書きの天気概況を配置（幅を全角文字ひとつ分程度に収める）
                         const dateStr = `
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
                                 <div style="line-height: 1.1; text-align: center; margin-bottom: 3px;">
