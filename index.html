@@ -368,7 +368,7 @@
                         }
                         kakogawaContainer.innerHTML = kakogawaHtml;
                     } else {
-                        kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">现在、加古川市に発表されている警報・注意報はありません。</div>`;
+                        kakogawaContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、加古川市に発表されている警報・注意報はありません。</div>`;
                     }
                 }
 
@@ -435,15 +435,15 @@
                             verticalWeatherHtml += `${char}<br>`;
                         }
 
-                        // 日付・曜日を改行で並べ、横に縦書きの天気概況を配置
+                        // 日付・曜日を上の行に並べ、その下に縦書きの天気概況を配置（幅を全角文字ひとつ分程度に収める）
                         const dateStr = `
-                            <div style="display: flex; align-items: flex-start; justify-content: center; gap: 4px;">
-                                <div style="line-height: 1.2; text-align: center;">
-                                    <span style="color: #64748b; font-size: 0.75rem; font-weight: normal; display: block;">${m}</span>
-                                    <span style="font-size: 1rem; font-weight: bold; display: block;">${d}</span>
-                                    <span style="font-size: 0.9rem; font-weight: bold; display: block; margin-top: 2px;">${w}</span>
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+                                <div style="line-height: 1.1; text-align: center; margin-bottom: 3px;">
+                                    <span style="color: #64748b; font-size: 0.7rem; font-weight: normal; display: block;">${m}</span>
+                                    <span style="font-size: 0.95rem; font-weight: bold; display: block;">${d}</span>
+                                    <span style="font-size: 0.85rem; font-weight: bold; display: block;">${w}</span>
                                 </div>
-                                <div style="font-size: 0.85rem; font-weight: normal; line-height: 1.15; display: inline-block; color: #475569; letter-spacing: -0.5px; margin-top: 1px;">${verticalWeatherHtml}</div>
+                                <div style="font-size: 0.8rem; font-weight: normal; line-height: 1.1; text-align: center; color: #475569; letter-spacing: -1px;">${verticalWeatherHtml}</div>
                             </div>
                         `;
 
