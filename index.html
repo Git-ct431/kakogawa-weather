@@ -27,6 +27,16 @@
             line-height: 1.5;
         }
 
+        .overview-box {
+            font-size: 0.9rem;
+            color: #334155;
+            line-height: 1.6;
+            background-color: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
         .content-row {
             display: flex;
             gap: 12px;
@@ -204,6 +214,12 @@
                 </div>
 
                 <div class="right-col">
+                    <!-- 天気概況カード -->
+                    <div class="card">
+                        <h2>天気概況</h2>
+                        <div id="overview-container" class="overview-box">読み込み中...</div>
+                    </div>
+
                     <div class="card">
                         <h2>警報・注意報</h2>
                         <div style="font-size: 0.85rem; color: #475569; margin-bottom: 4px; font-weight: bold;">兵庫県</div>
@@ -735,6 +751,13 @@
                 const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
                 if (resJmaForecast.ok) {
                     const jmaData = await resJmaForecast.json();
+                    
+                    // 天気概況テキストの取得と設定
+                    if (jmaData[1] && jmaData[1].text) {
+                        const overviewText = jmaData[1].text;
+                        document.getElementById('overview-container').innerHTML = overviewText.replace(/\n/g, '<br>');
+                    }
+
                     const timeSeriesWeathers = jmaData[0].timeSeries[0];
                     const areas = timeSeriesWeathers.areas;
                     const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
@@ -743,7 +766,8 @@
                     }
                 }
             } catch (err) {
-                console.error("JMA天気コードの解析エラー:", err);
+                console.error("JMA天気データの解析エラー:", err);
+                document.getElementById('overview-container').innerText = '天気概況の取得に失敗しました。';
             }
 
             try {
