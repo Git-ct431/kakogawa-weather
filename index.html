@@ -52,20 +52,20 @@
             margin-bottom: 0;
         }
 
-        #forecast-table { 
+        .forecast-table { 
             width: auto; 
             border-collapse: collapse; 
             margin-top: 0; 
             font-size: 0.85rem; 
             background-color: #F3F3F3;
         }
-        #forecast-table th, #forecast-table td { 
+        .forecast-table th, .forecast-table td { 
             padding: 4px 6px; 
             text-align: center; 
             vertical-align: middle; 
             background-color: #F3F3F3;
         }
-        #forecast-table th { 
+        .forecast-table th { 
             background-color: #F3F3F3; 
             color: #475569; 
             font-weight: bold; 
@@ -135,15 +135,15 @@
             <div class="header-card">
                 <h1>加古川市の天気 (1ページ目)</h1>
                 <div class="time-info">
-                    <div>ページ更新：<span id="page-update-time">読み込み中...</span></div>
-                    <div>データ更新：<span id="source-update-time">読み込み中...</span></div>
+                    <div>ページ更新：<span id="page-update-time-1">読み込み中...</span></div>
+                    <div>データ更新：<span id="source-update-time-1">読み込み中...</span></div>
                 </div>
             </div>
 
             <div class="content-row">
                 <div class="forecast-col">
                     <div style="overflow-x: auto;">
-                        <table id="forecast-table">
+                        <table id="forecast-table-1" class="forecast-table">
                             <thead>
                                 <tr>
                                     <th class="vertical-header" style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
@@ -180,14 +180,36 @@
             </div>
         </div>
 
-        <!-- ページ 2 -->
+        <!-- ページ 2：7日間の天気 -->
         <div id="page-2" class="page-content">
             <div class="header-card">
-                <h1>2ページ目</h1>
-                <div class="time-info">ここに2ページ目のコンテンツが入ります。</div>
+                <h1>加古川市の天気 (7日間・2ページ目)</h1>
+                <div class="time-info">
+                    <div>ページ更新：<span id="page-update-time-2">読み込み中...</span></div>
+                    <div>データ更新：<span id="source-update-time-2">読み込み中...</span></div>
+                </div>
             </div>
-            <div class="card" style="padding: 40px; text-align: center; color: #64748b;">
-                2ページ目の内容エリアです。自由に変更できます。
+
+            <div class="content-row">
+                <div class="forecast-col">
+                    <div style="overflow-x: auto;">
+                        <table id="forecast-table-7days" class="forecast-table">
+                            <thead>
+                                <tr>
+                                    <th class="vertical-header" style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">時間</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">気温</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">風速</th>
+                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">雨率</th>
+                                    <th class="vertical-header" style="border-right: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">降水</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="6">読み込み中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -224,20 +246,13 @@
         const totalPages = 4;
 
         function switchPage() {
-            // 現在のページを非表示
             document.getElementById(`page-${currentPage}`).classList.remove('active');
-
-            // 次のページ番号を計算（4を超えたら1に戻る）
             currentPage = currentPage >= totalPages ? 1 : currentPage + 1;
-
-            // 次のページを表示
             document.getElementById(`page-${currentPage}`).classList.add('active');
 
-            // ボタンの表示を更新（次のページ番号を設定）
             const nextTarget = currentPage >= totalPages ? 1 : currentPage + 1;
             document.getElementById('nav-btn').innerText = `ページ${nextTarget}へ`;
 
-            // ページトップへスクロール
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -383,10 +398,132 @@
             }
         }
 
+        function generateTableHtml(jmaWeatherTexts, meteoData, daysCount) {
+            const times = meteoData.hourly.time;
+            const temps = meteoData.hourly.temperature_2m;
+            const winds = meteoData.hourly.wind_speed_10m;
+            const pops = meteoData.hourly.precipitation_probability;
+            const rains = meteoData.hourly.precipitation;
+
+            const timeSlots = [
+                { startH: 0, endH: 2, label: '0' },
+                { startH: 3, endH: 5, label: '3' },
+                { startH: 6, endH: 8, label: '6' },
+                { startH: 9, endH: 11, label: '9' },
+                { startH: 12, endH: 14, label: '12' },
+                { startH: 15, endH: 17, label: '15' },
+                { startH: 18, endH: 20, label: '18' },
+                { startH: 21, endH: 23, label: '21' }
+            ];
+
+            const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            let forecastHtml = '';
+            
+            for (let dayOffset = 0; dayOffset < daysCount; dayOffset++) {
+                const targetDate = new Date();
+                targetDate.setDate(now.getDate() + dayOffset);
+                
+                const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+                const d = String(targetDate.getDate()).padStart(2, '0');
+                const w = weekdays[targetDate.getDay()];
+                
+                const weatherText = jmaWeatherTexts[dayOffset] || '曇り';
+                
+                let verticalWeatherHtml = '';
+                for (let char of weatherText) {
+                    verticalWeatherHtml += `${char}<br>`;
+                }
+
+                const dateStr = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+                        <div style="line-height: 1.1; text-align: center; margin-bottom: 3px;">
+                            <span style="color: #64748b; font-size: 0.7rem; font-weight: normal; display: block;">${m}</span>
+                            <span style="font-size: 0.95rem; font-weight: bold; display: block;">${d}</span>
+                            <span style="font-size: 0.85rem; font-weight: bold; display: block;">${w}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; font-weight: normal; line-height: 1.1; text-align: center; color: #475569; letter-spacing: -1px;">${verticalWeatherHtml}</div>
+                    </div>
+                `;
+
+                timeSlots.forEach((slot, slotIndex) => {
+                    let slotTemps = [];
+                    let slotWinds = [];
+                    let slotPops = [];
+                    let slotRainsSum = 0;
+
+                    for (let i = 0; i < times.length; i++) {
+                        const t = new Date(times[i]);
+                        if (t.getDate() === targetDate.getDate() && 
+                            t.getMonth() === targetDate.getMonth() && 
+                            t.getHours() >= slot.startH && t.getHours() <= slot.endH) {
+                            if (temps[i] != null) slotTemps.push(temps[i]);
+                            if (winds[i] != null) slotWinds.push(winds[i]);
+                            if (pops[i] != null) slotPops.push(pops[i]);
+                            if (rains[i] != null) slotRainsSum += rains[i];
+                        }
+                    }
+
+                    let avgTemp = slotTemps.length > 0 ? slotTemps.reduce((a, b) => a + b, 0) / slotTemps.length : null;
+                    let avgWind = slotWinds.length > 0 ? slotWinds.reduce((a, b) => a + b, 0) / slotWinds.length : null;
+                    let maxPop = slotPops.length > 0 ? Math.max(...slotPops) : null;
+
+                    let tempNum = (avgTemp != null && !isNaN(avgTemp)) ? Math.round(avgTemp) : null;
+                    let valTemp = formatTwoDigits(avgTemp);
+                    let tempStyle = getTempBackgroundColor(tempNum);
+                    if (tempNum === 0) tempStyle += '; color: #94a3b8;';
+
+                    let windNum = (avgWind != null && !isNaN(avgWind)) ? avgWind : null;
+                    let valWind = formatInteger(avgWind);
+                    let windStyle = getWindBackgroundColor(windNum);
+                    
+                    let popNum = formatPopValue(maxPop);
+                    let valPop = (popNum !== '--') ? String(popNum) : '--';
+                    let popStyle = getPopBackgroundColor(popNum);
+                    if (popNum === 0) popStyle += '; color: #94a3b8;';
+
+                    let rainNum = (slotRainsSum != null && !isNaN(slotRainsSum)) ? Math.round(slotRainsSum) : null;
+                    let valRain = formatInteger(slotRainsSum);
+                    let rainStyle = getRainBackgroundColor(rainNum);
+                    if (rainNum === 0) rainStyle += '; color: #94a3b8;';
+
+                    const isPast = (dayOffset < 0) || (dayOffset === 0 && slot.endH < currentHour);
+                    const isCurrentSlot = (dayOffset === 0) && (currentHour >= slot.startH && currentHour <= slot.endH);
+
+                    let topBorder = slotIndex === 0 ? '1px solid #707070' : 'none';
+                    let bottomBorder = slotIndex === timeSlots.length - 1 ? '1px solid #707070' : 'none';
+                    
+                    if (isCurrentSlot) {
+                        bottomBorder = '1.5px solid #2563eb';
+                    }
+
+                    const rowClass = isPast ? 'past-slot' : '';
+                    forecastHtml += `<tr class="${rowClass}">`;
+                    
+                    if (slotIndex === 0) {
+                        forecastHtml += `<td class="date-cell" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070; border-left: 1px solid #707070; border-right: 1px solid #dcdcdc;" rowspan="${timeSlots.length}">${dateStr}</td>`;
+                    }
+                    
+                    forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; background-color: #F3F3F3;">${slot.label}</td>`;
+                    forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${tempStyle}">${valTemp}</td>`;
+                    forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${windStyle}">${valWind}</td>`;
+                    forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${popStyle}">${valPop}</td>`;
+                    forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #707070; text-align: right; ${rainStyle}">${valRain}</td>`;
+                    forecastHtml += `</tr>`;
+                });
+            }
+            return forecastHtml;
+        }
+
         async function fetchDashboardData() {
             try {
-                document.getElementById('page-update-time').innerText = formatCustomDate(new Date());
-                document.getElementById('source-update-time').innerText = formatCustomDate(new Date());
+                const nowStr = formatCustomDate(new Date());
+                document.getElementById('page-update-time-1').innerText = nowStr;
+                document.getElementById('source-update-time-1').innerText = nowStr;
+                document.getElementById('page-update-time-2').innerText = nowStr;
+                document.getElementById('source-update-time-2').innerText = nowStr;
 
                 fetchTransitInfo();
 
@@ -480,122 +617,11 @@
                 if (resMeteo.ok) {
                     const data = await resMeteo.json();
                     
-                    const times = data.hourly.time;
-                    const temps = data.hourly.temperature_2m;
-                    const winds = data.hourly.wind_speed_10m;
-                    const pops = data.hourly.precipitation_probability;
-                    const rains = data.hourly.precipitation;
-
-                    const timeSlots = [
-                        { startH: 0, endH: 2, label: '0' },
-                        { startH: 3, endH: 5, label: '3' },
-                        { startH: 6, endH: 8, label: '6' },
-                        { startH: 9, endH: 11, label: '9' },
-                        { startH: 12, endH: 14, label: '12' },
-                        { startH: 15, endH: 17, label: '15' },
-                        { startH: 18, endH: 20, label: '18' },
-                        { startH: 21, endH: 23, label: '21' }
-                    ];
-
-                    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-                    const now = new Date();
-                    const currentHour = now.getHours();
+                    // 1ページ目 (3日間)
+                    document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(jmaWeatherTexts, data, 3);
                     
-                    let forecastHtml = '';
-                    
-                    for (let dayOffset = 0; dayOffset < 3; dayOffset++) {
-                        const targetDate = new Date();
-                        targetDate.setDate(now.getDate() + dayOffset);
-                        
-                        const m = String(targetDate.getMonth() + 1).padStart(2, '0');
-                        const d = String(targetDate.getDate()).padStart(2, '0');
-                        const w = weekdays[targetDate.getDay()];
-                        
-                        const weatherText = jmaWeatherTexts[dayOffset] || '曇り';
-                        
-                        let verticalWeatherHtml = '';
-                        for (let char of weatherText) {
-                            verticalWeatherHtml += `${char}<br>`;
-                        }
-
-                        const dateStr = `
-                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
-                                <div style="line-height: 1.1; text-align: center; margin-bottom: 3px;">
-                                    <span style="color: #64748b; font-size: 0.7rem; font-weight: normal; display: block;">${m}</span>
-                                    <span style="font-size: 0.95rem; font-weight: bold; display: block;">${d}</span>
-                                    <span style="font-size: 0.85rem; font-weight: bold; display: block;">${w}</span>
-                                </div>
-                                <div style="font-size: 0.8rem; font-weight: normal; line-height: 1.1; text-align: center; color: #475569; letter-spacing: -1px;">${verticalWeatherHtml}</div>
-                            </div>
-                        `;
-
-                        timeSlots.forEach((slot, slotIndex) => {
-                            let slotTemps = [];
-                            let slotWinds = [];
-                            let slotPops = [];
-                            let slotRainsSum = 0;
-
-                            for (let i = 0; i < times.length; i++) {
-                                const t = new Date(times[i]);
-                                if (t.getDate() === targetDate.getDate() && 
-                                    t.getMonth() === targetDate.getMonth() && 
-                                    t.getHours() >= slot.startH && t.getHours() <= slot.endH) {
-                                    if (temps[i] != null) slotTemps.push(temps[i]);
-                                    if (winds[i] != null) slotWinds.push(winds[i]);
-                                    if (pops[i] != null) slotPops.push(pops[i]);
-                                    if (rains[i] != null) slotRainsSum += rains[i];
-                                }
-                            }
-
-                            let avgTemp = slotTemps.length > 0 ? slotTemps.reduce((a, b) => a + b, 0) / slotTemps.length : null;
-                            let avgWind = slotWinds.length > 0 ? slotWinds.reduce((a, b) => a + b, 0) / slotWinds.length : null;
-                            let maxPop = slotPops.length > 0 ? Math.max(...slotPops) : null;
-
-                            let tempNum = (avgTemp != null && !isNaN(avgTemp)) ? Math.round(avgTemp) : null;
-                            let valTemp = formatTwoDigits(avgTemp);
-                            let tempStyle = getTempBackgroundColor(tempNum);
-                            if (tempNum === 0) tempStyle += '; color: #94a3b8;';
-
-                            let windNum = (avgWind != null && !isNaN(avgWind)) ? avgWind : null;
-                            let valWind = formatInteger(avgWind);
-                            let windStyle = getWindBackgroundColor(windNum);
-                            
-                            let popNum = formatPopValue(maxPop);
-                            let valPop = (popNum !== '--') ? String(popNum) : '--';
-                            let popStyle = getPopBackgroundColor(popNum);
-                            if (popNum === 0) popStyle += '; color: #94a3b8;';
-
-                            let rainNum = (slotRainsSum != null && !isNaN(slotRainsSum)) ? Math.round(slotRainsSum) : null;
-                            let valRain = formatInteger(slotRainsSum);
-                            let rainStyle = getRainBackgroundColor(rainNum);
-                            if (rainNum === 0) rainStyle += '; color: #94a3b8;';
-
-                            const isPast = (dayOffset < 0) || (dayOffset === 0 && slot.endH < currentHour);
-                            const isCurrentSlot = (dayOffset === 0) && (currentHour >= slot.startH && currentHour <= slot.endH);
-
-                            let topBorder = slotIndex === 0 ? '1px solid #707070' : 'none';
-                            let bottomBorder = slotIndex === timeSlots.length - 1 ? '1px solid #707070' : 'none';
-                            
-                            if (isCurrentSlot) {
-                                bottomBorder = '1.5px solid #2563eb';
-                            }
-
-                            const rowClass = isPast ? 'past-slot' : '';
-                            forecastHtml += `<tr class="${rowClass}">`;
-                            
-                            if (slotIndex === 0) {
-                                forecastHtml += `<td class="date-cell" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070; border-left: 1px solid #707070; border-right: 1px solid #dcdcdc;" rowspan="${timeSlots.length}">${dateStr}</td>`;
-                            }
-                            
-                            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; background-color: #F3F3F3;">${slot.label}</td>`;
-                            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${tempStyle}">${valTemp}</td>`;
-                            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${windStyle}">${valWind}</td>`;
-                            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${popStyle}">${valPop}</td>`;
-                            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #707070; text-align: right; ${rainStyle}">${valRain}</td>`;
-                            forecastHtml += `</tr>`;
-                        });
-                    }
-                    document.querySelector('#forecast-table tbody').innerHTML = forecastHtml;
+                    // 2ページ目 (7日間)
+                    document.querySelector('#forecast-table-7days tbody').innerHTML = generateTableHtml(jmaWeatherTexts, data, 7);
                 }
             } catch (e) {
                 console.error("データ取得エラー:", e);
