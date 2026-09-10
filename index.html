@@ -186,15 +186,6 @@
             return Math.min(Math.max(rounded, 0), 100);
         }
 
-        function getWeatherDesc(wcode) {
-            if (wcode === 0) return '晴れ';
-            if (wcode >= 1 && wcode <= 3) return '曇り';
-            if (wcode >= 95) return '雷雨';
-            if ((wcode >= 51 && wcode <= 67) || (wcode >= 80 && wcode <= 82)) return '雨';
-            if ((wcode >= 71 && wcode <= 77) || (wcode >= 85 && wcode <= 86)) return '雪';
-            return '曇り';
-        }
-
         function getPopBackgroundColor(val) {
             if (val == null || isNaN(val) || val < 40) return 'background-color: #F3F3F3;';
             const ratio = Math.min(Math.max((val - 40) / 60, 0), 1);
@@ -246,43 +237,18 @@
             return 'background-color: #990000; color: #fff; font-weight: bold;';
         }
 
-        // 気象庁公式コード対応表（IIJ Engineering REST API v1準拠）
         function getWarningName(code) {
             const codeMap = {
-                '10': '大雨注意報',
-                '03': '大雨警報',
-                '43': '大雨危険警報',
-                '33': '大雨特別警報',
-                '29': '土砂災害注意報',
-                '09': '土砂災害警報',
-                '49': '土砂災害危険警報',
-                '39': '土砂災害特別警報',
-                '19': '高潮注意報',
-                '08': '高潮警報',
-                '48': '高潮危険警報',
-                '38': '高潮特別警報',
-                '15': '強風注意報',
-                '05': '暴風警報',
-                '35': '暴風特別警報',
-                '13': '風雪注意報',
-                '02': '暴風雪警報',
-                '32': '暴風雪特別警報',
-                '16': '波浪注意報',
-                '07': '波浪警報',
-                '37': '波浪特別警報',
-                '12': '大雪注意報',
-                '06': '大雪警報',
-                '36': '大雪特別警報',
-                '17': '融雪注意報',
-                '14': '雷注意報',
-                '20': '濃霧注意報',
-                '21': '乾燥注意報',
-                '22': 'なだれ注意報',
-                '23': '低温注意報',
-                '24': '霜注意報',
-                '25': '着氷注意報',
-                '26': '着雪注意報',
-                '27': 'その他の注意報'
+                '10': '大雨注意報', '03': '大雨警報', '43': '大雨危険警報', '33': '大雨特別警報',
+                '29': '土砂災害注意報', '09': '土砂災害警報', '49': '土砂災害危険警報', '39': '土砂災害特別警報',
+                '19': '高潮注意報', '08': '高潮警報', '48': '高潮危険警報', '38': '高潮特別警報',
+                '15': '強風注意報', '05': '暴風警報', '35': '暴風特別警報',
+                '13': '風雪注意報', '02': '暴風雪警報', '32': '暴風雪特別警報',
+                '16': '波浪注意報', '07': '波浪警報', '37': '波浪特別警報',
+                '12': '大雪注意報', '06': '大雪警報', '36': '大雪特別警報',
+                '17': '融雪注意報', '14': '雷注意報', '20': '濃霧注意報', '21': '乾燥注意報',
+                '22': 'なだれ注意報', '23': '低温注意報', '24': '霜注意報', '25': '着氷注意報',
+                '26': '着雪注意報', '27': 'その他の注意報'
             };
             return codeMap[code] || `警報(${code})`;
         }
@@ -296,8 +262,7 @@
         }
 
         function isWarning(code) {
-            const level = getAlertLevel(code);
-            return level === '警報' || level === '特別警報';
+            return getAlertLevel(code) === '警報' || getAlertLevel(code) === '特別警報';
         }
 
         async function fetchTransitInfo() {
@@ -334,10 +299,10 @@
 
                 fetchTransitInfo();
 
+                // 警報・注意報データの取得
                 const resWarning = await fetch('https://www.jma.go.jp/bosai/warning/data/r8/280000.json');
                 if (resWarning.ok) {
                     const warnArray = await resWarning.json();
-                    
                     let hyogoWarnings = new Set();
                     let hyogoAdvisories = new Set();
                     let kakogawaWarnings = [];
@@ -348,19 +313,16 @@
                             report.warning.class20Items.forEach(item => {
                                 if (item.kinds) {
                                     item.kinds.forEach(k => {
-                                        // 解除を除外し、発表または継続のみを対象とする
                                         if ((k.status === '発表' || k.status === '継続') && k.code) {
                                             const name = getWarningName(k.code);
                                             const warningCheck = isWarning(k.code);
 
-                                            // 兵庫県全体
                                             if (warningCheck) {
                                                 hyogoWarnings.add(name);
                                             } else {
                                                 hyogoAdvisories.add(name);
                                             }
 
-                                            // 加古川市（2821000）
                                             if (item.areaCode === '2821000') {
                                                 if (warningCheck) {
                                                     kakogawaWarnings.push(name);
@@ -375,7 +337,6 @@
                         }
                     });
 
-                    // 兵庫県表示の構築
                     const hyogoContainer = document.getElementById('hyogo-warning-container');
                     if (hyogoWarnings.size > 0 || hyogoAdvisories.size > 0) {
                         let hyogoHtml = '';
@@ -390,7 +351,6 @@
                         hyogoContainer.innerHTML = `<div style="background-color: #f0fdf4; border: 1px solid #86efac; padding: 6px; border-radius: 6px; color: #166534; font-size: 0.9rem;">現在、兵庫県内に発表されている警報・注意報はありません。</div>`;
                     }
 
-                    // 加古川市表示の構築
                     const kakogawaContainer = document.getElementById('kakogawa-warning-container');
                     if (kakogawaWarnings.length > 0 || kakogawaAdvisories.length > 0) {
                         let kakogawaHtml = '';
@@ -406,9 +366,30 @@
                     }
                 }
 
+                // 気象庁の天気予報データ（weathersテキスト用）の取得
+                let jmaWeathers = [];
+                const resJmaForecast = await fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json');
+                if (resJmaForecast.ok) {
+                    const jmaData = await resJmaForecast.json();
+                    try {
+                        // 兵庫県南部（areaCode "280010" など、または配列内から「南部」を探す）
+                        const timeSeriesWeathers = jmaData[0].timeSeries[0];
+                        const areas = timeSeriesWeathers.areas;
+                        // 加古川市が含まれる「南部」のエリアを探す（area.nameが「南部」または該当地域）
+                        const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
+                        if (targetArea && targetArea.weathers) {
+                            // 空白を削除したweathersテキストの配列を作成
+                            jmaWeathers = targetArea.weathers.map(w => w.replace(/\s+/g, ''));
+                        }
+                    } catch (err) {
+                        console.error("JMA天気テキストの解析エラー:", err);
+                    }
+                }
+
+                // Open-Meteoデータの取得（気温・風速・降水確率・降水量用）
                 const lat = 34.7658;
                 const lon = 134.8437;
-                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo`;
+                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo`;
                 
                 const resMeteo = await fetch(meteoUrl);
                 if (resMeteo.ok) {
@@ -445,14 +426,8 @@
                         const d = String(targetDate.getDate()).padStart(2, '0');
                         const w = weekdays[targetDate.getDay()];
                         
-                        let dailyWeatherText = '曇り';
-                        if (data.daily && data.daily.time) {
-                            const targetDateStr = `${targetDate.getFullYear()}-${m}-${d}`;
-                            const dayIndex = data.daily.time.findIndex(t => t.startsWith(targetDateStr));
-                            if (dayIndex !== -1 && data.daily.weather_code) {
-                                dailyWeatherText = getWeatherDesc(data.daily.weather_code[dayIndex]);
-                            }
-                        }
+                        // 気象庁のweathersテキスト（weathers[0], weathers[1], weathers[2]）を割り当て
+                        let dailyWeatherText = jmaWeathers[dayOffset] || '曇り';
 
                         let formattedWeatherHtml = '';
                         for (let char of dailyWeatherText) {
