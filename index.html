@@ -256,14 +256,32 @@
             </div>
         </div>
 
-        <!-- ページ 4 -->
+        <!-- ページ 4：データソース情報 -->
         <div id="page-4" class="page-content">
             <div class="header-card">
-                <h1>4ページ目</h1>
-                <div class="time-info">ここに4ページ目のコンテンツが入ります。</div>
+                <h1>データソース情報</h1>
+                <div class="time-info">自動更新時刻：<span id="page-update-time-4">読み込み中...</span></div>
             </div>
-            <div class="card" style="padding: 40px; text-align: center; color: #64748b;">
-                4ページ目の内容エリアです。自由に変更できます。
+            <div class="card" style="padding: 16px;">
+                <h2 style="margin-bottom: 12px;">使用しているデータソース一覧</h2>
+                <ul style="margin: 0; padding-left: 20px; line-height: 1.8; font-size: 0.95rem;">
+                    <li style="margin-bottom: 10px;">
+                        <strong>タイトル:</strong> 気象庁 天気予報（兵庫県南部）<br>
+                        <strong>URL:</strong> <a href="https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json" target="_blank" rel="noopener noreferrer">https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json</a>
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <strong>タイトル:</strong> 気象庁 警報・注意報（兵庫県）<br>
+                        <strong>URL:</strong> <a href="https://www.jma.go.jp/bosai/warning/data/r8/280000.json" target="_blank" rel="noopener noreferrer">https://www.jma.go.jp/bosai/warning/data/r8/280000.json</a>
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <strong>タイトル:</strong> Open-Meteo 天気予報 API (加古川市)<br>
+                        <strong>URL:</strong> <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">https://open-meteo.com/</a>
+                    </li>
+                    <li>
+                        <strong>タイトル:</strong> Yahoo!路線情報 (JR神戸線運行情報)<br>
+                        <strong>URL:</strong> <a href="https://transit.yahoo.co.jp/diainfo/273/0" target="_blank" rel="noopener noreferrer">https://transit.yahoo.co.jp/diainfo/273/0</a>
+                    </li>
+                </ul>
             </div>
         </div>
 
@@ -590,7 +608,6 @@
                 let maxT = dayTemps.length > 0 ? Math.round(Math.max(...dayTemps)) : null;
                 let tempStr = (minT != null && maxT != null) ? `${minT}-${maxT}` : '--';
                 
-                // 気温の色は最高気温を基準にスタイリング
                 let tempNum = maxT;
                 let tempStyle = getTempBackgroundColor(tempNum);
                 if (tempNum === 0) tempStyle += '; color: #94a3b8;';
@@ -633,6 +650,7 @@
                 document.getElementById('source-update-time-1').innerText = nowStr;
                 document.getElementById('page-update-time-2').innerText = nowStr;
                 document.getElementById('source-update-time-2').innerText = nowStr;
+                document.getElementById('page-update-time-4').innerText = nowStr;
 
                 fetchTransitInfo();
 
@@ -720,7 +738,7 @@
 
                 const lat = 34.7658;
                 const lon = 134.8437;
-                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo`;
+                const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2Tokyo`;
                 
                 const resMeteo = await fetch(meteoUrl);
                 if (resMeteo.ok) {
@@ -733,7 +751,7 @@
                     document.querySelector('#forecast-table-7days tbody').innerHTML = generateDailyTableHtml(jmaWeatherTexts, data);
                 }
             } catch (e) {
-                console.error("データ取得エラー:", e);
+                console.error("データ育てエラー:", e);
             }
         }
 
