@@ -269,6 +269,109 @@
             return 'background-color: #990000; color: #fff; font-weight: bold;';
         }
 
+        // 気象庁公式コード対応表（IIJ Engineering REST API v1準拠）
+        // https://doc01.pf.iij-engineering.co.jp/pub/sdkdoc/v1/ja_JP/restapi/rest_jmaweather2_ver1.html
+        function getWarningName(code) {
+            const codeMap = {
+                // 大雨
+                '10': 'レベル２大雨注意報',
+                '03': 'レベル３大雨警報',
+                '43': 'レベル４大雨危険警報',
+                '33': 'レベル５大雨特別警報',
+                // 土砂災害
+                '29': 'レベル２土砂災害注意報',
+                '09': 'レベル３土砂災害警報',
+                '49': 'レベル４土砂災害危険警報',
+                '39': 'レベル５土砂災害特別警報',
+                // 高潮
+                '19': 'レベル２高潮注意報',
+                '08': 'レベル３高潮警報',
+                '48': 'レベル４高潮危険警報',
+                '38': 'レベル５高潮特別警報',
+                // 風（暴風・強風）
+                '15': '強風注意報',
+                '05': '暴風警報',
+                '35': '暴風特別警報',
+                // 風雪・暴風雪
+                '13': '風雪注意報',
+                '02': '暴風雪警報',
+                '32': '暴風雪特別警報',
+                // 波浪
+                '16': '波浪注意報',
+                '07': '波浪警報',
+                '37': '波浪特別警報',
+                // 大雪
+                '12': '大雪注意報',
+                '06': '大雪警報',
+                '36': '大雪特別警報',
+                // 融雪
+                '17': '融雪注意報',
+                // 雷
+                '14': '雷注意報',
+                // 濃霧
+                '20': '濃霧注意報',
+                // 乾燥
+                '21': '乾燥注意報',
+                // なだれ
+                '22': 'なだれ注意報',
+                // 低温
+                '23': '低温注意報',
+                // 霜
+                '24': '霜注意報',
+                // 着氷
+                '25': '着氷注意報',
+                // 着雪
+                '26': '着雪注意報',
+                // その他
+                '27': 'その他の注意報'
+            };
+            return codeMap[code] || `警報(${code})`;
+        }
+
+        // コードから警戒レベルを判定（気象庁公式体系）
+        // 警戒レベル：注意報、警報、特別警報の3段階
+        function getAlertLevel(code) {
+            // 特別警報 - 最も速写で売上げ的、警戒レベル5相当
+            const specialWarnings = [
+                '33', '43',             // 大雨特別警報
+                '39', '49',             // 土砂災害特別警報
+                '38', '48',             // 高潮特別警報
+                '32',                   // 暴風雪特別警報
+                '37',                   // 波浪特別警報
+                '36'                    // 大雪特別警報
+            ];
+            
+            // 警報 - 警戒レベル3、一部レベル4時の警報
+            const warnings = [
+                '03',                   // 大雨警報
+                '09',                   // 土砂災害警報
+                '08',                   // 高潮警報
+                '05',                   // 暴風警報
+                '02',                   // 暴風雪警報
+                '07',                   // 波浪警報
+                '06'                    // 大雪警報
+            ];
+            
+            // 日泊時夫は警報段階から把檪xや警報レベル4相当の警報を追加
+            // 11, 13, 15, 17 = 警报急場合もあり
+            // 憧死としはコードを子数値で公式計算しる
+            const codeNum = parseInt(code);
+            if (specialWarnings.includes(code)) return '特別警報';
+            if (warnings.includes(code)) return '警報';
+            return '注意報';
+        }
+
+        // 警報以上（警報、特別警報）かを判定
+        function isWarning(code) {
+            const level = getAlertLevel(code);
+            return level === '警報' || level === '特別警報';
+        }
+
+        // 特別警報かを判定
+        function isSpecialWarning(code) {
+            return getAlertLevel(code) === '特別警報';
+        }
+
         // 運行情報の取得関数（CORSプロキシ経由）
         async function fetchTransitInfo() {
             const targetUrl = "https://transit.yahoo.co.jp/diainfo/273/0";
@@ -317,12 +420,16 @@
                     warnArray.forEach(report => {
                         if (report.warning && report.warning.class20Items) {
                             report.warning.class20Items.forEach(item => {
-                                if (item.code === '2821000' && item.kinds) {
+                                if (item.areaCode === '2821000' && item.kinds) {
                                     item.kinds.forEach(k => {
-                                        if (k.status === '発表' || k.status === '継続') {
-                                            const name = k.name || '';
-                                            if (name.includes('警報')) warningsList.push(name);
-                                            else if (name.includes('注意報')) advisoriesList.push(name);
+                                        // 「発表」「継続」「解除」のいずれかで、コードが存在する場合
+                                        if ((k.status === '発表' || k.status === '継続' || k.status === '解除') && k.code) {
+                                            const name = getWarningName(k.code);
+                                            if (isWarning(k.code)) {
+                                                warningsList.push(name);
+                                            } else {
+                                                advisoriesList.push(name);
+                                            }
                                         }
                                     });
                                 }
