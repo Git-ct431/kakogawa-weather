@@ -467,7 +467,8 @@
             const winds = meteoData.hourly.wind_speed_10m;
             const pops = meteoData.hourly.precipitation_probability;
             const rains = meteoData.hourly.precipitation;
-            const weathercodes = meteoData.hourly.weathercode;
+            // 修正：weather_code を優先して参照するように修正
+            const weathercodes = meteoData.hourly.weather_code || meteoData.hourly.weathercode || [];
 
             const timeSlots = [
                 { startH: 0, endH: 2, label: '0' },
@@ -595,7 +596,8 @@
             const winds = meteoData.daily.windspeed_10m_max;
             const pops = meteoData.daily.precipitation_probability_max;
             const rains = meteoData.daily.precipitation_sum;
-            const weathercodes = meteoData.daily.weathercode;
+            // 修正：weather_code を優先して参照するように修正
+            const weathercodes = meteoData.daily.weather_code || meteoData.daily.weathercode || [];
 
             const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
             let html = '';
