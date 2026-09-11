@@ -10,10 +10,10 @@ def fetch_weather_data():
   jst_now = datetime.now(ZoneInfo("Asia/Tokyo"))
   data["updated_at"] = jst_now.strftime("%m.%d %H:%M:%S")
 
-  # 1. Open-Meteo 天気予報データ
+  # 1. Open-Meteo 天気予報データ（10日間のdailyおよびhourlyを取得）
   try:
     lat, lon = 34.7658, 134.8437
-    meteo_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo&forecast_days=10"
+    meteo_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo&forecast_days=10"
     res = requests.get(meteo_url, timeout=10)
     if res.status_code == 200:
       data["open_meteo"] = res.json()

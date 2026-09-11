@@ -585,74 +585,52 @@
             return forecastHtml;
         }
 
-        // 10日間に拡張
+        // Open-Meteoの daily データを使用して10日分の予報を構築
         function generateDailyTableHtml(meteoData) {
-            const times = meteoData.hourly.time;
-            const temps = meteoData.hourly.temperature_2m;
-            const winds = meteoData.hourly.wind_speed_10m;
-            const pops = meteoData.hourly.precipitation_probability;
-            const rains = meteoData.hourly.precipitation;
-            const weathercodes = meteoData.hourly.weathercode;
+            if (!meteoData || !meteoData.daily) return '<tr><td colspan="6">データがありません</td></tr>';
+
+            const times = meteoData.daily.time;
+            const maxTemps = meteoData.daily.temperature_2m_max;
+            const minTemps = meteoData.daily.temperature_2m_min;
+            const winds = meteoData.daily.windspeed_10m_max;
+            const pops = meteoData.daily.precipitation_probability_max;
+            const rains = meteoData.daily.precipitation_sum;
+            const weathercodes = meteoData.daily.weathercode;
 
             const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-            const now = new Date();
             let html = '';
 
-            for (let dayOffset = 0; dayOffset < 10; dayOffset++) {
-                const targetDate = new Date();
-                targetDate.setDate(now.getDate() + dayOffset);
-                
+            for (let i = 0; i < times.length; i++) {
+                const targetDate = new Date(times[i]);
                 const m = String(targetDate.getMonth() + 1).padStart(2, '0');
                 const d = String(targetDate.getDate()).padStart(2, '0');
                 const w = weekdays[targetDate.getDay()];
-                
-                let dayTemps = [];
-                let dayWinds = [];
-                let dayPops = [];
-                let dayRainSum = 0;
-                let representativeCode = 3;
 
-                for (let i = 0; i < times.length; i++) {
-                    const t = new Date(times[i]);
-                    if (t.getDate() === targetDate.getDate() && t.getMonth() === targetDate.getMonth()) {
-                        if (temps[i] != null) dayTemps.push(temps[i]);
-                        if (winds[i] != null) dayWinds.push(winds[i]);
-                        if (pops[i] != null) dayPops.push(pops[i]);
-                        if (rains[i] != null) dayRainSum += rains[i];
-                        if (t.getHours() === 12 && weathercodes[i] != null) {
-                            representativeCode = weathercodes[i];
-                        }
-                    }
-                }
-                const weatherText = convertWeatherCode(representativeCode);
+                const weatherText = convertWeatherCode(weathercodes[i]);
 
-                let minT = dayTemps.length > 0 ? Math.round(Math.min(...dayTemps)) : null;
-                let maxT = dayTemps.length > 0 ? Math.round(Math.max(...dayTemps)) : null;
+                let minT = minTemps[i] != null ? Math.round(minTemps[i]) : null;
+                let maxT = maxTemps[i] != null ? Math.round(maxTemps[i]) : null;
                 let tempStr = (minT != null && maxT != null) ? `${minT}-${maxT}` : '--';
                 
-                let tempNum = maxT;
-                let tempStyle = getTempBackgroundColor(tempNum);
-                if (tempNum === 0) tempStyle += '; color: #94a3b8;';
+                let tempStyle = getTempBackgroundColor(maxT);
+                if (maxT === 0) tempStyle += '; color: #94a3b8;';
 
-                let avgWind = dayWinds.length > 0 ? Math.round(dayWinds.reduce((a, b) => a + b, 0) / dayWinds.length) : null;
-                let valWind = formatInteger(avgWind);
-                let windStyle = getWindBackgroundColor(avgWind);
+                let maxWind = winds[i] != null ? Math.round(winds[i]) : null;
+                let valWind = formatInteger(maxWind);
+                let windStyle = getWindBackgroundColor(maxWind);
 
-                let maxPopNum = dayPops.length > 0 ? formatPopValue(Math.max(...dayPops)) : null;
+                let maxPopNum = pops[i] != null ? formatPopValue(pops[i]) : null;
                 let valPop = (maxPopNum !== '--') ? String(maxPopNum) : '--';
                 let popStyle = getPopBackgroundColor(maxPopNum);
                 if (maxPopNum === 0) popStyle += '; color: #94a3b8;';
 
-                let rainNum = dayRainSum > 0 ? Math.round(dayRainSum) : 0;
-                let valRain = formatInteger(dayRainSum);
-                let rainStyle = getRainBackgroundColor(rainNum);
-                if (rainNum === 0) rainStyle += '; color: #94a3b8;';
-
-                const isPast = (dayOffset < 0);
-                const rowClass = isPast ? 'past-day' : '';
+                let rainSum = rains[i] != null ? Math.round(rains[i]) : 0;
+                let valRain = formatInteger(rains[i]);
+                let rainStyle = getRainBackgroundColor(rainSum);
+                if (rainSum === 0) rainStyle += '; color: #94a3b8;';
 
                 html += `
-                    <tr class="${rowClass}">
+                    <tr>
                         <td style="background-color: #F3F3F3; font-weight: bold; white-space: nowrap;">${m}.${d} ${w}</td>
                         <td style="background-color: #F3F3F3;">${weatherText}</td>
                         <td style="text-align: right; ${tempStr !== '--' ? tempStyle : ''}">${tempStr}</td>
