@@ -646,25 +646,22 @@
 
         async function fetchDashboardData() {
             try {
-                const response = await fetch('./data.json');
+                // 末尾に ?t= 現在時刻 を付与してブラウザのキャッシュを回避
+                const response = await fetch('./data.json?t=' + new Date().getTime());
                 if (!response.ok) throw new Error("data.jsonの読み込みに失敗しました");
                 const data = await response.json();
 
-                // データの更新時刻（JSON内のupdated_at）と、ページを閲覧・読み込んだ現在の時刻を分離
                 const sourceUpdateTime = data.updated_at || '--';
                 const pageUpdateTime = formatCustomDate(new Date());
 
-                // ページ更新時刻の反映（ブラウザでの閲覧/読込時刻）
                 document.getElementById('page-update-time-1').innerText = pageUpdateTime;
                 document.getElementById('page-update-time-2').innerText = pageUpdateTime;
                 document.getElementById('page-update-time-3').innerText = pageUpdateTime;
                 document.getElementById('page-update-time-4').innerText = pageUpdateTime;
 
-                // データ更新時刻の反映（Python/バックエンドでの同期時刻）
                 document.getElementById('source-update-time-1').innerText = sourceUpdateTime;
                 document.getElementById('source-update-time-2').innerText = sourceUpdateTime;
 
-                // JR神戸線 運行情報の反映
                 const transitContainer = document.getElementById('transit-container');
                 if (data.transit_info) {
                     let statusText = data.transit_info;
@@ -674,7 +671,6 @@
                     transitContainer.innerHTML = `<div>平常運転（または詳細情報を取得できませんでした）</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
                 }
 
-                // 警報・注意報の反映
                 if (data.jma_warning) {
                     const warnArray = data.jma_warning;
                     let hyogoWarnings = new Set();
@@ -826,7 +822,11 @@
             }
         }
 
+        // 初回実行
         fetchDashboardData();
+
+        // 5分（300,000ミリ秒）ごとにバックグラウンドで最新データを再取得して画面を更新
+        setInterval(fetchDashboardData, 300000);
     </script>
 </body>
 </html>
