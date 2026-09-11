@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import requests
@@ -73,9 +72,9 @@ def fetch_weather_data():
     print(f"Transit info fetch error: {e}")
     data["transit_info"] = "運行情報の取得に失敗しました"
 
-  # JSONファイルとして出力
+  # JSONファイルとして出力（indentを削除して軽量化）
   with open("data.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
+    json.dump(data, f, ensure_ascii=False)
 
   print("Successfully generated data.json")
 
