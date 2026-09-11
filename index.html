@@ -291,7 +291,7 @@
         <div id="page-4" class="page-content">
             <div class="header-card">
                 <h1>データソース情報</h1>
-                <div class="time-info">自動更新時刻：<span id="page-update-time-4">読み込み中...</span></div>
+                <div class="time-info">ページ更新：<span id="page-update-time-4">読み込み中...</span></div>
             </div>
             <div class="card" style="padding: 16px;">
                 <h2 style="margin-bottom: 12px;">使用しているデータソース一覧</h2>
@@ -346,7 +346,7 @@
             const h = String(dateObj.getHours()).padStart(2, '0');
             const min = String(dateObj.getMinutes()).padStart(2, '0');
             const s = String(dateObj.getSeconds()).padStart(2, '0');
-            return `${m}.${d} ${h}:${min} ${s}`;
+            return `${m}.${d} ${h}:${min}:${s}`;
         }
 
         function formatTwoDigits(val) {
@@ -650,13 +650,19 @@
                 if (!response.ok) throw new Error("data.jsonの読み込みに失敗しました");
                 const data = await response.json();
 
-                const updateTime = data.updated_at || formatCustomDate(new Date());
-                document.getElementById('page-update-time-1').innerText = updateTime;
-                document.getElementById('source-update-time-1').innerText = updateTime;
-                document.getElementById('page-update-time-2').innerText = updateTime;
-                document.getElementById('source-update-time-2').innerText = updateTime;
-                document.getElementById('page-update-time-3').innerText = updateTime;
-                document.getElementById('page-update-time-4').innerText = updateTime;
+                // データの更新時刻（JSON内のupdated_at）と、ページを閲覧・読み込んだ現在の時刻を分離
+                const sourceUpdateTime = data.updated_at || '--';
+                const pageUpdateTime = formatCustomDate(new Date());
+
+                // ページ更新時刻の反映（ブラウザでの閲覧/読込時刻）
+                document.getElementById('page-update-time-1').innerText = pageUpdateTime;
+                document.getElementById('page-update-time-2').innerText = pageUpdateTime;
+                document.getElementById('page-update-time-3').innerText = pageUpdateTime;
+                document.getElementById('page-update-time-4').innerText = pageUpdateTime;
+
+                // データ更新時刻の反映（Python/バックエンドでの同期時刻）
+                document.getElementById('source-update-time-1').innerText = sourceUpdateTime;
+                document.getElementById('source-update-time-2').innerText = sourceUpdateTime;
 
                 // JR神戸線 運行情報の反映
                 const transitContainer = document.getElementById('transit-container');
