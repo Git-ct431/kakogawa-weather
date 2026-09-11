@@ -445,16 +445,6 @@
             return getAlertLevel(code) === '警報' || getAlertLevel(code) === '特別警報';
         }
 
-        function getWeatherTextFromCode(codeStr) {
-            if (!codeStr) return '曇り';
-            const firstChar = String(codeStr).charAt(0);
-            if (firstChar === '1') return '晴れ';
-            if (firstChar === '2') return '曇り';
-            if (firstChar === '3') return '雨';
-            if (firstChar === '4') return '雪';
-            return '曇り';
-        }
-
         function generateTableHtml(jmaWeatherTexts, meteoData, daysCount) {
             const times = meteoData.hourly.time;
             const temps = meteoData.hourly.temperature_2m;
@@ -487,6 +477,7 @@
                 const d = String(targetDate.getDate()).padStart(2, '0');
                 const w = weekdays[targetDate.getDay()];
                 
+                // そのままテキストを受け取る
                 const weatherText = jmaWeatherTexts[dayOffset] || '曇り';
                 
                 let verticalWeatherHtml = '';
@@ -588,6 +579,8 @@
                 const m = String(targetDate.getMonth() + 1).padStart(2, '0');
                 const d = String(targetDate.getDate()).padStart(2, '0');
                 const w = weekdays[targetDate.getDay()];
+                
+                // そのままテキストを受け取る
                 const weatherText = jmaWeatherTexts[dayOffset] || '曇り';
 
                 let dayTemps = [];
@@ -646,7 +639,6 @@
 
         async function fetchDashboardData() {
             try {
-                // 末尾に ?t= 現在時刻 を付与してブラウザのキャッシュを回避
                 const response = await fetch('./data.json?t=' + new Date().getTime());
                 if (!response.ok) throw new Error("data.jsonの読み込みに失敗しました");
                 const data = await response.json();
@@ -790,13 +782,26 @@
                     }
                 }
 
+                // ----------------------------------------------------
+                // 気象庁の天気テキストをコード変換せず、そのまま配列として受け取る
+                // ----------------------------------------------------
                 let jmaWeatherTexts = [];
                 if (data.jma_forecast) {
+                    // data.json 側にすでにテキストの配列（weathers など）が存在する場合はそれを優先し、
+                    // なければ weatherCodes の代わりに直接テキストが入っているプロパティをそのまま拾う形に合わせます
                     const timeSeriesWeathers = data.jma_forecast[0].timeSeries[0];
                     const areas = timeSeriesWeathers.areas;
                     const targetArea = areas.find(a => a.area.name.includes('南部')) || areas[0];
-                    if (targetArea && targetArea.weatherCodes) {
-                        jmaWeatherTexts = targetArea.weatherCodes.map(code => getWeatherTextFromCode(code));
+                    
+                    if (targetArea) {
+                        // weathers プロパティ（テキスト配列）があればそれをそのまま使用
+                        if (targetArea.weathers) {
+                            jmaWeatherTexts = targetArea.weathers;
+                        } 
+                        // もし weatherCodes しかない場合でも、もしそこに直接文字列が入っていればそのまま流す
+                        else if (targetArea.weatherCodes) {
+                            jmaWeatherTexts = targetArea.weatherCodes;
+                        }
                     }
                 }
 
@@ -825,7 +830,7 @@
         // 初回実行
         fetchDashboardData();
 
-        // 5分（300,000ミリ秒）ごとにバックグラウンドで最新データを再取得して画面を更新
+        // 5分（300,000ミリ秒）ごとにバックグラウンドで最新データを再取得
         setInterval(fetchDashboardData, 300000);
     </script>
 </body>
