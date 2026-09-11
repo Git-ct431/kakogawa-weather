@@ -1,12 +1,14 @@
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
 
 def fetch_weather_data():
   data = {}
-  data["updated_at"] = datetime.now().strftime("%m.%d %H:%M:%S")
+  jst_now = datetime.now(ZoneInfo("Asia/Tokyo"))
+  data["updated_at"] = jst_now.strftime("%m.%d %H:%M:%S")
 
   # 1. Open-Meteo 天気予報データ
   try:
