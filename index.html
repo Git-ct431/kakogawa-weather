@@ -237,10 +237,10 @@
             </div>
         </div>
 
-        <!-- ページ 2：7日間の天気 -->
+        <!-- ページ 2：10日間の天気 -->
         <div id="page-2" class="page-content">
             <div class="header-card">
-                <h1>加古川市の天気 (7日間・2ページ目)</h1>
+                <h1>加古川市の天気 (10日間・2ページ目)</h1>
                 <div class="time-info">
                     <div>ページ更新：<span id="page-update-time-2">読み込み中...</span></div>
                     <div>データ更新：<span id="source-update-time-2">読み込み中...</span></div>
@@ -249,7 +249,7 @@
 
             <div class="card" style="padding: 10px; display: inline-block;">
                 <div style="overflow-x: auto;">
-                    <table id="forecast-table-7days" class="daily-table">
+                    <table id="forecast-table-10days" class="daily-table">
                         <thead>
                             <tr>
                                 <th style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
@@ -494,8 +494,7 @@
                 const d = String(targetDate.getDate()).padStart(2, '0');
                 const w = weekdays[targetDate.getDay()];
                 
-                // その日の昼頃（12時台など）のweathercodeを代表値として取得し、天気テキストに変換
-                let representativeCode = 3; // デフォルト曇り
+                let representativeCode = 3;
                 for (let i = 0; i < times.length; i++) {
                     const t = new Date(times[i]);
                     if (t.getDate() === targetDate.getDate() && t.getMonth() === targetDate.getMonth() && t.getHours() === 12) {
@@ -586,6 +585,7 @@
             return forecastHtml;
         }
 
+        // 10日間に拡張
         function generateDailyTableHtml(meteoData) {
             const times = meteoData.hourly.time;
             const temps = meteoData.hourly.temperature_2m;
@@ -598,7 +598,7 @@
             const now = new Date();
             let html = '';
 
-            for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+            for (let dayOffset = 0; dayOffset < 10; dayOffset++) {
                 const targetDate = new Date();
                 targetDate.setDate(now.getDate() + dayOffset);
                 
@@ -819,7 +819,7 @@
 
                 if (data.open_meteo) {
                     document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(data.open_meteo, 3);
-                    document.querySelector('#forecast-table-7days tbody').innerHTML = generateDailyTableHtml(data.open_meteo);
+                    document.querySelector('#forecast-table-10days tbody').innerHTML = generateDailyTableHtml(data.open_meteo);
                 } else {
                     throw new Error("Open-Meteo data missing in data.json");
                 }
@@ -828,7 +828,7 @@
                 console.error("データ読み込みエラー:", err);
                 document.getElementById('overview-container').innerText = '天気データの読み込みに失敗しました。';
                 document.querySelector('#forecast-table-1 tbody').innerHTML = `<tr><td colspan="6">天気データの取得に失敗しました。</td></tr>`;
-                document.querySelector('#forecast-table-7days tbody').innerHTML = `<tr><td colspan="6">天気データの取得に失敗しました。</td></tr>`;
+                document.querySelector('#forecast-table-10days tbody').innerHTML = `<tr><td colspan="6">天気データの取得に失敗しました。</td></tr>`;
             }
         }
 
