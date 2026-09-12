@@ -23,12 +23,24 @@
 html { font-size: 12px; }
 body { 
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-    margin: 0; padding: 12px; padding-bottom: 70px; 
+    margin: 0; 
+    padding: 12px; 
+    padding-bottom: 70px; 
     background-color: var(--bg-main); 
     color: var(--text-main); 
     font-size: var(--font-base); 
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* ページ全体を左揃えにする */
+    justify-content: flex-start;
+    text-align: left;
 }
-.container { max-width: 900px; margin: 0 auto; }
+
+.container { 
+    width: 100%;
+    max-width: none; /* 中央寄せの最大幅制限を解除 */
+    margin: 0; 
+}
 
 .header-card, .card { 
     background: var(--bg-card); 
@@ -64,10 +76,13 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
     margin-bottom: 12px;
 }
 
-/* 3日間天気エリア：画面幅に対して最大40%に制限 */
+/* 3日間天気エリア：高さを画面の縦80%に固定し、幅は文字に合わせる */
 .forecast-col {
-    flex: 0 0 40%;
-    max-width: 40%;
+    flex: 0 0 auto;
+    max-width: none;
+    height: 80vh; /* 画面サイズの縦80% */
+    display: flex;
+    flex-direction: column;
     background: transparent;
     padding: 0;
     border-radius: 0;
@@ -77,8 +92,10 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 }
 
 .forecast-col > div {
-    width: 100%;
-    overflow-x: auto;
+    width: auto;
+    height: 100%;
+    overflow-y: auto; /* 縦スクロールが必要な場合に対応 */
+    overflow-x: auto; /* 横スクロール */
 }
 
 .right-col {
@@ -94,7 +111,9 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 
 /* テーブル共通スタイルのまとめ */
 .forecast-table, .daily-table { 
-    width: 100%; 
+    width: auto; /* 文字幅にぴったり合わせる */
+    height: 100%;
+    table-layout: auto; 
     border-collapse: collapse; 
     font-size: var(--font-sm); 
     background-color: var(--bg-table);
@@ -103,11 +122,12 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 
 .forecast-table th, .forecast-table td, 
 .daily-table th, .daily-table td { 
-    padding: 4px 6px; 
+    padding: 2px 5px; /* 上下左右のパディングを狭くして文字にフィットさせる */
     text-align: center; 
     vertical-align: middle; 
     background-color: var(--bg-table);
     border: 1px solid var(--border-color);
+    white-space: nowrap; /* 文字が不自然に折り返さないようにする */
 }
 .forecast-table th, .daily-table th { 
     color: var(--text-sub); 
@@ -164,7 +184,7 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 .page-content { display: none; }
 .page-content.active { display: block; }
 
-/* --- 下部ボタンエリアの調整（見た目はそのまま、バー全体のクリックエリアを拡大） --- */
+/* --- 下部ボタンエリアの調整 --- */
 .pagination-container {
     position: fixed;
     bottom: 0;
@@ -195,15 +215,15 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
     background-color: var(--primary-hover);
 }
 
-/* --- レスポンシブ対応（スマホなどの狭い画面向け） --- */
+/* --- レスポンシブ対応 --- */
 @media screen and (max-width: 768px) {
     .content-row {
         flex-direction: row; 
     }
     
     .forecast-col {
-        flex: 0 0 40%;
-        max-width: 40%; 
+        flex: 0 0 auto;
+        max-width: none; 
     }
 
     .right-col {
