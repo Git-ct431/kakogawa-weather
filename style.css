@@ -63,14 +63,24 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
     align-items: flex-start;
     margin-bottom: 12px;
 }
+
+/* 3日間天気エリア：画面幅に対して最大40%に制限 */
 .forecast-col {
-    flex: 0 0 auto;
+    flex: 0 0 40%;
+    max-width: 40%;
     background: transparent;
     padding: 0;
     border-radius: 0;
     box-shadow: none;
     margin-bottom: 0;
+    box-sizing: border-box;
 }
+
+.forecast-col > div {
+    width: 100%;
+    overflow-x: auto;
+}
+
 .right-col {
     flex: 1;
     min-width: 0;
@@ -84,7 +94,7 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 
 /* テーブル共通スタイルのまとめ */
 .forecast-table, .daily-table { 
-    width: auto; 
+    width: 100%; 
     border-collapse: collapse; 
     font-size: var(--font-sm); 
     background-color: var(--bg-table);
@@ -154,28 +164,32 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 .page-content { display: none; }
 .page-content.active { display: block; }
 
+/* ボタンコンテナ：背景をなくし、画面下に固定 */
 .pagination-container {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: rgba(244, 246, 248, 0.9);
-    backdrop-filter: blur(4px);
-    padding: 10px 0;
-    text-align: center;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.08);
+    background-color: transparent;
+    padding: 0;
+    box-shadow: none;
     z-index: 1000;
 }
+
+/* ナビゲーションボタン：画面幅いっぱいにクリックエリアを拡大 */
 .nav-button {
+    display: block;
+    width: 100%;
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 10px 24px;
+    padding: 14px 0;
     font-size: var(--font-base);
     font-weight: bold;
-    border-radius: 6px;
+    border-radius: 0;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.15);
+    text-align: center;
 }
 .nav-button:hover {
     background-color: var(--primary-hover);
@@ -189,5 +203,6 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
     
     .forecast-col, .right-col {
         width: 100%;
+        max-width: 100%;
     }
 }
