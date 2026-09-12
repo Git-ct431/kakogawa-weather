@@ -486,3 +486,6 @@ fetchDashboardData();
 
 // 5分（300,000ミリ秒）ごとにバックグラウンドで最新データを再取得
 setInterval(fetchDashboardData, 300000);
+
+// バー全体の透明クリックエリアからのイベントを受け取ってページを切り替える
+document.querySelector('.pagination-container').addEventListener('click', switchPage);
