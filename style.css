@@ -180,3 +180,14 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 .nav-button:hover {
     background-color: var(--primary-hover);
 }
+
+/* --- レスポンシブ対応（スマホなどの狭い画面向け） --- */
+@media screen and (max-width: 768px) {
+    .content-row {
+        flex-direction: column; /* スマホでは縦並びに切り替え */
+    }
+    
+    .forecast-col, .right-col {
+        width: 100%;
+    }
+}

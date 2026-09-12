@@ -4,22 +4,16 @@
    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 style=%22font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';%22>&#x2600;</text></svg>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加古川の天気だよ</title>
+    <title>加古川の天気</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <!-- ページ 1 -->
         <div id="page-1" class="page-content active">
-            <div class="header-card">
-                <h1>加古川市の天気 作成中 (1ページ目)</h1>
-                <div class="time-info">
-                    <div>ページ更新：<span id="page-update-time-1">読み込み中...</span></div>
-                    <div>データ更新：<span id="source-update-time-1">読み込み中...</span></div>
-                </div>
-            </div>
-
+            <!-- メインコンテンツ（左：3日天気 / 右：各種カード） -->
             <div class="content-row">
+                <!-- 左側：3日天気 -->
                 <div class="forecast-col">
                     <div style="overflow-x: auto;">
                         <table id="forecast-table-1" class="forecast-table">
@@ -40,6 +34,7 @@
                     </div>
                 </div>
 
+                <!-- 右側：上部に天気概況・警報注意報、下部にJR運行情報 -->
                 <div class="right-col">
                     <!-- 天気概況カード -->
                     <div class="card">
@@ -63,18 +58,19 @@
                     </div>
                 </div>
             </div>
+
+            <!-- タイトル行（コンテンツ最下部へ移動） -->
+            <div class="header-card">
+                <h1>加古川  (1ページ目)</h1>
+                <div class="time-info">
+                    <div>ページ更新：<span id="page-update-time-1">読み込み中...</span></div>
+                    <div>データ更新：<span id="source-update-time-1">読み込み中...</span></div>
+                </div>
+            </div>
         </div>
 
         <!-- ページ 2：10日間の天気 -->
         <div id="page-2" class="page-content">
-            <div class="header-card">
-                <h1>加古川市の天気 (10日間・2ページ目)</h1>
-                <div class="time-info">
-                    <div>ページ更新：<span id="page-update-time-2">読み込み中...</span></div>
-                    <div>データ更新：<span id="source-update-time-2">読み込み中...</span></div>
-                </div>
-            </div>
-
             <div class="card" style="padding: 10px; display: inline-block;">
                 <div style="overflow-x: auto;">
                     <table id="forecast-table-10days" class="daily-table">
@@ -94,16 +90,18 @@
                     </table>
                 </div>
             </div>
+
+            <div class="header-card">
+                <h1>加古川市の天気 (10日間・2ページ目)</h1>
+                <div class="time-info">
+                    <div>ページ更新：<span id="page-update-time-2">読み込み中...</span></div>
+                    <div>データ更新：<span id="source-update-time-2">読み込み中...</span></div>
+                </div>
+            </div>
         </div>
 
         <!-- ページ 3：警報・注意報アラートマップ（軽量リスト版） -->
         <div id="page-3" class="page-content">
-            <div class="header-card">
-                <h1>兵庫県 警報・注意報エリア一覧 (3ページ目)</h1>
-                <div class="time-info">
-                    <div>ページ更新：<span id="page-update-time-3">読み込み中...</span></div>
-                </div>
-            </div>
             <div class="card" style="padding: 16px;">
                 <h2>一次細分区域別の発表状況</h2>
                 <div style="font-size: 0.9rem; color: #475569; margin-bottom: 14px;">
@@ -113,14 +111,17 @@
                     <div style="color: #64748b; font-size: 0.9rem;">データを読み込んでいます...</div>
                 </div>
             </div>
+
+            <div class="header-card">
+                <h1>兵庫県 警報・注意報エリア一覧 (3ページ目)</h1>
+                <div class="time-info">
+                    <div>ページ更新：<span id="page-update-time-3">読み込み中...</span></div>
+                </div>
+            </div>
         </div>
 
         <!-- ページ 4 -->
         <div id="page-4" class="page-content">
-            <div class="header-card">
-                <h1>データソース情報</h1>
-                <div class="time-info">ページ更新：<span id="page-update-time-4">読み込み中...</span></div>
-            </div>
             <div class="card" style="padding: 16px;">
                 <h2 style="margin-bottom: 12px;">使用しているデータソース一覧</h2>
                 <ul style="margin: 0; padding-left: 20px; line-height: 1.8; font-size: 0.95rem;">
@@ -146,9 +147,15 @@
                     </li>
                 </ul>
             </div>
+
+            <div class="header-card">
+                <h1>データソース情報</h1>
+                <div class="time-info">ページ更新：<span id="page-update-time-4">読み込み中...</span></div>
+            </div>
         </div>
     </div>
 
+    <!-- 操作ボタン（下部固定） -->
     <div class="pagination-container">
         <button id="nav-btn" class="nav-button" onclick="switchPage()">ページ2へ</button>
     </div>
