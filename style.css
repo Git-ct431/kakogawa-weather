@@ -164,45 +164,50 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 .page-content { display: none; }
 .page-content.active { display: block; }
 
-/* ボタンコンテナ：背景をなくし、画面下に固定 */
+/* --- 下部ボタンエリアの調整（見た目はそのまま、バー全体のクリックエリアを拡大） --- */
 .pagination-container {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: transparent;
-    padding: 0;
-    box-shadow: none;
+    background-color: rgba(244, 246, 248, 0.9);
+    backdrop-filter: blur(4px);
+    padding: 10px 0;
+    text-align: center;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.08);
     z-index: 1000;
+    cursor: pointer;
 }
 
-/* ナビゲーションボタン：画面幅いっぱいにクリックエリアを拡大 */
 .nav-button {
-    display: block;
-    width: 100%;
     background-color: var(--primary-color);
     color: white;
     border: none;
-    padding: 14px 0;
+    padding: 10px 24px;
     font-size: var(--font-base);
     font-weight: bold;
-    border-radius: 0;
+    border-radius: 6px;
     cursor: pointer;
-    box-shadow: 0 -2px 6px rgba(0,0,0,0.15);
-    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    pointer-events: none;
 }
-.nav-button:hover {
+.pagination-container:hover .nav-button {
     background-color: var(--primary-hover);
 }
 
 /* --- レスポンシブ対応（スマホなどの狭い画面向け） --- */
 @media screen and (max-width: 768px) {
     .content-row {
-        flex-direction: column; /* スマホでは縦並びに切り替え */
+        flex-direction: row; /* スマホでも横並び（または必要に応じて維持） */
     }
     
-    .forecast-col, .right-col {
-        width: 100%;
-        max-width: 100%;
+    .forecast-col {
+        flex: 0 0 40%;
+        max-width: 40%; /* スマホでも40%幅を維持 */
+    }
+
+    .right-col {
+        flex: 1;
+        min-width: 0;
     }
 }
