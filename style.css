@@ -198,12 +198,12 @@ h2 { font-size: var(--font-lg); margin-top: 0; color: var(--text-heading); borde
 /* --- レスポンシブ対応（スマホなどの狭い画面向け） --- */
 @media screen and (max-width: 768px) {
     .content-row {
-        flex-direction: row; /* スマホでも横並び（または必要に応じて維持） */
+        flex-direction: row; 
     }
     
     .forecast-col {
         flex: 0 0 40%;
-        max-width: 40%; /* スマホでも40%幅を維持 */
+        max-width: 40%; 
     }
 
     .right-col {
