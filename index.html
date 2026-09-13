@@ -1,87 +1,41 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 style=%22font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji';%22>&#x2600;</text></svg>">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加古川　天気</title>
+    <title>加古川市 天気・気象病ダッシュボード</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- ページ 1 -->
-        <div id="page-1" class="page-content active">
-            <!-- メインコンテンツ（左：3日天気 / 右：各種カード） -->
-            <div class="content-row">
-                <!-- 左側：3日天気 -->
-                <div class="forecast-col">
-                    <div style="overflow-x: auto;">
-                        <table id="forecast-table-1" class="forecast-table">
-                            <thead>
-                                <tr>
-                                    <th class="vertical-header" style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">時間</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">気温</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">風速</th>
-                                    <th class="vertical-header" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">雨率</th>
-                                    <th class="vertical-header" style="border-right: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">降水</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr><td colspan="6">読み込み中...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- 右側：上部に天気概況・警報注意報、下部にJR運行情報 -->
-                <div class="right-col">
-                    <!-- 天気概況カード -->
-                    <div class="card">
-                        <h2>天気概況</h2>
-                        <div id="overview-container" class="overview-box">読み込み中...</div>
-                    </div>
-
-                    <div class="card">
-                        <h2>気象警報</h2>
-                        <div style="font-size: 0.85rem; color: #475569; margin-bottom: 4px; font-weight: bold;">兵庫県</div>
-                        <div id="hyogo-warning-container" class="plain-warning" style="margin-bottom: 10px;">読み込み中...</div>
-                        <div style="font-size: 0.85rem; color: #475569; margin-bottom: 4px; font-weight: bold;">加古川市</div>
-                        <div id="kakogawa-warning-container" class="plain-warning">読み込み中...</div>
-                    </div>
-
-                    <div class="card">
-                        <h2>JR神戸線 運行情報</h2>
-                        <a href="https://transit.yahoo.co.jp/diainfo/273/0" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
-                            <div id="transit-container" class="transit-box" style="cursor: pointer;">読み込み中...</div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- タイトル行（コンテンツ最下部へ移動） -->
-            <div class="header-card">
-                <h1>加古川  (1ページ目)</h1>
-                <div class="time-info">
-                    <div>ページ更新：<span id="page-update-time-1">読み込み中...</span></div>
-                    <div>データ更新：<span id="source-update-time-1">読み込み中...</span></div>
-                </div>
-            </div>
+    <header class="site-header">
+        <h1>加古川市 荒天・気象病特化型ダッシュボード</h1>
+        <div class="update-info">
+            <span>ページ更新: <span id="page-update-time-1">--</span></span>
+            <span>気象データ取得: <span id="source-update-time-1">--</span></span>
         </div>
+    </header>
 
-        <!-- ページ 2：10日間の天気 -->
-        <div id="page-2" class="page-content">
-            <div class="card" style="padding: 10px; display: inline-block;">
-                <div style="overflow-x: auto;">
-                    <table id="forecast-table-10days" class="daily-table">
+    <main class="dashboard-main">
+        <!-- ページ1: 概要・直近の天気 -->
+        <div id="page-1" class="page-section active">
+            <section class="card">
+                <h2>現在の状況・お知らせ</h2>
+                <div id="overview-container">データを読み込んでいます...</div>
+                <div id="transit-container" style="margin-top: 10px; font-weight: bold;"></div>
+            </section>
+
+            <section class="card">
+                <h2>3時間ごとの天気予報（今後数日間）</h2>
+                <div class="table-scroll-container">
+                    <table id="forecast-table-1" class="weather-table">
                         <thead>
                             <tr>
-                                <th style="border-left: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">日付</th>
-                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">天気</th>
-                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">気温</th>
-                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">風速</th>
-                                <th style="border-top: 1px solid #707070; border-bottom: 1px solid #707070;">雨率</th>
-                                <th style="border-right: 1px solid #707070; border-top: 1px solid #707070; border-bottom: 1px solid #707070;">降水</th>
+                                <th>日時</th>
+                                <th>時</th>
+                                <th>気温<br>(℃)</th>
+                                <th>風速<br>(m/s)</th>
+                                <th>降水<br>確率(%)</th>
+                                <th>降水<br>(mm)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -89,75 +43,67 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <div class="header-card">
-                <h1>加古川市の天気 (10日間・2ページ目)</h1>
-                <div class="time-info">
-                    <div>ページ更新：<span id="page-update-time-2">読み込み中...</span></div>
-                    <div>データ更新：<span id="source-update-time-2">読み込み中...</span></div>
-                </div>
-            </div>
+            </section>
+            <div class="page-update-sub">ページ更新: <span id="page-update-time-2">--</span></div>
         </div>
 
-        <!-- ページ 3：警報・注意報アラートマップ（軽量リスト版） -->
-        <div id="page-3" class="page-content">
-            <div class="card" style="padding: 16px;">
-                <h2>一次細分区域別の発表状況</h2>
-                <div style="font-size: 0.9rem; color: #475569; margin-bottom: 14px;">
-                    気象庁が定義する兵庫県の一次細分区域ごとの警報・注意報の発表状況です。アラート発令時は文字色と背景が自動で強調されます。
+        <!-- ページ2: 10日間週間予報 -->
+        <div id="page-2" class="page-section">
+            <section class="card">
+                <h2>10日間週間予報</h2>
+                <div class="table-scroll-container">
+                    <table id="forecast-table-10days" class="weather-table">
+                        <thead>
+                            <tr>
+                                <th>日付</th>
+                                <th>天気</th>
+                                <th>気温(低-高)<br>(℃)</th>
+                                <th>最大風速<br>(m/s)</th>
+                                <th>最高降水<br>確率(%)</th>
+                                <th>降水合計<br>(mm)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6">読み込み中...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div id="alert-map-container" style="display: flex; flex-direction: column; gap: 10px;">
-                    <div style="color: #64748b; font-size: 0.9rem;">データを読み込んでいます...</div>
-                </div>
-            </div>
-
-            <div class="header-card">
-                <h1>兵庫県 警報・注意報エリア一覧 (3ページ目)</h1>
-                <div class="time-info">
-                    <div>ページ更新：<span id="page-update-time-3">読み込み中...</span></div>
-                </div>
-            </div>
+            </section>
+            <div class="page-update-sub">ページ更新: <span id="page-update-time-3">--</span></div>
         </div>
 
-        <!-- ページ 4 -->
-        <div id="page-4" class="page-content">
-            <div class="card" style="padding: 16px;">
-                <h2 style="margin-bottom: 12px;">使用しているデータソース一覧</h2>
-                <ul style="margin: 0; padding-left: 20px; line-height: 1.8; font-size: 0.95rem;">
-                    <li style="margin-bottom: 10px;">
-                        <strong>タイトル:</strong> 気象庁 天気予報（兵庫県南部）<br>
-                        <strong>URL:</strong> <a href="https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json" target="_blank" rel="noopener noreferrer">https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json</a>
-                    </li>
-                    <li style="margin-bottom: 10px;">
-                        <strong>タイトル:</strong> 気象庁 天気概況（兵庫県）<br>
-                        <strong>URL:</strong> <a href="https://www.jma.go.jp/bosai/forecast/data/overview_forecast/280000.json" target="_blank" rel="noopener noreferrer">https://www.jma.go.jp/bosai/forecast/data/overview_forecast/280000.json</a>
-                    </li>
-                    <li style="margin-bottom: 10px;">
-                        <strong>タイトル:</strong> 気象庁 警報・注意報（兵庫県）<br>
-                        <strong>URL:</strong> <a href="https://www.jma.go.jp/bosai/warning/data/r8/280000.json" target="_blank" rel="noopener noreferrer">https://www.jma.go.jp/bosai/warning/data/r8/280000.json</a>
-                    </li>
-                    <li style="margin-bottom: 10px;">
-                        <strong>タイトル:</strong> Open-Meteo 天気予報 API (加古川市)<br>
-                        <strong>URL:</strong> <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">https://open-meteo.com/</a>
-                    </li>
-                    <li>
-                        <strong>タイトル:</strong> Yahoo!路線情報 (JR神戸線運行情報)<br>
-                        <strong>URL:</strong> <a href="https://transit.yahoo.co.jp/diainfo/273/0" target="_blank" rel="noopener noreferrer">https://transit.yahoo.co.jp/diainfo/273/0</a>
-                    </li>
-                </ul>
-            </div>
+        <!-- ページ3: 警報・注意報（加古川市・兵庫県） -->
+        <div id="page-3" class="page-section">
+            <section class="card">
+                <h2>加古川市の警報・注意報</h2>
+                <div id="kakogawa-warning-container">情報を読み込んでいます...</div>
+            </section>
 
-            <div class="header-card">
-                <h1>データソース情報</h1>
-                <div class="time-info">ページ更新：<span id="page-update-time-4">読み込み中...</span></div>
-            </div>
+            <section class="card">
+                <h2>兵庫県内の警報・注意報</h2>
+                <div id="hyogo-warning-container" style="margin-bottom: 15px;">情報を読み込んでいます...</div>
+                <h3>地域別状況</h3>
+                <div id="alert-map-container" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                    <div>情報を読み込んでいます...</div>
+                </div>
+            </section>
+            <div class="page-update-sub">ページ更新: <span id="page-update-time-4">--</span></div>
         </div>
-    </div>
 
-    <!-- 操作ボタン（下部固定） -->
+        <!-- ページ4: 予備・その他情報など -->
+        <div id="page-4" class="page-section">
+            <section class="card">
+                <h2>データソース・更新情報</h2>
+                <p>気象データ提供: Open-Meteo</p>
+                <p>防災情報提供: 気象庁 防災情報API</p>
+                <p>最終データ取得日時: <span id="source-update-time-2">--</span></p>
+            </section>
+        </div>
+    </main>
+
+    <!-- ページ切り替えボタン -->
     <div class="pagination-container">
-        <button id="nav-btn" class="nav-button" onclick="switchPage()">ページ2へ</button>
+        <button id="nav-btn" class="nav-button">ページ2へ</button>
     </div>
 
     <script src="script.js"></script>
