@@ -38,7 +38,6 @@ function formatPopValue(val) {
     return Math.min(Math.max(rounded, 0), 100);
 }
 
-// Open-MeteoのWMO天気コードを日本語に変換する関数
 function convertWeatherCode(code) {
     switch (code) {
         case 0: return '晴れ';
@@ -133,45 +132,45 @@ function isWarning(code) {
     return getAlertLevel(code) === '警報' || getAlertLevel(code) === '特別警報';
 }
 
-function generateTableHtml(meteoData, daysCount) {
-    const times = meteoData.hourly.time;
-    const temps = meteoData.hourly.temperature_2m;
-    const winds = meteoData.hourly.wind_speed_10m;
-    const pops = meteoData.hourly.precipitation_probability;
-    const rains = meteoData.hourly.precipitation;
-    const weathercodes = meteoData.hourly.weather_code || meteoData.hourly.weathercode || [];
+function generateTableHtml(hourly3hData, daysCount) {
+    if (!hourly3hData || !Array.isArray(hourly3hData)) return '<tr><td colspan="6">データがありません</td></tr>';
 
-    const timeSlots = [
-        { startH: 0, endH: 2, label: '0' },
-        { startH: 3, endH: 5, label: '3' },
-        { startH: 6, endH: 8, label: '6' },
-        { startH: 9, endH: 11, label: '9' },
-        { startH: 12, endH: 14, label: '12' },
-        { startH: 15, endH: 17, label: '15' },
-        { startH: 18, endH: 20, label: '18' },
-        { startH: 21, endH: 23, label: '21' }
-    ];
-
+    const timeSlots = [0, 3, 6, 9, 12, 15, 18, 21];
     const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
     const now = new Date();
     const currentHour = now.getHours();
     
+    let dataByDate = {};
+    hourly3hData.forEach(item => {
+        const t = new Date(item.time);
+        const dateKey = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+        if (!dataByDate[dateKey]) {
+            dataByDate[dateKey] = {};
+        }
+        dataByDate[dateKey][t.getHours()] = item;
+    });
+
     let forecastHtml = '';
-    
+    const startDate = new Date();
+
     for (let dayOffset = 0; dayOffset < daysCount; dayOffset++) {
-        const targetDate = new Date();
-        targetDate.setDate(now.getDate() + dayOffset);
+        const targetDate = new Date(startDate);
+        targetDate.setDate(startDate.getDate() + dayOffset);
         
         const m = String(targetDate.getMonth() + 1).padStart(2, '0');
         const d = String(targetDate.getDate()).padStart(2, '0');
         const w = weekdays[targetDate.getDay()];
+        const dateKey = `${targetDate.getFullYear()}-${m}-${d}`;
         
+        const dayData = dataByDate[dateKey] || {};
+
         let representativeCode = 3;
-        for (let i = 0; i < times.length; i++) {
-            const t = new Date(times[i]);
-            if (t.getDate() === targetDate.getDate() && t.getMonth() === targetDate.getMonth() && t.getHours() === 12) {
-                if (weathercodes[i] != null) representativeCode = weathercodes[i];
-                break;
+        if (dayData[12] && dayData[12].weather_code != null) {
+            representativeCode = dayData[12].weather_code;
+        } else {
+            const firstHour = Object.keys(dayData)[0];
+            if (firstHour && dayData[firstHour].weather_code != null) {
+                representativeCode = dayData[firstHour].weather_code;
             }
         }
         const weatherText = convertWeatherCode(representativeCode);
@@ -192,28 +191,13 @@ function generateTableHtml(meteoData, daysCount) {
             </div>
         `;
 
-        timeSlots.forEach((slot, slotIndex) => {
-            let slotTemps = [];
-            let slotWinds = [];
-            let slotPops = [];
-            let slotRains = [];
+        timeSlots.forEach((slotHour, slotIndex) => {
+            const slotItem = dayData[slotHour];
 
-            for (let i = 0; i < times.length; i++) {
-                const t = new Date(times[i]);
-                if (t.getDate() === targetDate.getDate() && 
-                    t.getMonth() === targetDate.getMonth() && 
-                    t.getHours() >= slot.startH && t.getHours() <= slot.endH) {
-                    if (temps[i] != null) slotTemps.push(temps[i]);
-                    if (winds[i] != null) slotWinds.push(winds[i]);
-                    if (pops[i] != null) slotPops.push(pops[i]);
-                    if (rains[i] != null) slotRains.push(rains[i]);
-                }
-            }
-
-            let avgTemp = slotTemps.length > 0 ? slotTemps.reduce((a, b) => a + b, 0) / slotTemps.length : null;
-            let maxWind = slotWinds.length > 0 ? Math.max(...slotWinds) : null;
-            let maxPop = slotPops.length > 0 ? Math.max(...slotPops) : null;
-            let maxRain = slotRains.length > 0 ? Math.max(...slotRains) : null;
+            let avgTemp = slotItem ? slotItem.temperature : null;
+            let maxWind = slotItem ? slotItem.wind_speed : null;
+            let maxPop = slotItem ? slotItem.precipitation_probability : null;
+            let maxRain = slotItem ? slotItem.precipitation : null;
 
             let tempNum = (avgTemp != null && !isNaN(avgTemp)) ? Math.round(avgTemp) : null;
             let valTemp = formatTwoDigits(avgTemp);
@@ -234,7 +218,7 @@ function generateTableHtml(meteoData, daysCount) {
             let rainStyle = getRainBackgroundColor(rainNum);
             if (rainNum === 0) rainStyle += '; color: #94a3b8;';
 
-            const isPast = (dayOffset < 0) || (dayOffset === 0 && slot.endH < currentHour);
+            const isPast = (dayOffset < 0) || (dayOffset === 0 && (slotHour + 2) < currentHour);
 
             let topBorder = slotIndex === 0 ? '1px solid #707070' : 'none';
             let bottomBorder = slotIndex === timeSlots.length - 1 ? '1px solid #707070' : 'none';
@@ -246,7 +230,7 @@ function generateTableHtml(meteoData, daysCount) {
                 forecastHtml += `<td class="date-cell" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070; border-left: 1px solid #707070; border-right: 1px solid #dcdcdc;" rowspan="${timeSlots.length}">${dateStr}</td>`;
             }
             
-            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; background-color: #F3F3F3;">${slot.label}</td>`;
+            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; background-color: #F3F3F3;">${slotHour}</td>`;
             forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${tempStyle}">${valTemp}</td>`;
             forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${windStyle}">${valWind}</td>`;
             forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${popStyle}">${valPop}</td>`;
@@ -257,16 +241,16 @@ function generateTableHtml(meteoData, daysCount) {
     return forecastHtml;
 }
 
-function generateDailyTableHtml(meteoData) {
-    if (!meteoData || !meteoData.daily) return '<tr><td colspan="6">データがありません</td></tr>';
+function generateDailyTableHtml(dailyData) {
+    if (!dailyData || !dailyData.time) return '<tr><td colspan="6">データがありません</td></tr>';
 
-    const times = meteoData.daily.time;
-    const maxTemps = meteoData.daily.temperature_2m_max;
-    const minTemps = meteoData.daily.temperature_2m_min;
-    const winds = meteoData.daily.windspeed_10m_max;
-    const pops = meteoData.daily.precipitation_probability_max;
-    const rains = meteoData.daily.precipitation_sum;
-    const weathercodes = meteoData.daily.weather_code || meteoData.daily.weathercode || [];
+    const times = dailyData.time;
+    const maxTemps = dailyData.temperature_2m_max;
+    const minTemps = dailyData.temperature_2m_min;
+    const winds = dailyData.wind_speed_10m_max;
+    const pops = dailyData.precipitation_probability_max;
+    const rains = dailyData.precipitation_sum;
+    const weathercodes = dailyData.weather_code || dailyData.weathercode || [];
 
     const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
     let html = '';
@@ -334,10 +318,9 @@ async function fetchDashboardData() {
         const transitContainer = document.getElementById('transit-container');
         if (data.transit_info) {
             let statusText = data.transit_info;
-            statusText = statusText.replace(/（([^）]+)掲載）/g, '<br><span style="font-size: 0.85rem; color: #64748b;">$1掲載</span>');
             transitContainer.innerHTML = `<div>${statusText}</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
         } else {
-            transitContainer.innerHTML = `<div>平常運転（または詳細情報を取得できませんでした）</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
+            transitContainer.innerHTML = `<div>平常運転</div> <div style="font-size: 0.8rem; color: #1d4ed8; text-align: right; margin-top: 4px;">詳細 ↗</div>`;
         }
 
         if (data.jma_warning) {
@@ -460,17 +443,18 @@ async function fetchDashboardData() {
         }
 
         const overviewContainer = document.getElementById('overview-container');
-        if (data.jma_overview && typeof data.jma_overview.text === 'string') {
-            overviewContainer.innerHTML = data.jma_overview.text.replace(/\n/g, '<br>');
+        overviewContainer.innerHTML = '加古川市加古川町稲屋の気象データ（Open-Meteo & 気象庁防災API連携）';
+
+        if (data.hourly_3h) {
+            document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(data.hourly_3h, 3);
         } else {
-            overviewContainer.innerText = '天気概況データが見つかりませんでした。';
+            throw new Error("hourly_3h data missing in data.json");
         }
 
-        if (data.open_meteo) {
-            document.querySelector('#forecast-table-1 tbody').innerHTML = generateTableHtml(data.open_meteo, 3);
-            document.querySelector('#forecast-table-10days tbody').innerHTML = generateDailyTableHtml(data.open_meteo);
+        if (data.daily_forecast) {
+            document.querySelector('#forecast-table-10days tbody').innerHTML = generateDailyTableHtml(data.daily_forecast);
         } else {
-            throw new Error("Open-Meteo data missing in data.json");
+            throw new Error("daily_forecast data missing in data.json");
         }
 
     } catch (err) {
@@ -481,11 +465,6 @@ async function fetchDashboardData() {
     }
 }
 
-// 初回実行
 fetchDashboardData();
-
-// 5分（300,000ミリ秒）ごとにバックグラウンドで最新データを再取得
 setInterval(fetchDashboardData, 300000);
-
-// バー全体の透明クリックエリアからのイベントを受け取ってページを切り替える
 document.querySelector('.pagination-container').addEventListener('click', switchPage);
