@@ -1,48 +1,102 @@
-import json
 from datetime import datetime
-from zoneinfo import ZoneInfo
+import json
 import requests
-from bs4 import BeautifulSoup
+
+
+def get_weather_severity(code):
+  # WMO天気コードを荒天度（0〜4）に分類
+  if code in [95, 96, 99]:
+    return 4  # 雷雨・嵐
+  elif code in [65, 66, 67, 75, 81, 82, 85, 86]:
+    return 3  # 強い雨・雪
+  elif code in [61, 63, 71, 73, 77, 80]:
+    return 2  # 通常の雨・雪
+  elif code in [45, 48, 51, 53, 55, 56, 57]:
+    return 1  # 霧・小雨
+  else:
+    return 0  # 晴れ・曇り
 
 
 def fetch_weather_data():
   data = {}
-  jst_now = datetime.now(ZoneInfo("Asia/Tokyo"))
+  jst_now = datetime.now()
   data["updated_at"] = jst_now.strftime("%m.%d %H:%M:%S")
 
-  # 1. Open-Meteo 天気予報データ（10日間のdailyおよびhourlyを取得）
-  try:
-    lat, lon = 34.7658, 134.8437
-    meteo_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=temperature_2m,precipitation,wind_speed_10m,precipitation_probability&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,precipitation_sum&wind_speed_unit=ms&timezone=Asia%2FTokyo&forecast_days=10"
-    res = requests.get(meteo_url, timeout=10)
-    if res.status_code == 200:
-      data["open_meteo"] = res.json()
-  except Exception as e:
-    print(f"Open-Meteo fetch error: {e}")
+  # 加古川市加古川町稲屋の座標
+  lat, lon = 34.75803345356596, 134.8150154875823
 
-  # 2. 気象庁 天気予報（兵庫県南部）
+  # 1 & 2. Open-Meteo 1時間ごとデータ（3日先まで）＆ 3時間ごとへの集約
   try:
-    jma_forecast_url = (
-        "https://www.jma.go.jp/bosai/forecast/data/forecast/280000.json"
+    hourly_url = (
+        f"https://api.open-meteo.com/v1/jma?latitude={lat}&longitude={lon}"
+        "&hourly=temperature_2m,precipitation,wind_speed_10m,pressure_msl,weather_code,precipitation_probability"
+        "&wind_speed_unit=ms&timezone=Asia%2FTokyo&forecast_days=3"
     )
-    res = requests.get(jma_forecast_url, timeout=10)
+    res = requests.get(hourly_url, timeout=10)
     if res.status_code == 200:
-      data["jma_forecast"] = res.json()
-  except Exception as e:
-    print(f"JMA forecast fetch error: {e}")
+      raw_hourly = res.json().get("hourly", {})
+      data["hourly_raw"] = raw_hourly
 
-  # 3. 気象庁 天気概況（兵庫県）
+      aggregated_3h = []
+      times = raw_hourly.get("time", [])
+      temps = raw_hourly.get("temperature_2m", [])
+      precips = raw_hourly.get("precipitation", [])
+      winds = raw_hourly.get("wind_speed_10m", [])
+      pressures = raw_hourly.get("pressure_msl", [])
+      weather_codes = raw_hourly.get("weather_code", [])
+      pop_list = raw_hourly.get("precipitation_probability", [])
+
+      for i in range(0, len(times), 3):
+        chunk_times = times[i : i + 3]
+        if not chunk_times:
+          break
+
+        chunk_temps = temps[i : i + 3]
+        chunk_precips = precips[i : i + 3]
+        chunk_winds = winds[i : i + 3]
+        chunk_pressures = pressures[i : i + 3]
+        chunk_pops = pop_list[i : i + 3] if pop_list else [0] * len(chunk_times)
+        chunk_weather = weather_codes[i : i + 3]
+
+        avg_temp = sum(chunk_temps) / len(chunk_temps) if chunk_temps else 0
+        max_precip = max(chunk_precips) if chunk_precips else 0
+        max_wind = max(chunk_winds) if chunk_winds else 0
+        max_pop = max(chunk_pops) if chunk_pops else 0
+        min_pressure = min(chunk_pressures) if chunk_pressures else 0
+        rep_weather = (
+            max(chunk_weather, key=get_weather_severity)
+            if chunk_weather
+            else 0
+        )
+
+        aggregated_3h.append({
+            "time": chunk_times[0],
+            "temperature": round(avg_temp, 1),
+            "precipitation": round(max_precip, 1),
+            "wind_speed": round(max_wind, 1),
+            "pressure": round(min_pressure, 1),
+            "precipitation_probability": max_pop,
+            "weather_code": rep_weather,
+        })
+
+      data["hourly_3h"] = aggregated_3h
+  except Exception as e:
+    print(f"Open-Meteo hourly fetch error: {e}")
+
+  # 3. Open-Meteo 1日ごとデータ（10日先まで）
   try:
-    jma_overview_url = (
-        "https://www.jma.go.jp/bosai/forecast/data/overview_forecast/280000.json"
+    daily_url = (
+        f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+        "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,pressure_msl_mean,wind_speed_10m_max,sunrise,sunset"
+        "&wind_speed_unit=ms&timezone=Asia%2FTokyo&forecast_days=10"
     )
-    res = requests.get(jma_overview_url, timeout=10)
+    res = requests.get(daily_url, timeout=10)
     if res.status_code == 200:
-      data["jma_overview"] = res.json()
+      data["daily_forecast"] = res.json().get("daily", {})
   except Exception as e:
-    print(f"JMA overview fetch error: {e}")
+    print(f"Open-Meteo daily fetch error: {e}")
 
-  # 4. 気象庁 警報・注意報（兵庫県）
+  # 4. 気象庁 警報・注意報（加古川市エリア判定用）
   try:
     jma_warning_url = "https://www.jma.go.jp/bosai/warning/data/r8/280000.json"
     res = requests.get(jma_warning_url, timeout=10)
@@ -51,33 +105,15 @@ def fetch_weather_data():
   except Exception as e:
     print(f"JMA warning fetch error: {e}")
 
-  # 5. Yahoo!路線情報 (JR神戸線運行情報)
-  try:
-    transit_url = "https://transit.yahoo.co.jp/diainfo/273/0"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
-    res = requests.get(transit_url, headers=headers, timeout=10)
-    if res.status_code == 200:
-      soup = BeautifulSoup(res.text, "html.parser")
-      trouble_element = soup.select_one(
-          "#mdServiceStatus .trouble, dd.trouble, #mdServiceStatus"
-      )
-      if trouble_element:
-        data["transit_info"] = trouble_element.get_text(strip=True)
-      else:
-        data["transit_info"] = "平常運転（または詳細情報を取得できませんでした）"
-    else:
-      data["transit_info"] = "運行情報の取得に失敗しました"
-  except Exception as e:
-    print(f"Transit info fetch error: {e}")
-    data["transit_info"] = "運行情報の取得に失敗しました"
+  # 5. 運行情報（テストデータに置き換え）
+  # 実際のリクエストを行わず、プレビュー用のダミーテキストを格納します
+  data["transit_info"] = "【テストデータ】JR神戸線：平常運転"
 
-  # JSONファイルとして出力（indentを削除して軽量化）
+  # JSONファイルとして出力
   with open("data.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False)
 
-  print("Successfully generated data.json")
+  print("Successfully generated data.json with safe test transit data.")
 
 
 if __name__ == "__main__":
