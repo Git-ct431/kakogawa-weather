@@ -77,6 +77,7 @@ def fetch_weather_data():
             "pressure": round(min_pressure, 1),
             "precipitation_probability": max_pop,
             "weather_code": rep_weather,
+            "severity": get_weather_severity(rep_weather),
         })
 
       data["hourly_3h"] = aggregated_3h
@@ -106,14 +107,13 @@ def fetch_weather_data():
     print(f"JMA warning fetch error: {e}")
 
   # 5. 運行情報（テストデータに置き換え）
-  # 実際のリクエストを行わず、プレビュー用のダミーテキストを格納します
   data["transit_info"] = "【テストデータ】JR神戸線：平常運転"
 
   # JSONファイルとして出力
   with open("data.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False)
 
-  print("Successfully generated data.json with safe test transit data.")
+  print("Successfully generated data.json with severity info.")
 
 
 if __name__ == "__main__":

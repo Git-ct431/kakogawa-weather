@@ -196,8 +196,8 @@ function generateTableHtml(hourly3hData, daysCount) {
 
             let avgTemp = slotItem ? slotItem.temperature : null;
             let maxWind = slotItem ? slotItem.wind_speed : null;
-            let maxPop = slotItem ? slotItem.precipitation_probability : null;
             let maxRain = slotItem ? slotItem.precipitation : null;
+            let severityNum = slotItem && slotItem.severity != null ? slotItem.severity : 0;
 
             let tempNum = (avgTemp != null && !isNaN(avgTemp)) ? Math.round(avgTemp) : null;
             let valTemp = formatTwoDigits(avgTemp);
@@ -207,16 +207,18 @@ function generateTableHtml(hourly3hData, daysCount) {
             let maxWindNum = (maxWind != null && !isNaN(maxWind)) ? maxWind : null;
             let valWind = formatInteger(maxWind);
             let windStyle = getWindBackgroundColor(maxWindNum);
-            
-            let popNum = formatPopValue(maxPop);
-            let valPop = (popNum !== '--') ? String(popNum) : '--';
-            let popStyle = getPopBackgroundColor(popNum);
-            if (popNum === 0) popStyle += '; color: #94a3b8;';
 
             let rainNum = (maxRain != null && !isNaN(maxRain)) ? Math.round(maxRain) : null;
             let valRain = formatInteger(maxRain);
             let rainStyle = getRainBackgroundColor(rainNum);
             if (rainNum === 0) rainStyle += '; color: #94a3b8;';
+
+            let severityStyle = "background-color: #F3F3F3; text-align: center;";
+            if (severityNum >= 3) {
+                severityStyle = "background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center;";
+            } else if (severityNum >= 1) {
+                severityStyle = "background-color: #fef9c3; color: #854d0e; text-align: center;";
+            }
 
             const isPast = (dayOffset < 0) || (dayOffset === 0 && (slotHour + 2) < currentHour);
 
@@ -230,10 +232,10 @@ function generateTableHtml(hourly3hData, daysCount) {
                 forecastHtml += `<td class="date-cell" style="border-top: 1px solid #707070; border-bottom: 1px solid #707070; border-left: 1px solid #707070; border-right: 1px solid #dcdcdc;" rowspan="${timeSlots.length}">${dateStr}</td>`;
             }
             
-            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; background-color: #F3F3F3;">${slotHour}</td>`;
+            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; background-color: #F3F3F3; text-align: center;">${slotHour}</td>`;
             forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${tempStyle}">${valTemp}</td>`;
             forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${windStyle}">${valWind}</td>`;
-            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; text-align: right; ${popStyle}">${valPop}</td>`;
+            forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #dcdcdc; ${severityStyle}">${severityNum}</td>`;
             forecastHtml += `<td style="border-top: ${topBorder}; border-bottom: ${bottomBorder}; border-left: none; border-right: 1px solid #707070; text-align: right; ${rainStyle}">${valRain}</td>`;
             forecastHtml += `</tr>`;
         });
