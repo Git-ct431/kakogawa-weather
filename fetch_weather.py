@@ -228,6 +228,8 @@ def fetch_jma():
         )
     }
     res = requests.get(url, headers=headers, timeout=10)
+    print(f"JMA HTTP Status: {res.status_code}")
+
     if res.status_code == 200:
       data = res.json()
       target_codes = {"2821000", "280010", "280020"}
@@ -246,23 +248,23 @@ def fetch_jma():
             kinds = parse_kinds(item.get("kinds", []))
             matched_items.append({"areaCode": area_code, "kinds": kinds})
 
-        if matched_items or report.get("headlineText"):
-          extracted_reports.append({
-              "control_datetime": report.get("controlDatetime"),
-              "report_datetime": report.get("reportDatetime"),
-              "info_type": report.get("infoType"),
-              "publishing_office": report.get("publishingOffice"),
-              "headline_text": report.get("headlineText"),
-              "data_type_code": data_type_code,
-              "target_area_items": matched_items,
-          })
+        extracted_reports.append({
+            "control_datetime": report.get("controlDatetime"),
+            "report_datetime": report.get("reportDatetime"),
+            "info_type": report.get("infoType"),
+            "publishing_office": report.get("publishingOffice"),
+            "headline_text": report.get("headlineText"),
+            "data_type_code": data_type_code,
+            "target_area_items": matched_items,
+        })
 
       return {"jma_warning": extracted_reports}
     else:
       print(f"JMA warning HTTP error: {res.status_code}")
   except Exception as e:
     print(f"JMA warning fetch error: {e}")
-  return {}
+
+  return {"jma_warning": []}
 
 
 def fetch_weather_data():
