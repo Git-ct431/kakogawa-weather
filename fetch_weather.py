@@ -1,7 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 import json
-import subprocess
 import time
 import requests
 
@@ -184,21 +183,17 @@ def fetch_jma():
         class10_items = warning_sec.get("class10Items", [])
         class20_items = warning_sec.get("class20Items", [])
 
-        # 1. 兵庫県南部・北部の広域情報を抽出 (class10Items)
         regional_items = [
             item for item in class10_items
             if str(item.get("areaCode", "")) in [target_south_code, target_north_code]
         ]
 
-        # 2. 加古川市の詳細情報を抽出 (class20Items)
         kakogawa_items = [
             item for item in class20_items
             if str(item.get("areaCode", "")) == target_kakogawa_code
         ]
 
-        # 3. 兵庫県全域の見出し(headlineText)または対象エリアの情報が存在する場合に保持
         if report.get("headlineText") or regional_items or kakogawa_items:
-          # 各項目のプロパティから criteriaPeriod（具体的な対象時間）などを安全に取得できるように構造を保持
           filtered_report = {
               "control_datetime": report.get("controlDatetime"),
               "report_datetime": report.get("reportDatetime"),
@@ -233,10 +228,8 @@ def fetch_weather_data():
 
   elapsed_time = time.time() - start_time
 
-  # 実行環境のタイムゾーンに依存せず確実に日本時間（JST）で記録
   data["json_updatetime"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
 
-  # 変数にまとめたデータを data.json へ書き込み
   with open("data.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 
@@ -244,37 +237,6 @@ def fetch_weather_data():
       f"Successfully generated data.json in {elapsed_time:.2f} seconds with"
       " parallel execution."
   )
-
-  # Git操作＆コミットメッセージに反映
-  try:
-    commit_message = f"Update weather data, create time {elapsed_time:.2f}s"
-    subprocess.run(
-        ["git", "config", "--local", "user.name", "github-actions[bot]"],
-        check=True,
-    )
-    subprocess.run(
-        [
-            "git",
-            "config",
-            "--local",
-            "user.email",
-            "github-actions[bot]@users.noreply.github.com",
-        ],
-        check=True,
-    )
-    subprocess.run(["git", "add", "data.json"], check=True)
-
-    diff_check = subprocess.run(
-        ["git", "diff", "--cached", "--quiet"], capture_output=True
-    )
-    if diff_check.returncode != 0:
-      subprocess.run(["git", "commit", "-m", commit_message], check=True)
-      subprocess.run(["git", "push"], check=True)
-      print(f"Successfully committed with message: '{commit_message}'")
-    else:
-      print("No changes to commit.")
-  except Exception as e:
-    print(f"Git commit/push error: {e}")
 
 
 if __name__ == "__main__":
