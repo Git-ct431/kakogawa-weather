@@ -236,7 +236,8 @@ def fetch_jma():
         def extract_all_items(obj):
           items = []
           if isinstance(obj, dict):
-            if "areaCode" in obj:
+            # areaCode または code のどちらが含まれていても抽出対象とする
+            if "areaCode" in obj or "code" in obj:
               items.append(obj)
             for k, v in obj.items():
               items.extend(extract_all_items(v))
@@ -250,7 +251,8 @@ def fetch_jma():
         seen_codes = set()
         filtered_items = []
         for item in all_items:
-          code = str(item.get("areaCode", ""))
+          # areaCode または code のいずれかからコード文字列を取得する
+          code = str(item.get("areaCode") or item.get("code", ""))
           if code in [target_kakogawa_code, target_south_code, target_north_code]:
             unique_key = (code, str(item.get("kinds", "")))
             if unique_key not in seen_codes:
