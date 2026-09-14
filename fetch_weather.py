@@ -233,33 +233,40 @@ def fetch_jma():
       reports = data if isinstance(data, list) else [data]
 
       for report in reports:
-        warning_sec = report.get("warning", {})
-        class10_items = warning_sec.get("class10Items", [])
-        class20_items = warning_sec.get("class20Items", [])
+        def extract_all_items(obj):
+          items = []
+          if isinstance(obj, dict):
+            if "areaCode" in obj:
+              items.append(obj)
+            for k, v in obj.items():
+              items.extend(extract_all_items(v))
+          elif isinstance(obj, list):
+            for item in obj:
+              items.extend(extract_all_items(item))
+          return items
 
-        # kinds 内部のコードを解析して alert_level と alert_type を付与するヘルパー関数
-        def process_items(items):
-          processed = []
-          for item in items:
-            item_copy = item.copy()
-            if "kinds" in item_copy:
-              item_copy["kinds"] = parse_kinds(item_copy["kinds"])
-            processed.append(item_copy)
-          return processed
+        all_items = extract_all_items(report)
 
-        regional_items = process_items([
-            item for item in class10_items
-            if str(item.get("areaCode", "")) in [target_south_code, target_north_code]
-        ])
+        seen_codes = set()
+        filtered_items = []
+        for item in all_items:
+          code = str(item.get("areaCode", ""))
+          if code in [target_kakogawa_code, target_south_code, target_north_code]:
+            unique_key = (code, str(item.get("kinds", "")))
+            if unique_key not in seen_codes:
+              seen_codes.add(unique_key)
+              filtered_items.append(item)
 
-        kakogawa_items = process_items([
-            item for item in class20_items
-            if str(item.get("areaCode", "")) == target_kakogawa_code
-        ])
+        processed_items = []
+        for item in filtered_items:
+          item_copy = item.copy()
+          if "kinds" in item_copy:
+            item_copy["kinds"] = parse_kinds(item_copy["kinds"])
+          processed_items.append(item_copy)
 
         offices = report.get("offices", [])
 
-        if report.get("headlineText") or regional_items or kakogawa_items or offices:
+        if report.get("headlineText") or processed_items or offices:
           filtered_report = {
               "control_datetime": report.get("controlDatetime"),
               "report_datetime": report.get("reportDatetime"),
@@ -268,8 +275,7 @@ def fetch_jma():
               "headline_text": report.get("headlineText"),
               "data_type_code": report.get("dataTypeCode"),
               "offices": offices,
-              "hyogo_regional_items": regional_items,
-              "kakogawa_items": kakogawa_items,
+              "target_area_items": processed_items,
           }
           extracted_reports.append(filtered_report)
 
