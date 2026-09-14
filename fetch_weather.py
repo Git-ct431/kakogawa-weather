@@ -23,60 +23,6 @@ def get_weather_risk_level(code):
     return 0
 
 
-def translate_warning_code(code):
-  """気象庁の2桁防災情報コードを解析し、簡潔なレベルと種別を返す"""
-  if not code:
-    return {"alert_level": 0, "alert_type": "なし"}
-
-  code_str = str(code).zfill(2)
-  tens = code_str[0]
-  ones = code_str[1]
-
-  # 独自の体系を持つ個別コード
-  special_mapping = {
-      "10": {"level": 3, "alert_type": "大雨"},
-      "14": {"level": 2, "alert_type": "雷・竜巻"},
-      "15": {"level": 3, "alert_type": "風"},
-      "16": {"level": 3, "alert_type": "波"},
-      "48": {"level": 0, "alert_type": "解除"},
-  }
-  if code_str in special_mapping:
-    return special_mapping[code_str]
-
-  # 十の位による警戒レベルの数値化
-  level_map = {"4": 4, "3": 5, "2": 2, "0": 3}
-  alert_level = level_map.get(tens, 0)
-
-  # 一の位による災害種別の簡易表記
-  phenomenon_map = {"3": "大雨", "9": "土砂"}
-  phenomenon = phenomenon_map.get(ones, "その他")
-
-  return {
-      "alert_level": alert_level,
-      "alert_type": f"LV{alert_level} {phenomenon}",
-  }
-
-
-def parse_kinds(kinds_list):
-  """kinds リストを走査して alert_level と alert_type を追加する"""
-  parsed_kinds = []
-  for kind in kinds_list:
-    code_val = kind.get("code")
-    decoded = translate_warning_code(code_val)
-
-    kind_data = {
-        "code": code_val,
-        "alert_level": decoded["alert_level"],
-        "alert_type": decoded["alert_type"],
-        "status": kind.get("status"),
-        "properties": kind.get("properties"),
-        "significancyPart": kind.get("significancyPart"),
-        "criteriaPeriod": kind.get("criteriaPeriod"),
-    }
-    parsed_kinds.append(kind_data)
-  return parsed_kinds
-
-
 def fetch_hourly(lat, lon):
   try:
     url = (
@@ -231,46 +177,8 @@ def fetch_jma():
     print(f"JMA HTTP Status: {res.status_code}")
 
     if res.status_code == 200:
-      data = res.json()
-      class10_target_codes = {"280010", "280020"}  # 南部、北部
-      class20_target_codes = {"2821000"}           # 加古川市
-      extracted_reports = []
-
-      reports = data if isinstance(data, list) else [data]
-      for report in reports:
-        data_type_code = report.get("dataTypeCode")
-        warning_data = report.get("warning", {})
-        
-        class10_items = warning_data.get("class10Items", [])
-        class20_items = warning_data.get("class20Items", [])
-
-        matched_items = []
-
-        # 北部・南部（class10Items）の抽出
-        for item in class10_items:
-          area_code = str(item.get("areaCode", ""))
-          if area_code in class10_target_codes:
-            kinds = parse_kinds(item.get("kinds", []))
-            matched_items.append({"areaCode": area_code, "level": "class10", "kinds": kinds})
-
-        # 加古川市（class20Items）の抽出
-        for item in class20_items:
-          area_code = str(item.get("areaCode", ""))
-          if area_code in class20_target_codes:
-            kinds = parse_kinds(item.get("kinds", []))
-            matched_items.append({"areaCode": area_code, "level": "class20", "kinds": kinds})
-
-        extracted_reports.append({
-            "control_datetime": report.get("controlDatetime"),
-            "report_datetime": report.get("reportDatetime"),
-            "info_type": report.get("infoType"),
-            "publishing_office": report.get("publishingOffice"),
-            "headline_text": report.get("headlineText"),
-            "data_type_code": data_type_code,
-            "target_area_items": matched_items,
-        })
-
-      return {"jma_warning": extracted_reports}
+      # 【デバッグ用】パースせず、生データをそのまま返す
+      return {"jma_warning": res.json()}
     else:
       print(f"JMA warning HTTP error: {res.status_code}")
   except Exception as e:
