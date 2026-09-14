@@ -225,35 +225,36 @@ def fetch_jma():
     if res.status_code == 200:
       data = res.json()
 
-      target_kakogawa_code = "2821000"  # 加古川市
-      target_south_code = "280010"      # 県南部（一次細分区）
-      target_north_code = "280020"      # 県北部（一次細分区）
+      target_codes = {"2821000", "280010", "280020"}  # 検索したいコードのセット
 
       extracted_reports = []
       reports = data if isinstance(data, list) else [data]
 
       for report in reports:
-        def extract_all_items(obj):
-          items = []
+        def extract_matching_items(obj):
+          matched_items = []
           if isinstance(obj, dict):
-            # areaCode または code のどちらが含まれていても抽出対象とする
-            if "areaCode" in obj or "code" in obj:
-              items.append(obj)
+            # 辞書の値の中にターゲットコードのいずれかが含まれているか直接判定
+            is_target_node = any(str(v) in target_codes for v in obj.values())
+            if is_target_node:
+              matched_items.append(obj)
+            
+            # 再帰的に子要素を走査
             for k, v in obj.items():
-              items.extend(extract_all_items(v))
+              matched_items.extend(extract_matching_items(v))
           elif isinstance(obj, list):
             for item in obj:
-              items.extend(extract_all_items(item))
-          return items
+              matched_items.extend(extract_matching_items(item))
+          return matched_items
 
-        all_items = extract_all_items(report)
+        all_items = extract_matching_items(report)
 
         seen_codes = set()
         filtered_items = []
         for item in all_items:
-          # areaCode または code のいずれかからコード文字列を取得する
+          # ヒットしたアイテムから確実にコードを特定して二重チェック
           code = str(item.get("areaCode") or item.get("code", ""))
-          if code in [target_kakogawa_code, target_south_code, target_north_code]:
+          if code in target_codes:
             unique_key = (code, str(item.get("kinds", "")))
             if unique_key not in seen_codes:
               seen_codes.add(unique_key)
