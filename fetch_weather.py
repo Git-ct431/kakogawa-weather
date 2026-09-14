@@ -167,24 +167,88 @@ def fetch_daily(lat, lon):
 def fetch_jma():
   try:
     url = "https://www.jma.go.jp/bosai/warning/data/r8/280000.json"
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,"
-            " like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
-    }
-    res = requests.get(url, headers=headers, timeout=10)
+    res = requests.get(url, timeout=10)
     print(f"JMA HTTP Status: {res.status_code}")
 
     if res.status_code == 200:
-      # 【デバッグ用】パースせず、生データをそのまま返す
-      return {"jma_warning": res.json()}
+      raw_data = res.json()
+      
+      # 1. デバッグ用：生データをそのまま保持
+      jma_warning_raw = raw_data
+
+      # 2. 4つの地域別の格納用リストを初期化
+      hyogo_warnings = []
+      nanbu_warnings = []
+      hokubu_warnings = []
+      kakogawa_warnings = []
+
+      # 3. 再帰的にJSONを探索し、地域名に一致するものをそれぞれのリストに振り分ける
+      def extract_areas(obj):
+        if isinstance(obj, dict):
+          area_name = obj.get("name", "")
+          warnings = obj.get("warnings", [])
+          
+          if area_name == "兵庫県":
+            for w in warnings:
+              hyogo_warnings.append({
+                  "area_name": area_name,
+                  "code": w.get("code"),
+                  "status": w.get("status"),
+                  "title": w.get("title")
+              })
+          if "南部" in area_name:
+            for w in warnings:
+              nanbu_warnings.append({
+                  "area_name": area_name,
+                  "code": w.get("code"),
+                  "status": w.get("status"),
+                  "title": w.get("title")
+              })
+          if "北部" in area_name:
+            for w in warnings:
+              hokubu_warnings.append({
+                  "area_name": area_name,
+                  "code": w.get("code"),
+                  "status": w.get("status"),
+                  "title": w.get("title")
+              })
+          if "加古川" in area_name:
+            for w in warnings:
+              kakogawa_warnings.append({
+                  "area_name": area_name,
+                  "code": w.get("code"),
+                  "status": w.get("status"),
+                  "title": w.get("title")
+              })
+
+          for k, v in obj.items():
+            extract_areas(v)
+        elif isinstance(obj, list):
+          for item in obj:
+            extract_areas(item)
+
+      extract_areas(raw_data)
+
+      # 生データと、4つの地域別データをまとめて返す
+      return {
+          "jma_warning": jma_warning_raw,
+          "jma_warning_hyogo": hyogo_warnings,
+          "jma_warning_nanbu": nanbu_warnings,
+          "jma_warning_hokubu": hokubu_warnings,
+          "jma_warning_kakogawa": kakogawa_warnings
+      }
     else:
       print(f"JMA warning HTTP error: {res.status_code}")
   except Exception as e:
     print(f"JMA warning fetch error: {e}")
 
-  return {"jma_warning": []}
+  return {
+      "jma_warning": [],
+      "jma_warning_hyogo": [],
+      "jma_warning_nanbu": [],
+      "jma_warning_hokubu": [],
+      "jma_warning_kakogawa": []
+  }
 
 
 def fetch_weather_data():
