@@ -1,13 +1,3 @@
-"""
-【変数名の命名規則】
-- すべての変数名および辞書キーはハイフンではなくアンダースコア（_）で結合する。
-- 時間の粒度を表すサフィックスを明確に付与する：
-  - 1時間ごとのデータ・項目: _1h
-  - 3時間ごとのデータ・項目: _3h
-  - 1日ごとのデータ・項目: _1day
-- グループ名と粒度を統一し、エディタの補完やデータアクセスの視認性を最適化する。
-"""
-
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 import json
@@ -181,38 +171,47 @@ def fetch_jma():
     res = requests.get(url, timeout=10)
     if res.status_code == 200:
       data = res.json()
-      target_code = "2821000"  # 加古川市のエリアコード
 
-      def filter_areas(node):
-        """指定ノードから加古川市のエリア情報のみを抽出・フィルタリングする"""
-        if isinstance(node, dict) and "areaTypes" in node:
-          filtered_area_types = []
-          for area_type in node["areaTypes"]:
-            if "areas" in area_type:
-              filtered_areas = [
-                  area for area in area_type["areas"]
-                  if str(area.get("area", {}).get("code", "")) == target_code
-              ]
-              if filtered_areas:
-                new_area_type = area_type.copy()
-                new_area_type["areas"] = filtered_areas
-                filtered_area_types.append(new_area_type)
-          node["areaTypes"] = filtered_area_types
-        return node
+      target_kakogawa_code = "2821000"  # 加古川市
+      target_south_code = "280010"      # 県南部（一次細分区）
+      target_north_code = "280020"      # 県北部（一次細分区）
 
-      # JSON構造がリスト（複数電文配列）または辞書（単一オブジェクト）のどちらであっても柔軟に走査して抽出
-      if isinstance(data, list):
-        filtered_reports = []
-        for report in data:
-          filtered_report = filter_areas(report)
-          # 加古川市のデータが残った（areaTypesに有効なデータが存在する）電文のみ保持
-          if isinstance(filtered_report, dict) and filtered_report.get("areaTypes"):
-            filtered_reports.append(filtered_report)
-        data = filtered_reports
-      elif isinstance(data, dict):
-        data = filter_areas(data)
+      extracted_reports = []
+      reports = data if isinstance(data, list) else [data]
 
-      return {"jma_warning": data}
+      for report in reports:
+        warning_sec = report.get("warning", {})
+        class10_items = warning_sec.get("class10Items", [])
+        class20_items = warning_sec.get("class20Items", [])
+
+        # 1. 兵庫県南部・北部の広域情報を抽出 (class10Items)
+        regional_items = [
+            item for item in class10_items
+            if str(item.get("areaCode", "")) in [target_south_code, target_north_code]
+        ]
+
+        # 2. 加古川市の詳細情報を抽出 (class20Items)
+        kakogawa_items = [
+            item for item in class20_items
+            if str(item.get("areaCode", "")) == target_kakogawa_code
+        ]
+
+        # 3. 兵庫県全域の見出し(headlineText)または対象エリアの情報が存在する場合に保持
+        if report.get("headlineText") or regional_items or kakogawa_items:
+          filtered_report = {
+              "control_datetime": report.get("controlDatetime"),
+              "report_datetime": report.get("reportDatetime"),
+              "publishing_office": report.get("publishingOffice"),
+              "headline_text": report.get("headlineText"),
+              "data_type_code": report.get("dataTypeCode"),
+              "hyogo_regional_items": regional_items,
+              "kakogawa_items": kakogawa_items,
+          }
+          extracted_reports.append(filtered_report)
+
+      return {"jma_warning": extracted_reports}
+    else:
+      print(f"JMA warning HTTP error: {res.status_code}")
   except Exception as e:
     print(f"JMA warning fetch error: {e}")
   return {}
