@@ -23,6 +23,60 @@ def get_weather_risk_level(code):
     return 0
 
 
+def translate_warning_code(code):
+  """気象庁の2桁防災情報コードを解析し、簡潔なレベルと種別を返す"""
+  if not code:
+    return {"alert_level": 0, "alert_type": "なし"}
+
+  code_str = str(code).zfill(2)
+  tens = code_str[0]
+  ones = code_str[1]
+
+  # 独自の体系を持つ個別コード
+  special_mapping = {
+      "10": {"level": 3, "alert_type": "大雨"},
+      "14": {"level": 2, "alert_type": "雷・竜巻"},
+      "15": {"level": 3, "alert_type": "風"},
+      "16": {"level": 3, "alert_type": "波"},
+      "48": {"level": 0, "alert_type": "解除"},
+  }
+  if code_str in special_mapping:
+    return special_mapping[code_str]
+
+  # 十の位による警戒レベルの数値化
+  level_map = {"4": 4, "3": 5, "2": 2, "0": 3}
+  alert_level = level_map.get(tens, 0)
+
+  # 一の位による災害種別の簡易表記
+  phenomenon_map = {"3": "大雨", "9": "土砂"}
+  phenomenon = phenomenon_map.get(ones, "その他")
+
+  return {
+      "alert_level": alert_level,
+      "alert_type": f"LV{alert_level} {phenomenon}",
+  }
+
+
+def parse_kinds(kinds_list):
+  """kinds リストを走査して alert_level と alert_type を追加する"""
+  parsed_kinds = []
+  for kind in kinds_list:
+    code_val = kind.get("code")
+    decoded = translate_warning_code(code_val)
+
+    kind_data = {
+        "code": code_val,
+        "alert_level": decoded["alert_level"],
+        "alert_type": decoded["alert_type"],
+        "status": kind.get("status"),
+        "properties": kind.get("properties"),
+        "significancyPart": kind.get("significancyPart"),
+        "criteriaPeriod": kind.get("criteriaPeriod"),
+    }
+    parsed_kinds.append(kind_data)
+  return parsed_kinds
+
+
 def fetch_hourly(lat, lon):
   try:
     url = (
@@ -183,23 +237,37 @@ def fetch_jma():
         class10_items = warning_sec.get("class10Items", [])
         class20_items = warning_sec.get("class20Items", [])
 
-        regional_items = [
+        # kinds 内部のコードを解析して alert_level と alert_type を付与するヘルパー関数
+        def process_items(items):
+          processed = []
+          for item in items:
+            item_copy = item.copy()
+            if "kinds" in item_copy:
+              item_copy["kinds"] = parse_kinds(item_copy["kinds"])
+            processed.append(item_copy)
+          return processed
+
+        regional_items = process_items([
             item for item in class10_items
             if str(item.get("areaCode", "")) in [target_south_code, target_north_code]
-        ]
+        ])
 
-        kakogawa_items = [
+        kakogawa_items = process_items([
             item for item in class20_items
             if str(item.get("areaCode", "")) == target_kakogawa_code
-        ]
+        ])
 
-        if report.get("headlineText") or regional_items or kakogawa_items:
+        offices = report.get("offices", [])
+
+        if report.get("headlineText") or regional_items or kakogawa_items or offices:
           filtered_report = {
               "control_datetime": report.get("controlDatetime"),
               "report_datetime": report.get("reportDatetime"),
+              "info_type": report.get("infoType"),
               "publishing_office": report.get("publishingOffice"),
               "headline_text": report.get("headlineText"),
               "data_type_code": report.get("dataTypeCode"),
+              "offices": offices,
               "hyogo_regional_items": regional_items,
               "kakogawa_items": kakogawa_items,
           }
