@@ -19,11 +19,24 @@
                 padding: 20px;
                 margin: 0;
             }
+            header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #333;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
             h1 {
                 font-size: 1.2rem;
                 color: #4ec9b0;
-                border-bottom: 1px solid #333;
-                padding-bottom: 10px;
+                margin: 0;
+                border: none;
+                padding: 0;
+            }
+            .update-info {
+                font-size: 0.85rem;
+                color: #9cdcfe;
             }
             ul {
                 list-style-type: none;
@@ -51,33 +64,116 @@
         `;
         document.head.appendChild(style);
 
-        // アプリケーションの初期化・描画処理
-        async function initDebugViewer() {
+        let lastKnownUpdateTime = null;
+        let isFirstLoad = true;
+        let pollTimer = null;
+        let isFetching = false; // 多重フェッチ防止用ロック
+
+        // アプリケーションの初期化・データフェッチ処理
+        async function fetchAndUpdateViewer() {
+            if (isFetching) return;
+            isFetching = true;
+
             const app = document.getElementById('app');
+            
+            if (isFirstLoad) {
+                const header = document.createElement('header');
+                
+                const title = document.createElement('h1');
+                title.textContent = 'JSON Debug Viewer (data.json)';
+                header.appendChild(title);
 
-            // タイトル要素をJavaScriptで生成
-            const title = document.createElement('h1');
-            title.textContent = 'JSON Debug Viewer (data.json)';
-            app.appendChild(title);
+                const updateInfo = document.createElement('div');
+                updateInfo.id = 'update-info';
+                updateInfo.className = 'update-info';
+                updateInfo.textContent = '更新時刻を確認中...';
+                header.appendChild(updateInfo);
 
-            // コンテンツコンテナ
-            const container = document.createElement('main');
-            container.textContent = '読み込み中...';
-            app.appendChild(container);
+                app.appendChild(header);
+
+                const container = document.createElement('main');
+                container.id = 'content-container';
+                container.textContent = '読み込み中...';
+                app.appendChild(container);
+            }
 
             try {
-                const response = await fetch('data.json');
+                // キャッシュを完全に無効化して最新を取得
+                const response = await fetch(`data.json?_=${Date.now()}`, { cache: 'no-store' });
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const jsonData = await response.json();
-                
-                container.innerHTML = '';
-                container.appendChild(createDebugList(jsonData));
+                const currentUpdateTime = jsonData.json_updatetime || '不明';
+
+                // 画面上の更新日時表示を更新
+                const updateInfoEl = document.getElementById('update-info');
+                if (updateInfoEl) {
+                    updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
+                }
+
+                // 初回読み込み時、またはJSONの更新日時が変わっていた場合にDOMを再描画
+                if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
+                    if (!isFirstLoad && lastKnownUpdateTime !== null) {
+                        console.log(`新着データを検知しました。更新時刻: ${currentUpdateTime}`);
+                    }
+                    lastKnownUpdateTime = currentUpdateTime;
+
+                    const container = document.getElementById('content-container');
+                    container.innerHTML = '';
+                    container.appendChild(createDebugList(jsonData));
+                    isFirstLoad = false;
+                }
             } catch (error) {
-                container.innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}<br>※ローカル環境(file://)の場合はCORS制限がかかるため、簡易サーバー等でお試しください。</span>`;
+                if (isFirstLoad) {
+                    const container = document.getElementById('content-container');
+                    container.innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}<br>※ローカル環境(file://)の場合はCORS制限がかかるため、簡易サーバー等でお試しください。</span>`;
+                } else {
+                    console.warn(`バックグラウンドでのデータ確認に失敗しました: ${error.message}`);
+                }
+            } finally {
+                isFetching = false;
+                // タブがアクティブな場合のみ次回のタイマーをスケジュール
+                if (!document.hidden) {
+                    scheduleNextCheck();
+                }
             }
         }
+
+        // 次回チェックタイミングのスマート制御（10分経過まではその時間までジャンプ、以降は1分刻み）
+        function scheduleNextCheck() {
+            if (pollTimer) clearTimeout(pollTimer);
+
+            let delayMs = 60000; // デフォルト1分
+
+            if (lastKnownUpdateTime) {
+                const updateTimeMs = new Date(lastKnownUpdateTime.replace(' ', 'T') + '+09:00').getTime();
+                const nowMs = Date.now();
+                const tenMinutesMs = 10 * 60 * 1000;
+                const elapsedMs = nowMs - updateTimeMs;
+
+                if (elapsedMs < tenMinutesMs) {
+                    // まだ10分経っていなければ、残りの時間だけ一気にスリープ
+                    delayMs = tenMinutesMs - elapsedMs;
+                } else {
+                    // 10分経過以降は、更新されるまで1分毎に確認
+                    delayMs = 60 * 1000;
+                }
+            }
+
+            pollTimer = setTimeout(fetchAndUpdateViewer, delayMs);
+        }
+
+        // ページがアクティブになった瞬間に即座に最新確認を行う
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                console.log('タブがアクティブになりました。最新データを即時確認します。');
+                if (pollTimer) clearTimeout(pollTimer);
+                fetchAndUpdateViewer();
+            } else {
+                if (pollTimer) clearTimeout(pollTimer);
+            }
+        });
 
         // オブジェクトを再帰的に走査してツリー状のDOMを生成する関数
         function createDebugList(data) {
@@ -115,8 +211,8 @@
             return ul;
         }
 
-        // 実行
-        initDebugViewer();
+        // 初回実行
+        fetchAndUpdateViewer();
     </script>
 </body>
 </html>
