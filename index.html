@@ -59,6 +59,26 @@
                 font-size: 0.8rem;
                 color: #858585;
                 margin-left: 6px;
+                cursor: pointer;
+                user-select: none;
+            }
+            .type-tag:hover {
+                color: #d4d4d4;
+            }
+            .toggle-btn {
+                background: none;
+                border: none;
+                color: #4ec9b0;
+                cursor: pointer;
+                font-family: monospace;
+                font-size: 0.9rem;
+                padding: 0 4px 0 0;
+            }
+            .toggle-btn:hover {
+                color: #9cdcfe;
+            }
+            .collapsed > ul {
+                display: none;
             }
             .error { color: #f44747; }
         `;
@@ -67,7 +87,7 @@
         let lastKnownUpdateTime = null;
         let isFirstLoad = true;
         let pollTimer = null;
-        let isFetching = false; // 多重フェッチ防止用ロック
+        let isFetching = false;
 
         // アプリケーションの初期化・データフェッチ処理
         async function fetchAndUpdateViewer() {
@@ -98,7 +118,6 @@
             }
 
             try {
-                // キャッシュを完全に無効化して最新を取得
                 const response = await fetch(`data.json?_=${Date.now()}`, { cache: 'no-store' });
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -106,16 +125,14 @@
                 const jsonData = await response.json();
                 const currentUpdateTime = jsonData.json_updatetime || '不明';
 
-                // 画面上の更新日時表示を更新
                 const updateInfoEl = document.getElementById('update-info');
                 if (updateInfoEl) {
                     updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
                 }
 
-                // 初回読み込み時、またはJSONの更新日時が変わっていた場合にDOMを再描画
                 if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
                     if (!isFirstLoad && lastKnownUpdateTime !== null) {
-                        console.log(`新着データを検知しました。更新時刻: ${currentUpdateTime}`);
+                        console.log(`新着 데이터를検知しました。更新時刻: ${currentUpdateTime}`);
                     }
                     lastKnownUpdateTime = currentUpdateTime;
 
@@ -133,41 +150,31 @@
                 }
             } finally {
                 isFetching = false;
-                // タブがアクティブな場合のみ次回のタイマーをスケジュール
                 if (!document.hidden) {
                     scheduleNextCheck();
                 }
             }
         }
 
-        // 次回チェックタイミングのスマート制御（10分経過まではその時間までジャンプ、以降は1分刻み）
         function scheduleNextCheck() {
             if (pollTimer) clearTimeout(pollTimer);
-
-            let delayMs = 60000; // デフォルト1分
-
+            let delayMs = 60000;
             if (lastKnownUpdateTime) {
                 const updateTimeMs = new Date(lastKnownUpdateTime.replace(' ', 'T') + '+09:00').getTime();
                 const nowMs = Date.now();
                 const tenMinutesMs = 10 * 60 * 1000;
                 const elapsedMs = nowMs - updateTimeMs;
-
                 if (elapsedMs < tenMinutesMs) {
-                    // まだ10分経っていなければ、残りの時間だけ一気にスリープ
                     delayMs = tenMinutesMs - elapsedMs;
                 } else {
-                    // 10分経過以降は、更新されるまで1分毎に確認
                     delayMs = 60 * 1000;
                 }
             }
-
             pollTimer = setTimeout(fetchAndUpdateViewer, delayMs);
         }
 
-        // ページがアクティブになった瞬間に即座に最新確認を行う
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                console.log('タブがアクティブになりました。最新データを即時確認します。');
                 if (pollTimer) clearTimeout(pollTimer);
                 fetchAndUpdateViewer();
             } else {
@@ -175,7 +182,7 @@
             }
         });
 
-        // オブジェクトを再帰的に走査してツリー状のDOMを生成する関数
+        // オブジェクトを再帰的に走査して開閉可能なツリー状DOMを生成する関数
         function createDebugList(data) {
             const ul = document.createElement('ul');
 
@@ -184,21 +191,44 @@
                     const value = data[key];
                     const li = document.createElement('li');
                     
-                    const keySpan = document.createElement('span');
-                    keySpan.className = 'key';
-                    keySpan.textContent = key + ': ';
-                    li.appendChild(keySpan);
-
                     const type = typeof value;
+                    const isObjOrArray = value !== null && type === 'object';
 
-                    if (value !== null && type === 'object') {
+                    if (isObjOrArray) {
+                        li.classList.add('collapsed'); // デフォルトは折りたたみ状態（必要に応じて外せます）
+
+                        // 開閉用のボタンを作成
+                        const toggleBtn = document.createElement('button');
+                        toggleBtn.className = 'toggle-btn';
+                        toggleBtn.textContent = '▶';
+                        toggleBtn.onclick = () => {
+                            const isCollapsed = li.classList.toggle('collapsed');
+                            toggleBtn.textContent = isCollapsed ? '▶' : '▼';
+                        };
+                        li.appendChild(toggleBtn);
+
+                        const keySpan = document.createElement('span');
+                        keySpan.className = 'key';
+                        keySpan.textContent = key + ': ';
+                        li.appendChild(keySpan);
+
                         const typeTag = document.createElement('span');
                         typeTag.className = 'type-tag';
                         typeTag.textContent = Array.isArray(value) ? `[Array(${value.length})]` : '{Object}';
+                        typeTag.onclick = () => {
+                            const isCollapsed = li.classList.toggle('collapsed');
+                            toggleBtn.textContent = isCollapsed ? '▶' : '▼';
+                        };
                         li.appendChild(typeTag);
                         
                         li.appendChild(createDebugList(value));
                     } else {
+                        // オブジェクト/配列ではない通常のキー・値
+                        const keySpan = document.createElement('span');
+                        keySpan.className = 'key';
+                        keySpan.textContent = key + ': ';
+                        li.appendChild(keySpan);
+
                         const valSpan = document.createElement('span');
                         valSpan.className = type;
                         valSpan.textContent = JSON.stringify(value);
