@@ -54,19 +54,19 @@ def fetch_hourly(lat, lon):
 
       data_1h_list = []
       for i, t in enumerate(times):
-        temp = temps[i] if i < len(temps) else 0
-        precip = precips[i] if i < len(precips) else 0
-        wind = winds[i] if i < len(winds) else 0
-        pressure = pressures[i] if i < len(pressures) else 0
-        pop = pop_list[i] if i < len(pop_list) else 0
-        w_code = weather_codes[i] if i < len(weather_codes) else 0
+        temp = temps[i] if i < len(temps) and temps[i] is not None else 0.0
+        precip = precips[i] if i < len(precips) and precips[i] is not None else 0.0
+        wind = winds[i] if i < len(winds) and winds[i] is not None else 0.0
+        pressure = pressures[i] if i < len(pressures) and pressures[i] is not None else 0.0
+        pop = pop_list[i] if i < len(pop_list) and pop_list[i] is not None else 0
+        w_code = weather_codes[i] if i < len(weather_codes) and weather_codes[i] is not None else 0
 
         data_1h_list.append({
             "time_1h": t,
-            "temperature_1h": round(temp, 1),
-            "precipitation_1h": round(precip, 1),
-            "wind_speed_1h": round(wind, 1),
-            "pressure_1h": round(pressure, 1),
+            "temperature_1h": round(temp),
+            "precipitation_1h": round(precip),
+            "wind_speed_1h": round(wind),
+            "pressure_1h": round(pressure),
             "precipitation_probability_1h": pop,
             "weather_code_1h": w_code,
             "weather_risk_level_1h": get_weather_risk_level(w_code),
@@ -78,12 +78,12 @@ def fetch_hourly(lat, lon):
         if not chunk_times:
           break
 
-        chunk_temps = temps[i : i + 3]
-        chunk_precips = precips[i : i + 3]
-        chunk_winds = winds[i : i + 3]
-        chunk_pressures = pressures[i : i + 3]
-        chunk_pops = pop_list[i : i + 3] if pop_list else [0] * len(chunk_times)
-        chunk_weather = weather_codes[i : i + 3]
+        chunk_temps = [temps[idx] for idx in range(i, min(i + 3, len(temps))) if temps[idx] is not None] if i < len(temps) else []
+        chunk_precips = [precips[idx] for idx in range(i, min(i + 3, len(precips))) if precips[idx] is not None] if i < len(precips) else []
+        chunk_winds = [winds[idx] for idx in range(i, min(i + 3, len(winds))) if winds[idx] is not None] if i < len(winds) else []
+        chunk_pressures = [pressures[idx] for idx in range(i, min(i + 3, len(pressures))) if pressures[idx] is not None] if i < len(pressures) else []
+        chunk_pops = [pop_list[idx] for idx in range(i, min(i + 3, len(pop_list))) if pop_list[idx] is not None] if i < len(pop_list) else []
+        chunk_weather = [weather_codes[idx] for idx in range(i, min(i + 3, len(weather_codes))) if weather_codes[idx] is not None] if i < len(weather_codes) else []
 
         avg_temp = sum(chunk_temps) / len(chunk_temps) if chunk_temps else 0
         max_precip = max(chunk_precips) if chunk_precips else 0
@@ -98,10 +98,10 @@ def fetch_hourly(lat, lon):
 
         data_3h_list.append({
             "time_3h": chunk_times[0],
-            "temperature_3h": round(avg_temp, 1),
-            "precipitation_3h": round(max_precip, 1),
-            "wind_speed_3h": round(max_wind, 1),
-            "pressure_3h": round(min_pressure, 1),
+            "temperature_3h": round(avg_temp),
+            "precipitation_3h": round(max_precip),
+            "wind_speed_3h": round(max_wind),
+            "pressure_3h": round(min_pressure),
             "precipitation_probability_3h": max_pop,
             "weather_code_3h": rep_weather,
             "weather_risk_level_3h": get_weather_risk_level(rep_weather),
@@ -136,33 +136,33 @@ def fetch_daily(lat, lon):
 
       data_1day_list = []
       for i, t in enumerate(d_times):
-        w_code = d_codes[i] if i < len(d_codes) else 0
-        tmax = d_tmax[i] if i < len(d_tmax) else 0
-        tmin = d_tmin[i] if i < len(d_tmin) else 0
-        p_sum = d_precip_sum[i] if i < len(d_precip_sum) else 0
-        p_max = d_pop_max[i] if i < len(d_pop_max) else 0
-        pres = d_pressure[i] if i < len(d_pressure) else 0
-        wind = d_wind[i] if i < len(d_wind) else 0
-        sr = d_sunrise[i] if i < len(d_sunrise) else ""
-        ss = d_sunset[i] if i < len(d_sunset) else ""
+        w_code = d_codes[i] if i < len(d_codes) and d_codes[i] is not None else 0
+        tmax = d_tmax[i] if i < len(d_tmax) and d_tmax[i] is not None else 0
+        tmin = d_tmin[i] if i < len(d_tmin) and d_tmin[i] is not None else 0
+        p_sum = d_precip_sum[i] if i < len(d_precip_sum) and d_precip_sum[i] is not None else 0
+        p_max = d_pop_max[i] if i < len(d_pop_max) and d_pop_max[i] is not None else 0
+        pres = d_pressure[i] if i < len(d_pressure) and d_pressure[i] is not None else 0
+        wind = d_wind[i] if i < len(d_wind) and d_wind[i] is not None else 0
+        sr = d_sunrise[i] if i < len(d_sunrise) and d_sunrise[i] is not None else ""
+        ss = d_sunset[i] if i < len(d_sunset) and d_sunset[i] is not None else ""
 
         data_1day_list.append({
             "time_1day": t,
             "temperature_max_1day": (
-                round(tmax, 1) if isinstance(tmax, (int, float)) else tmax
+                round(tmax) if isinstance(tmax, (int, float)) else tmax
             ),
             "temperature_min_1day": (
-                round(tmin, 1) if isinstance(tmin, (int, float)) else tmin
+                round(tmin) if isinstance(tmin, (int, float)) else tmin
             ),
             "precipitation_sum_1day": (
-                round(p_sum, 1) if isinstance(p_sum, (int, float)) else p_sum
+                round(p_sum) if isinstance(p_sum, (int, float)) else p_sum
             ),
             "precipitation_probability_max_1day": p_max,
             "pressure_mean_1day": (
-                round(pres, 1) if isinstance(pres, (int, float)) else pres
+                round(pres) if isinstance(pres, (int, float)) else pres
             ),
             "wind_speed_max_1day": (
-                round(wind, 1) if isinstance(wind, (int, float)) else wind
+                round(wind) if isinstance(wind, (int, float)) else wind
             ),
             "weather_code_1day": w_code,
             "weather_risk_level_1day": get_weather_risk_level(w_code),
@@ -180,7 +180,39 @@ def fetch_jma():
     url = "https://www.jma.go.jp/bosai/warning/data/r8/280000.json"
     res = requests.get(url, timeout=10)
     if res.status_code == 200:
-      return {"jma_warning": res.json()}
+      data = res.json()
+      target_code = "2821000"  # 加古川市のエリアコード
+
+      def filter_areas(node):
+        """指定ノードから加古川市のエリア情報のみを抽出・フィルタリングする"""
+        if isinstance(node, dict) and "areaTypes" in node:
+          filtered_area_types = []
+          for area_type in node["areaTypes"]:
+            if "areas" in area_type:
+              filtered_areas = [
+                  area for area in area_type["areas"]
+                  if str(area.get("area", {}).get("code", "")) == target_code
+              ]
+              if filtered_areas:
+                new_area_type = area_type.copy()
+                new_area_type["areas"] = filtered_areas
+                filtered_area_types.append(new_area_type)
+          node["areaTypes"] = filtered_area_types
+        return node
+
+      # JSON構造がリスト（複数電文配列）または辞書（単一オブジェクト）のどちらであっても柔軟に走査して抽出
+      if isinstance(data, list):
+        filtered_reports = []
+        for report in data:
+          filtered_report = filter_areas(report)
+          # 加古川市のデータが残った（areaTypesに有効なデータが存在する）電文のみ保持
+          if isinstance(filtered_report, dict) and filtered_report.get("areaTypes"):
+            filtered_reports.append(filtered_report)
+        data = filtered_reports
+      elif isinstance(data, dict):
+        data = filter_areas(data)
+
+      return {"jma_warning": data}
   except Exception as e:
     print(f"JMA warning fetch error: {e}")
   return {}
@@ -202,7 +234,7 @@ def fetch_weather_data():
   elapsed_time = time.time() - start_time
 
   # 実行環境のタイムゾーンに依存せず確実に日本時間（JST）で記録
-  data["json_updatetime"] = datetime.now(JST).strftime("%m.%d %H:%M:%S")
+  data["json_updatetime"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
 
   with open("data.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
