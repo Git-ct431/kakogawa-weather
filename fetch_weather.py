@@ -9,11 +9,16 @@
 """
 
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import json
 import subprocess
 import time
 import requests
+
+# 座標（兵庫県加古川市周辺など）
+LATITUDE = 34.75803345356596
+LONGITUDE = 134.8150154875823
+JST = timezone(timedelta(hours=9))
 
 
 def get_weather_risk_level(code):
@@ -183,12 +188,11 @@ def fetch_jma():
 
 def fetch_weather_data():
   start_time = time.time()
-  lat, lon = 34.75803345356596, 134.8150154875823
   data = {}
 
   with ThreadPoolExecutor(max_workers=3) as executor:
-    future_hourly = executor.submit(fetch_hourly, lat, lon)
-    future_daily = executor.submit(fetch_daily, lat, lon)
+    future_hourly = executor.submit(fetch_hourly, LATITUDE, LONGITUDE)
+    future_daily = executor.submit(fetch_daily, LATITUDE, LONGITUDE)
     future_jma = executor.submit(fetch_jma)
 
     data.update(future_hourly.result())
@@ -197,11 +201,11 @@ def fetch_weather_data():
 
   elapsed_time = time.time() - start_time
 
-  jst_now = datetime.now()
-  data["json_updatetime"] = jst_now.strftime("%m.%d %H:%M:%S")
+  # 実行環境のタイムゾーンに依存せず確実に日本時間（JST）で記録
+  data["json_updatetime"] = datetime.now(JST).strftime("%m.%d %H:%M:%S")
 
   with open("data.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False)
+    json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 
   print(
       f"Successfully generated data.json in {elapsed_time:.2f} seconds with"
@@ -227,7 +231,6 @@ def fetch_weather_data():
     )
     subprocess.run(["git", "add", "data.json"], check=True)
 
-    # 差分がある場合のみコミット＆プッシュを実行
     diff_check = subprocess.run(
         ["git", "diff", "--cached", "--quiet"], capture_output=True
     )
