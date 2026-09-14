@@ -221,11 +221,17 @@ def fetch_daily(lat, lon):
 def fetch_jma():
   try:
     url = "https://www.jma.go.jp/bosai/warning/data/r8/280000.json"
-    res = requests.get(url, timeout=10)
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,"
+            " like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
+    res = requests.get(url, headers=headers, timeout=10)
     if res.status_code == 200:
       data = res.json()
 
-      target_codes = {"2821000", "280010", "280020"}  # 検索したいコードのセット
+      target_codes = {"2821000", "280010", "280020"}
 
       extracted_reports = []
       reports = data if isinstance(data, list) else [data]
@@ -234,12 +240,9 @@ def fetch_jma():
         def extract_matching_items(obj):
           matched_items = []
           if isinstance(obj, dict):
-            # 辞書の値の中にターゲットコードのいずれかが含まれているか直接判定
             is_target_node = any(str(v) in target_codes for v in obj.values())
             if is_target_node:
               matched_items.append(obj)
-            
-            # 再帰的に子要素を走査
             for k, v in obj.items():
               matched_items.extend(extract_matching_items(v))
           elif isinstance(obj, list):
@@ -252,7 +255,6 @@ def fetch_jma():
         seen_codes = set()
         filtered_items = []
         for item in all_items:
-          # ヒットしたアイテムから確実にコードを特定して二重チェック
           code = str(item.get("areaCode") or item.get("code", ""))
           if code in target_codes:
             unique_key = (code, str(item.get("kinds", "")))
