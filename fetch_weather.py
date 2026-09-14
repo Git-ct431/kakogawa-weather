@@ -173,63 +173,73 @@ def fetch_jma():
     if res.status_code == 200:
       raw_data = res.json()
       
-      # 1. デバッグ用：生データをそのまま保持
       jma_warning_raw = raw_data
-
-      # 2. 4つの地域別の格納用リストを初期化
       hyogo_warnings = []
       nanbu_warnings = []
       hokubu_warnings = []
       kakogawa_warnings = []
 
-      # 3. 再帰的にJSONを探索し、地域名に一致するものをそれぞれのリストに振り分ける
-      def extract_areas(obj):
-        if isinstance(obj, dict):
-          area_name = obj.get("name", "")
-          warnings = obj.get("warnings", [])
-          
-          if area_name == "兵庫県":
-            for w in warnings:
+      # エリアコードの定義（必要に応じて調整してください）
+      NANBU_CODE = "280010"    # 南部（広域）
+      HOKUBU_CODE = "280020"   # 北部（広域）
+      KAKOGAWA_CODE = "2821000" # 加古川市コード
+
+      # 取得したJSONはリスト形式（各警報種別ごとのオブジェクトの配列）
+      if isinstance(raw_data, list):
+        for entry in raw_data:
+          warning_obj = entry.get("warning", {})
+          headline = entry.get("headlineText", "")
+          data_type = entry.get("dataTypeCode", "")
+
+          # 1. class10Items（広域：南部・北部など）の走査
+          for item in warning_obj.get("class10Items", []):
+            code = item.get("areaCode")
+            kinds = item.get("kinds", [])
+            
+            if code == NANBU_CODE:
+              for k in kinds:
+                nanbu_warnings.append({
+                    "dataTypeCode": data_type,
+                    "headlineText": headline,
+                    "code": k.get("code"),
+                    "status": k.get("status"),
+                    "additions": k.get("additions", [])
+                })
+            elif code == HOKUBU_CODE:
+              for k in kinds:
+                hokubu_warnings.append({
+                    "dataTypeCode": data_type,
+                    "headlineText": headline,
+                    "code": k.get("code"),
+                    "status": k.get("status"),
+                    "additions": k.get("additions", [])
+                })
+
+          # 2. class20Items（市町村単位：加古川市など）の走査
+          for item in warning_obj.get("class20Items", []):
+            code = item.get("areaCode")
+            kinds = item.get("kinds", [])
+            
+            if code == KAKOGAWA_CODE:
+              for k in kinds:
+                kakogawa_warnings.append({
+                    "dataTypeCode": data_type,
+                    "headlineText": headline,
+                    "code": k.get("code"),
+                    "status": k.get("status"),
+                    "properties": k.get("properties", [])
+                })
+
+            # 兵庫県全体のリスト（すべてのclass20Itemsを網羅する場合など）を必要に応じて格納
+            # ここでは例として全件を対象にするか、特定の条件でhyogo_warningsに入れます
+            for k in kinds:
               hyogo_warnings.append({
-                  "area_name": area_name,
-                  "code": w.get("code"),
-                  "status": w.get("status"),
-                  "title": w.get("title")
-              })
-          if "南部" in area_name:
-            for w in warnings:
-              nanbu_warnings.append({
-                  "area_name": area_name,
-                  "code": w.get("code"),
-                  "status": w.get("status"),
-                  "title": w.get("title")
-              })
-          if "北部" in area_name:
-            for w in warnings:
-              hokubu_warnings.append({
-                  "area_name": area_name,
-                  "code": w.get("code"),
-                  "status": w.get("status"),
-                  "title": w.get("title")
-              })
-          if "加古川" in area_name:
-            for w in warnings:
-              kakogawa_warnings.append({
-                  "area_name": area_name,
-                  "code": w.get("code"),
-                  "status": w.get("status"),
-                  "title": w.get("title")
+                  "areaCode": code,
+                  "dataTypeCode": data_type,
+                  "code": k.get("code"),
+                  "status": k.get("status")
               })
 
-          for k, v in obj.items():
-            extract_areas(v)
-        elif isinstance(obj, list):
-          for item in obj:
-            extract_areas(item)
-
-      extract_areas(raw_data)
-
-      # 生データと、4つの地域別データをまとめて返す
       return {
           "jma_warning": jma_warning_raw,
           "jma_warning_hyogo": hyogo_warnings,
