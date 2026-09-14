@@ -198,6 +198,7 @@ def fetch_jma():
 
         # 3. 兵庫県全域の見出し(headlineText)または対象エリアの情報が存在する場合に保持
         if report.get("headlineText") or regional_items or kakogawa_items:
+          # 各項目のプロパティから criteriaPeriod（具体的な対象時間）などを安全に取得できるように構造を保持
           filtered_report = {
               "control_datetime": report.get("controlDatetime"),
               "report_datetime": report.get("reportDatetime"),
@@ -235,6 +236,7 @@ def fetch_weather_data():
   # 実行環境のタイムゾーンに依存せず確実に日本時間（JST）で記録
   data["json_updatetime"] = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S")
 
+  # 変数にまとめたデータを data.json へ書き込み
   with open("data.json", "w", encoding="utf-8") as f:
     json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
 
