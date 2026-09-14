@@ -3,110 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加古川 天気</title>
-    <link rel="stylesheet" href="style.css">
+    <title>JSON Debug Viewer</title>
 </head>
 <body>
-    <header class="site-header">
-        <h1>加古川</h1>
-        <div class="update-info">
-            <span>ページ更新: <span class="page-update-time">--</span></span>
-            <span>気象データ取得: <span id="source-update-time-1">--</span></span>
-        </div>
-    </header>
+    <div id="app"></div>
 
-    <main class="dashboard-main">
-        <!-- ページ1: 概要・直近の天気 -->
-        <div id="page-1" class="page-section active">
-            <section class="card">
-                <h2>現在の状況・お知らせ</h2>
-                <div id="overview-container">データを読み込んでいます...</div>
-                <div id="transit-container" style="margin-top: 10px; font-weight: bold;"></div>
-            </section>
+    <script>
+        // スタイルを動的に生成して適用
+        const style = document.createElement('style');
+        style.textContent = `
+            body {
+                font-family: monospace;
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+                padding: 20px;
+                margin: 0;
+            }
+            h1 {
+                font-size: 1.2rem;
+                color: #4ec9b0;
+                border-bottom: 1px solid #333;
+                padding-bottom: 10px;
+            }
+            ul {
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 4px 0;
+                border-left: 1px dotted #404040;
+            }
+            li {
+                margin: 2px 0;
+            }
+            .key {
+                color: #9cdcfe;
+                font-weight: bold;
+            }
+            .string { color: #ce9178; }
+            .number { color: #b5cea8; }
+            .boolean { color: #569cd6; }
+            .null { color: #569cd6; }
+            .type-tag {
+                font-size: 0.8rem;
+                color: #858585;
+                margin-left: 6px;
+            }
+            .error { color: #f44747; }
+        `;
+        document.head.appendChild(style);
 
-            <section class="card">
-                <h2>3日天気</h2>
-                <div class="table-scroll-container">
-                    <table id="forecast-table-1" class="weather-table">
-                        <thead>
-                            <tr>
-                                <th>日付</th>
-                                <th>時間</th>
-                                <th>気温</th>
-                                <th>風速</th>
-                                <th>荒天</th>
-                                <th>降水</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="6">読み込み中...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-            <div class="page-update-sub">ページ更新: <span class="page-update-time">--</span></div>
-        </div>
+        // アプリケーションの初期化・描画処理
+        async function initDebugViewer() {
+            const app = document.getElementById('app');
 
-        <!-- ページ2: 10日間週間予報 -->
-        <div id="page-2" class="page-section">
-            <section class="card">
-                <h2>10日間週間予報</h2>
-                <div class="table-scroll-container">
-                    <table id="forecast-table-10days" class="weather-table">
-                        <thead>
-                            <tr>
-                                <th>日付</th>
-                                <th>天気</th>
-                                <th>最低気温<br>(℃)</th>
-                                <th>最高気温<br>(℃)</th>
-                                <th>最大風速<br>(m/s)</th>
-                                <th>降水確率<br>(%)</th>
-                                <th>降水量<br>(mm)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="7">読み込み中...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-            <div class="page-update-sub">ページ更新: <span class="page-update-time">--</span></div>
-        </div>
+            // タイトル要素をJavaScriptで生成
+            const title = document.createElement('h1');
+            title.textContent = 'JSON Debug Viewer (data.json)';
+            app.appendChild(title);
 
-        <!-- ページ3: 警報・注意報（加古川市・兵庫県） -->
-        <div id="page-3" class="page-section">
-            <section class="card">
-                <h2>加古川市の警報・注意報</h2>
-                <div id="kakogawa-warning-container">情報を読み込んでいます...</div>
-            </section>
+            // コンテンツコンテナ
+            const container = document.createElement('main');
+            container.textContent = '読み込み中...';
+            app.appendChild(container);
 
-            <section class="card">
-                <h2>兵庫県内の警報・注意報</h2>
-                <div id="hyogo-warning-container" style="margin-bottom: 15px;">情報を読み込んでいます...</div>
-                <h3>地域別状況</h3>
-                <div id="alert-map-container" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                    <div>情報を読み込んでいます...</div>
-                </div>
-            </section>
-            <div class="page-update-sub">ページ更新: <span class="page-update-time">--</span></div>
-        </div>
+            try {
+                const response = await fetch('data.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const jsonData = await response.json();
+                
+                container.innerHTML = '';
+                container.appendChild(createDebugList(jsonData));
+            } catch (error) {
+                container.innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}<br>※ローカル環境(file://)の場合はCORS制限がかかるため、簡易サーバー等でお試しください。</span>`;
+            }
+        }
 
-        <!-- ページ4: 予備・その他情報など -->
-        <div id="page-4" class="page-section">
-            <section class="card">
-                <h2>データソース・更新情報</h2>
-                <p>気象データ提供: Open-Meteo</p>
-                <p>防災情報提供: 気象庁 防災情報API</p>
-                <p>最終データ取得日時: <span id="source-update-time-2">--</span></p>
-            </section>
-        </div>
-    </main>
+        // オブジェクトを再帰的に走査してツリー状のDOMを生成する関数
+        function createDebugList(data) {
+            const ul = document.createElement('ul');
 
-    <!-- ページ切り替えボタン -->
-    <div class="pagination-container">
-        <button id="nav-btn" class="nav-button">ページ2へ</button>
-    </div>
+            for (const key in data) {
+                if (Object.prototype.hasOwnProperty.call(data, key)) {
+                    const value = data[key];
+                    const li = document.createElement('li');
+                    
+                    const keySpan = document.createElement('span');
+                    keySpan.className = 'key';
+                    keySpan.textContent = key + ': ';
+                    li.appendChild(keySpan);
 
-    <script src="script.js"></script>
+                    const type = typeof value;
+
+                    if (value !== null && type === 'object') {
+                        const typeTag = document.createElement('span');
+                        typeTag.className = 'type-tag';
+                        typeTag.textContent = Array.isArray(value) ? `[Array(${value.length})]` : '{Object}';
+                        li.appendChild(typeTag);
+                        
+                        li.appendChild(createDebugList(value));
+                    } else {
+                        const valSpan = document.createElement('span');
+                        valSpan.className = type;
+                        valSpan.textContent = JSON.stringify(value);
+                        li.appendChild(valSpan);
+                    }
+
+                    ul.appendChild(li);
+                }
+            }
+            return ul;
+        }
+
+        // 実行
+        initDebugViewer();
+    </script>
 </body>
 </html>
