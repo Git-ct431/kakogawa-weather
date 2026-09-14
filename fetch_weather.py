@@ -232,21 +232,33 @@ def fetch_jma():
 
     if res.status_code == 200:
       data = res.json()
-      target_codes = {"2821000", "280010", "280020"}
+      class10_target_codes = {"280010", "280020"}  # 南部、北部
+      class20_target_codes = {"2821000"}           # 加古川市
       extracted_reports = []
 
       reports = data if isinstance(data, list) else [data]
       for report in reports:
         data_type_code = report.get("dataTypeCode")
         warning_data = report.get("warning", {})
+        
+        class10_items = warning_data.get("class10Items", [])
         class20_items = warning_data.get("class20Items", [])
 
         matched_items = []
+
+        # 北部・南部（class10Items）の抽出
+        for item in class10_items:
+          area_code = str(item.get("areaCode", ""))
+          if area_code in class10_target_codes:
+            kinds = parse_kinds(item.get("kinds", []))
+            matched_items.append({"areaCode": area_code, "level": "class10", "kinds": kinds})
+
+        # 加古川市（class20Items）の抽出
         for item in class20_items:
           area_code = str(item.get("areaCode", ""))
-          if area_code in target_codes:
+          if area_code in class20_target_codes:
             kinds = parse_kinds(item.get("kinds", []))
-            matched_items.append({"areaCode": area_code, "kinds": kinds})
+            matched_items.append({"areaCode": area_code, "level": "class20", "kinds": kinds})
 
         extracted_reports.append({
             "control_datetime": report.get("controlDatetime"),
