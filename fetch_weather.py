@@ -230,59 +230,32 @@ def fetch_jma():
     res = requests.get(url, headers=headers, timeout=10)
     if res.status_code == 200:
       data = res.json()
-
       target_codes = {"2821000", "280010", "280020"}
-
       extracted_reports = []
+
       reports = data if isinstance(data, list) else [data]
-
       for report in reports:
-        def extract_matching_items(obj):
-          matched_items = []
-          if isinstance(obj, dict):
-            is_target_node = any(str(v) in target_codes for v in obj.values())
-            if is_target_node:
-              matched_items.append(obj)
-            for k, v in obj.items():
-              matched_items.extend(extract_matching_items(v))
-          elif isinstance(obj, list):
-            for item in obj:
-              matched_items.extend(extract_matching_items(item))
-          return matched_items
+        data_type_code = report.get("dataTypeCode")
+        warning_data = report.get("warning", {})
+        class20_items = warning_data.get("class20Items", [])
 
-        all_items = extract_matching_items(report)
+        matched_items = []
+        for item in class20_items:
+          area_code = str(item.get("areaCode", ""))
+          if area_code in target_codes:
+            kinds = parse_kinds(item.get("kinds", []))
+            matched_items.append({"areaCode": area_code, "kinds": kinds})
 
-        seen_codes = set()
-        filtered_items = []
-        for item in all_items:
-          code = str(item.get("areaCode") or item.get("code", ""))
-          if code in target_codes:
-            unique_key = (code, str(item.get("kinds", "")))
-            if unique_key not in seen_codes:
-              seen_codes.add(unique_key)
-              filtered_items.append(item)
-
-        processed_items = []
-        for item in filtered_items:
-          item_copy = item.copy()
-          if "kinds" in item_copy:
-            item_copy["kinds"] = parse_kinds(item_copy["kinds"])
-          processed_items.append(item_copy)
-
-        offices = report.get("offices", [])
-
-        if report.get("headlineText") or processed_items or offices:
-          filtered_report = {
+        if matched_items or report.get("headlineText"):
+          extracted_reports.append({
               "control_datetime": report.get("controlDatetime"),
               "report_datetime": report.get("reportDatetime"),
               "info_type": report.get("infoType"),
               "publishing_office": report.get("publishingOffice"),
               "headline_text": report.get("headlineText"),
-              "data_type_code": report.get("dataTypeCode"),
-              "offices": offices,
-              "target_area_items": processed_items,
-          }
-          extracted_reports.append(filtered_report)
+              "data_type_code": data_type_code,
+              "target_area_items": matched_items,
+          })
 
       return {"jma_warning": extracted_reports}
     else:
