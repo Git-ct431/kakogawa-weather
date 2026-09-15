@@ -95,29 +95,41 @@ class JMAHyogoParser:
             })
         return headers
 
-    # 2. 指定エリアコードのフラット抽出（code_lv を分離・適用）
+    # 2. 指定エリアコードのフラット抽出（status が "継続" または "発表" のものを対象に取得）
     def get_warnings_by_area(self, target_area_code):
         results = []
         for entry in self.raw_data:
             dt_code = entry.get("dataTypeCode")
             dt_code_jp = DATA_TYPE_NAMES.get(dt_code, "不明な情報")
             
-            for items in entry.get("warning", {}).values():
-                if isinstance(items, list):
-                    for item in items:
-                        if item.get("areaCode") == target_area_code:
-                            for k in item.get("kinds", []):
-                                w_code = k.get("code")
-                                results.append({
-                                    "dataTypeCode": dt_code,
-                                    "dataTypeCode_jp": dt_code_jp,
-                                    "areaCode": item.get("areaCode"),
-                                    "code": w_code,
-                                    "code_jp": WARNING_CODE_NAMES.get(w_code, "不明なコード"),
-                                    "code_lv": get_warning_level(w_code),
-                                    "status": k.get("status"),
-                                    "additions": k.get("additions", [])
-                                })
+            warning_data = entry.get("warning", {})
+            if not isinstance(warning_data, dict):
+                continue
+
+            for items in warning_data.values():
+                if not isinstance(items, list):
+                    continue
+                
+                for item in items:
+                    if item.get("areaCode") != target_area_code:
+                        continue
+                        
+                    for k in item.get("kinds", []):
+                        status = k.get("status")
+                        
+                        # "継続" または "発表" の場合のみデータを取得
+                        if status in ("継続", "発表"):
+                            w_code = k.get("code")
+                            results.append({
+                                "dataTypeCode": dt_code,
+                                "dataTypeCode_jp": dt_code_jp,
+                                "areaCode": item.get("areaCode"),
+                                "code": w_code,
+                                "code_jp": WARNING_CODE_NAMES.get(w_code, "不明なコード"),
+                                "code_lv": get_warning_level(w_code),
+                                "status": status,
+                                "additions": k.get("additions", [])
+                            })
         return results
 
 
