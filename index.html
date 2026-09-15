@@ -134,14 +134,14 @@
                 border-bottom: 2px solid #3d887a !important;
             }
 
-            /* 左列の日付セル（ページ2,3用：縦並び） */
+            /* 左列の日付セル（ページ2,3用：縦並び・上揃え） */
             .date-cell {
                 background-color: #2d2d2d;
                 color: #9cdcfe;
                 font-weight: bold;
-                vertical-align: middle;
+                vertical-align: top;
                 text-align: center;
-                padding: 4px 10px;
+                padding: 6px 10px;
                 border-right: 1px solid #333;
                 height: auto !important;
             }
@@ -154,7 +154,6 @@
 
             /* ページ4専用の日付セル（横並び・左寄せ） */
             .date-cell-horizontal {
-                background-color: #2d2d2d;
                 color: #9cdcfe;
                 font-weight: bold;
                 vertical-align: middle;
@@ -199,7 +198,7 @@
             .wind-w3 { background-color: #2b1c12; color: #e8b894; }
             .wind-w4 { background-color: #2b1212; color: #e89494; font-weight: bold; }
 
-            /* 降水量のカラーマップ */
+            /* 降水量のカラーマップ（ページ2,3用） */
             .rain-1 { background-color: #16222b; color: #9cdcfe; }
             .rain-2 { background-color: #142b3b; color: #a6e3e9; }
             .rain-3 { background-color: #11324d; color: #79c0ff; }
@@ -786,7 +785,7 @@
             return wrapper;
         }
 
-        // ページ4: 10日天気ビュー（横並び左寄せ日付 ＆ pressure_mean_1day を参照）
+        // ページ4: 10日天気ビュー
         function create10DayWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -817,14 +816,13 @@
                 data.daily_1day.forEach(d => {
                     const tr = document.createElement('tr');
 
+                    const rawTime = d.time_1day || '';
                     let monthStr = '';
                     let dayStr = '';
                     let dayOfWeekChar = '';
-                    const rawTime = d.time_1day || '';
 
-                    if (rawTime.includes('T') || rawTime.includes(' ')) {
-                        const parts = rawTime.split(/[\sT]/);
-                        const dateParts = parts[0].split('-');
+                    if (rawTime) {
+                        const dateParts = rawTime.split('-');
                         if (dateParts.length === 3) {
                             const year = parseInt(dateParts[0], 10);
                             const month = parseInt(dateParts[1], 10);
@@ -845,7 +843,6 @@
                     const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
 
                     const rainVal = d.precipitation_sum_1day ?? d.precipitation_probability_max_1day;
-                    const rainClass = getRainClass(rainVal);
                     const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
                         ? `<span class="val-zero">${rainVal}</span>`
                         : (rainVal ?? '-');
@@ -868,19 +865,18 @@
                         ? `<span class="val-zero">${windVal}</span>`
                         : (windVal ?? '-');
 
-                    // pressure_mean_1day を直接参照
                     const pressureVal = d.pressure_mean_1day;
 
                     tr.innerHTML = `
                         <td class="date-cell-horizontal">
                             <div class="date-cell-horizontal-inner">
-                                <span>${monthStr}</span>
-                                <span>${dayStr}</span>
-                                <span>${dayOfWeekChar}</span>
+                                <span>${monthStr || '-'}</span>
+                                <span>${dayStr || '-'}</span>
+                                <span>${dayOfWeekChar ? `(${dayOfWeekChar})` : ''}</span>
                             </div>
                         </td>
                         <td class="${riskClass}">${riskDisplay}</td>
-                        <td class="${rainClass}">${rainDisplay}</td>
+                        <td>${rainDisplay}</td>
                         <td class="${minTempClass}">${minTempDisplay}</td>
                         <td class="${maxTempClass}">${maxTempDisplay}</td>
                         <td class="${windClass}">${windDisplay}</td>
