@@ -86,7 +86,7 @@
                 border-bottom: 1px solid #333;
                 padding-bottom: 8px;
             }
-            /* テーブル用スタイル：上下の余白をなし（0）に設定 */
+            /* テーブル用スタイル */
             .weather-table {
                 width: auto;
                 border-collapse: collapse;
@@ -128,7 +128,13 @@
             .weather-table tr:hover {
                 background-color: #252526;
             }
-            /* 左列の日付セル（上揃え、縦並び） */
+
+            /* 現在時刻行のうっすら下線スタイル */
+            .current-time-row td {
+                border-bottom: 2px solid #3d887a !important;
+            }
+
+            /* 左列の日付セル */
             .date-cell {
                 background-color: #2d2d2d;
                 color: #9cdcfe;
@@ -146,35 +152,48 @@
                 line-height: 1.2;
             }
             /* 天候リスクごとの背景色 */
-            .risk-0 { /* なし */ }
+            .risk-0 { }
             .risk-1 { background-color: #1c3b57; color: #9cdcfe; }
             .risk-2 { background-color: #1a4d7c; color: #c5e4ff; }
             .risk-3 { background-color: #5c521e; color: #ffe680; }
             .risk-4 { background-color: #5c2727; color: #ffb3b3; }
 
-            /* 3℃刻みの温度カラーマップ（より薄く・淡いトーンに調整） */
-            .temp-b3 { background-color: #122238; color: #b0d4ff; } /* 0℃未満 */
-            .temp-b2 { background-color: #152b47; color: #b0d4ff; } /* 0〜3℃未満 */
-            .temp-b1 { background-color: #173456; color: #a5ccf5; } /* 3〜6℃未満 */
-            .temp-b0 { background-color: #193d5c; color: #9cdcfe; } /* 6〜9℃未満 */
-            .temp-g0 { background-color: #1a423e; color: #9cdcfe; } /* 9〜12℃未満 */
-            .temp-g1 { background-color: #1c452b; color: #b5cea8; } /* 12〜15℃未満 */
-            .temp-g2 { background-color: #1e4a1e; color: #b5cea8; } /* 15〜18℃未満 */
-            .temp-g3 { background-color: #1b5232; color: #ffffff; font-weight: bold; } /* 18〜21℃ (最も快適) */
-            .temp-r0 { background-color: #3b421a; color: #e6dfa0; } /* 21〜24℃未満 */
-            .temp-r1 { background-color: #4f3c17; color: #e6dfa0; } /* 24〜27℃未満 */
-            .temp-r2 { background-color: #4f2d17; color: #f5cca8; } /* 27〜30℃未満 */
-            .temp-r3 { background-color: #4f1d17; color: #f5b0b0; } /* 30〜33℃未満 */
-            .temp-r4 { background-color: #4f1515; color: #f5b0b0; } /* 33〜36℃未満 */
-            .temp-r5 { background-color: #470d26; color: #f5b0d8; } /* 36℃以上 */
+            /* 3℃刻みの温度カラーマップ */
+            .temp-b3 { background-color: #0c1824; color: #9ac2ff; }
+            .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; }
+            .temp-b1 { background-color: #102334; color: #92b8ea; }
+            .temp-b0 { background-color: #12283c; color: #9cdcfe; }
+            .temp-g0 { background-color: #132a28; color: #9cdcfe; }
+            .temp-g1 { background-color: #142d1e; color: #b5cea8; }
+            .temp-g2 { background-color: #163116; color: #b5cea8; }
+            .temp-g3 { background-color: #153722; color: #ffffff; font-weight: bold; }
+            .temp-r0 { background-color: #282d12; color: #d4cc8c; }
+            .temp-r1 { background-color: #332710; color: #d4cc8c; }
+            .temp-r2 { background-color: #331e10; color: #e8b894; }
+            .temp-r3 { background-color: #331310; color: #e89494; }
+            .temp-r4 { background-color: #330e0e; color: #e89494; }
+            .temp-r5 { background-color: #2c0919; color: #e894c7; }
 
-            /* 数値が0の場合の半透明スタイル */
+            /* 風速のカラーマップ */
+            .wind-w1 { background-color: #1b2a24; color: #a8c5b3; }
+            .wind-w2 { background-color: #2b2812; color: #d4cc8c; }
+            .wind-w3 { background-color: #2b1c12; color: #e8b894; }
+            .wind-w4 { background-color: #2b1212; color: #e89494; font-weight: bold; }
+
+            /* 降水量のカラーマップ */
+            .rain-1 { background-color: #16222b; color: #9cdcfe; }
+            .rain-2 { background-color: #142b3b; color: #a6e3e9; }
+            .rain-3 { background-color: #11324d; color: #79c0ff; }
+            .rain-4 { background-color: #2b2812; color: #d4cc8c; }
+            .rain-5 { background-color: #332510; color: #f0b875; }
+            .rain-6 { background-color: #2b1212; color: #e89494; }
+
+            /* 数値0の半透明 */
             .val-zero {
                 color: #777777 !important;
                 opacity: 0.6;
             }
 
-            /* 既存の縦型レイアウト（ページ4用） */
             .weather-list-vertical {
                 display: flex;
                 flex-direction: column;
@@ -242,7 +261,6 @@
         let pollTimer = null;
         let isFetching = false;
 
-        // 温度に応じたCSSクラスを判定するヘルパー関数
         function getTempClass(temp) {
             if (temp === null || temp === undefined || isNaN(temp)) return '';
             const t = parseFloat(temp);
@@ -262,7 +280,62 @@
             return 'temp-r5';
         }
 
-        // アプリケーションの初期化・データフェッチ処理
+        function getWindClass(windSpeed) {
+            if (windSpeed === null || windSpeed === undefined || isNaN(windSpeed)) return '';
+            const w = parseFloat(windSpeed);
+            if (w >= 15) return 'wind-w4';
+            if (w >= 11) return 'wind-w3';
+            if (w >= 8)  return 'wind-w2';
+            if (w >= 5)  return 'wind-w1';
+            return '';
+        }
+
+        function getRainClass(rain) {
+            if (rain === null || rain === undefined || isNaN(rain)) return '';
+            const r = parseFloat(rain);
+            if (r >= 20) return 'rain-6';
+            if (r >= 10) return 'rain-5';
+            if (r >= 6)  return 'rain-4';
+            if (r >= 3)  return 'rain-3';
+            if (r >= 2)  return 'rain-2';
+            if (r >= 1)  return 'rain-1';
+            return '';
+        }
+
+        // --- 1時間天気用の現在時刻判定 (0時間以上〜1時間未満) ---
+        function isCurrentTimeRow(rawTime) {
+            if (!rawTime) return false;
+            try {
+                const rowDate = new Date(rawTime.replace(' ', 'T'));
+                if (isNaN(rowDate.getTime())) return false;
+
+                const now = new Date();
+                const diffMs = rowDate.getTime() - now.getTime();
+                const diffHours = diffMs / (1000 * 60 * 60);
+                
+                return diffHours >= 0 && diffHours < 1;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // --- 3時間天気用の現在時刻判定 (0時間以上〜3時間未満) ---
+        function isCurrentTimeRow3H(rawTime) {
+            if (!rawTime) return false;
+            try {
+                const rowDate = new Date(rawTime.replace(' ', 'T'));
+                if (isNaN(rowDate.getTime())) return false;
+
+                const now = new Date();
+                const diffMs = rowDate.getTime() - now.getTime();
+                const diffHours = diffMs / (1000 * 60 * 60);
+                
+                return diffHours >= 0 && diffHours < 3;
+            } catch (e) {
+                return false;
+            }
+        }
+
         async function fetchAndUpdateViewer() {
             if (isFetching) return;
             isFetching = true;
@@ -284,7 +357,6 @@
 
                 app.appendChild(header);
 
-                // タブ切り替え用のナビゲーションを生成（全4ページ分）
                 const tabNav = document.createElement('div');
                 tabNav.className = 'tab-nav';
                 
@@ -314,7 +386,6 @@
 
                 app.appendChild(tabNav);
 
-                // 各ペイン（ページ1〜4）のコンテナ作成
                 const pane1 = document.createElement('div');
                 pane1.id = 'pane-page1';
                 pane1.className = 'page-pane active';
@@ -364,22 +435,18 @@
                 if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
                     lastKnownUpdateTime = currentUpdateTime;
 
-                    // ページ1: JSONデバッグ
                     const container1 = document.getElementById('content-container');
                     container1.innerHTML = '';
                     container1.appendChild(createDebugList(jsonData));
 
-                    // ページ2: 1時間天気
                     const container2 = document.getElementById('weather-1h-container');
                     container2.innerHTML = '';
                     container2.appendChild(create1HourWeatherView(jsonData));
 
-                    // ページ3: 3時間天気
                     const container3 = document.getElementById('weather-3h-container');
                     container3.innerHTML = '';
                     container3.appendChild(create3HourWeatherView(jsonData));
 
-                    // ページ4: 10日天気
                     const container4 = document.getElementById('weather-10d-container');
                     container4.innerHTML = '';
                     container4.appendChild(create10DayWeatherView(jsonData));
@@ -401,7 +468,6 @@
             }
         }
 
-        // タブ切り替え処理
         function switchTab(targetId, activeBtn) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-pane').forEach(pane => pane.classList.remove('active'));
@@ -436,7 +502,6 @@
             }
         });
 
-        // 共通の数値0判定用ヘルパー
         function formatVal(val) {
             if (val === 0 || val === '0' || val === 0.0) {
                 return `<span class="val-zero">${val}</span>`;
@@ -498,7 +563,6 @@
                     groupedByDate[dateKey].items.push({ ...h, displayTime: timeOnly });
                 });
 
-                let isFirstTable = true;
                 for (const group of Object.values(groupedByDate)) {
                     const table = document.createElement('table');
                     table.className = 'weather-table';
@@ -523,6 +587,12 @@
 
                     group.items.forEach((h, index) => {
                         const tr = document.createElement('tr');
+                        
+                        // 1時間用の判定関数を使用
+                        if (isCurrentTimeRow(h.time_1h)) {
+                            tr.className = 'current-time-row';
+                        }
+
                         let rowHtml = '';
                         if (index === 0) {
                             rowHtml += `
@@ -546,12 +616,24 @@
                             ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
                             : (tempVal ?? '-');
 
+                        const windVal = h.wind_speed_1h;
+                        const windClass = getWindClass(windVal);
+                        const windDisplay = (windVal === 0 || windVal === '0')
+                            ? `<span class="val-zero">${windVal}</span>`
+                            : (windVal ?? '-');
+
+                        const rainVal = h.precipitation_1h;
+                        const rainClass = getRainClass(rainVal);
+                        const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
+                            ? `<span class="val-zero">${rainVal}</span>`
+                            : (rainVal ?? '-');
+
                         rowHtml += `
                             <td>${h.displayTime}</td>
                             <td class="${riskClass}">${riskDisplay}</td>
-                            <td>${formatVal(h.precipitation_1h)}</td>
+                            <td class="${rainClass}">${rainDisplay}</td>
                             <td class="${tempClass}">${tempDisplay}</td>
-                            <td>${formatVal(h.wind_speed_1h)}</td>
+                            <td class="${windClass}">${windDisplay}</td>
                             <td>${formatVal(h.pressure_1h)}</td>
                             <td>${formatVal(h.weather_code_1h)}</td>
                         `;
@@ -560,7 +642,6 @@
                     });
 
                     sec.appendChild(table);
-                    isFirstTable = false;
                 }
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -624,7 +705,6 @@
                     groupedByDate[dateKey].items.push({ ...h, displayTime: timeOnly });
                 });
 
-                let isFirstTable = true;
                 for (const group of Object.values(groupedByDate)) {
                     const table = document.createElement('table');
                     table.className = 'weather-table';
@@ -649,6 +729,12 @@
 
                     group.items.forEach((h, index) => {
                         const tr = document.createElement('tr');
+                        
+                        // 3時間用の判定関数を使用 (0〜3時間未満)
+                        if (isCurrentTimeRow3H(h.time_3h)) {
+                            tr.className = 'current-time-row';
+                        }
+
                         let rowHtml = '';
                         if (index === 0) {
                             rowHtml += `
@@ -672,12 +758,24 @@
                             ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
                             : (tempVal ?? '-');
 
+                        const windVal = h.wind_speed_3h;
+                        const windClass = getWindClass(windVal);
+                        const windDisplay = (windVal === 0 || windVal === '0')
+                            ? `<span class="val-zero">${windVal}</span>`
+                            : (windVal ?? '-');
+
+                        const rainVal = h.precipitation_3h;
+                        const rainClass = getRainClass(rainVal);
+                        const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
+                            ? `<span class="val-zero">${rainVal}</span>`
+                            : (rainVal ?? '-');
+
                         rowHtml += `
                             <td>${h.displayTime}</td>
                             <td class="${riskClass}">${riskDisplay}</td>
-                            <td>${formatVal(h.precipitation_3h)}</td>
+                            <td class="${rainClass}">${rainDisplay}</td>
                             <td class="${tempClass}">${tempDisplay}</td>
-                            <td>${formatVal(h.wind_speed_3h)}</td>
+                            <td class="${windClass}">${windDisplay}</td>
                             <td>${formatVal(h.pressure_3h)}</td>
                             <td>${formatVal(h.weather_code_3h)}</td>
                         `;
@@ -686,7 +784,6 @@
                     });
 
                     sec.appendChild(table);
-                    isFirstTable = false;
                 }
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -731,7 +828,6 @@
             return wrapper;
         }
 
-        // ページ1用：オブジェクトを再帰的に走査してツリーを表示する関数
         function createDebugList(data) {
             const ul = document.createElement('ul');
 
@@ -788,7 +884,6 @@
             return ul;
         }
 
-        // 初回実行
         fetchAndUpdateViewer();
     </script>
 </body>
