@@ -86,21 +86,30 @@
                 border-bottom: 1px solid #333;
                 padding-bottom: 8px;
             }
-            /* 縦型レイアウト用のコンテナ（1列で縦に配置） */
+            /* 日付ごとのグループ見出し */
+            .date-group-title {
+                font-size: 1.05rem;
+                color: #9cdcfe;
+                margin: 15px 0 8px 0;
+                border-left: 3px solid #4ec9b0;
+                padding-left: 8px;
+            }
+            /* 縦型レイアウト用のコンテナ */
             .weather-list-vertical {
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
+                gap: 8px;
             }
-            /* 縦型レイアウト用のカード */
+            /* 縦型レイアウト用のカード（指定された項目を整然と配置） */
             .weather-card-vertical {
                 background-color: #1e1e1e;
                 border: 1px solid #333;
-                padding: 12px 18px;
+                padding: 10px 15px;
                 border-radius: 6px;
-                font-size: 0.95rem;
+                font-size: 0.9rem;
                 display: flex;
-                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 15px;
                 align-items: center;
             }
             ul {
@@ -328,7 +337,7 @@
             }
         });
 
-        // ページ2: 1時間天気ビュー（縦型レイアウト）の生成
+        // ページ2: 1時間天気ビュー（日付ごとにグループ化・指定形式に準拠）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -337,24 +346,58 @@
             sec.innerHTML = '<h2>1時間ごとの天気</h2>';
 
             if (data.hourly_1h && data.hourly_1h.length > 0) {
-                const listContainer = document.createElement('div');
-                listContainer.className = 'weather-list-vertical';
-                
+                // 日付ごとにデータをグループ化する
+                const groupedByDate = {};
                 data.hourly_1h.forEach(h => {
-                    const card = document.createElement('div');
-                    card.className = 'weather-card-vertical';
-                    const timeStr = h.time_1h.replace('T', ' ');
-                    card.innerHTML = `
-                        <div style="color: #9cdcfe; font-weight: bold;">${timeStr}</div>
-                        <div style="display: flex; gap: 20px; align-items: center;">
-                            <div>降水: ${h.precipitation_1h} mm</div>
-                            <div>風速: ${h.wind_speed_1h} m/s</div>
-                            <div style="font-size: 1.2rem; font-weight: bold; color: #4ec9b0; min-width: 70px; text-align: right;">${h.temperature_1h}℃</div>
-                        </div>
-                    `;
-                    listContainer.appendChild(card);
+                    // time_1h 例: "2026-09-15T09:00" または "2026-09-15 09:00" から日付部分を抽出して "MM/DD" に変換
+                    const rawTime = h.time_1h || '';
+                    let dateKey = 'その他';
+                    let timeOnly = rawTime;
+
+                    if (rawTime.includes('T') || rawTime.includes(' ')) {
+                        const parts = rawTime.split(/[\sT]/);
+                        const dateParts = parts[0].split('-'); // [YYYY, MM, DD]
+                        if (dateParts.length === 3) {
+                            dateKey = `${dateParts[1]}/${dateParts[2]}`; // MM/DD
+                        }
+                        timeOnly = parts[1].substring(0, 5); // HH:mm
+                    }
+
+                    if (!groupedByDate[dateKey]) {
+                        groupedByDate[dateKey] = [];
+                    }
+                    groupedByDate[dateKey].push({ ...h, displayTime: timeOnly });
                 });
-                sec.appendChild(listContainer);
+
+                // グループごとに描画
+                for (const [dateStr, items] of Object.entries(groupedByDate)) {
+                    const dateTitle = document.createElement('div');
+                    dateTitle.className = 'date-group-title';
+                    dateTitle.textContent = dateStr; // 例: 09/15
+                    sec.appendChild(dateTitle);
+
+                    const listContainer = document.createElement('div');
+                    listContainer.className = 'weather-list-vertical';
+
+                    items.forEach(h => {
+                        const card = document.createElement('div');
+                        card.className = 'weather-card-vertical';
+                        
+                        // 指定された項目の順番で構築
+                        card.innerHTML = `
+                            <div style="color: #9cdcfe; font-weight: bold; min-width: 50px;">${h.displayTime}</div>
+                            <div>気温<span style="color: #4ec9b0; font-weight: bold;">${h.temperature_1h ?? '-'}</span>℃</div>
+                            <div>降水:${h.precipitation_1h ?? '-'}mm</div>
+                            <div>風速:${h.wind_speed_1h ?? '-'}m/s</div>
+                            <div>気圧:${h.pressure_1h ?? '-'}hPa</div>
+                            <div>降水確率:${h.precipitation_probability_1h ?? '-'}%</div>
+                            <div>天気コード:${h.weather_code_1h ?? '-'}</div>
+                            <div>天候リスク:${h.weather_risk_level_1h ?? '-'}</div>
+                        `;
+                        listContainer.appendChild(card);
+                    });
+                    sec.appendChild(listContainer);
+                }
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
@@ -363,7 +406,7 @@
             return wrapper;
         }
 
-        // ページ3: 3時間天気ビュー（縦型レイアウト）の生成
+        // ページ3: 3時間天気ビュー
         function create3HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -378,12 +421,12 @@
                 data.hourly_3h.forEach(h => {
                     const card = document.createElement('div');
                     card.className = 'weather-card-vertical';
-                    const timeStr = h.time_3h.replace('T', ' ');
+                    const timeStr = (h.time_3h || '').replace('T', ' ');
                     card.innerHTML = `
                         <div style="color: #9cdcfe; font-weight: bold;">${timeStr}</div>
                         <div style="display: flex; gap: 20px; align-items: center;">
                             <div>降水: ${h.precipitation_3h} mm</div>
-                            <div style="font-size: 1.2rem; font-weight: bold; color: #4ec9b0; min-width: 70px; text-align: right;">${h.temperature_3h}℃</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #4ec9b0; min-width: 70px; text-align: right;">${h.temperature_3h}℃</div>
                         </div>
                     `;
                     listContainer.appendChild(card);
@@ -397,7 +440,7 @@
             return wrapper;
         }
 
-        // ページ4: 10日天気ビュー（縦型レイアウト）の生成
+        // ページ4: 10日天気ビュー
         function create10DayWeatherView(data) {
             const wrapper = document.createElement('div');
             
