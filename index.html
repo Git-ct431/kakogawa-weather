@@ -86,25 +86,25 @@
                 border-bottom: 1px solid #333;
                 padding-bottom: 8px;
             }
-            /* テーブル用スタイル：上下の隙間をなくしてぴったりくっつける */
+            /* テーブル用スタイル：上下の余白をなし（0）に設定 */
             .weather-table {
                 width: auto;
                 border-collapse: collapse;
                 background-color: #1e1e1e;
                 border: 1px solid #333;
                 font-size: 0.9rem;
-                margin-bottom: 0; /* 下部マージンを完全になくす */
+                margin-bottom: 0;
             }
-            /* 2つ目以降のテーブルは上のテーブルと枠線が重ならないように上ボーダーを調整、またはそのまま連結 */
             .weather-table + .weather-table {
                 border-top: none; 
             }
             .weather-table th, .weather-table td {
-                padding: 8px 12px;
+                padding: 0 12px;
                 text-align: center;
-                border-bottom: none; /* 横罫線を削除 */
-                border-right: 1px solid #333; /* 薄めの縦罫線 */
+                border-bottom: none; 
+                border-right: 1px solid #333;
                 white-space: nowrap;
+                height: 26px;
             }
             .weather-table th:last-child, .weather-table td:last-child {
                 border-right: none;
@@ -122,7 +122,6 @@
                 padding: 6px 6px;
                 border-bottom: 1px solid #333;
             }
-            /* 2つ目以降のテーブルのヘッダーは非表示にする（1つの大きな表に見せるため） */
             .weather-table ~ .weather-table thead {
                 display: none;
             }
@@ -134,10 +133,11 @@
                 background-color: #2d2d2d;
                 color: #9cdcfe;
                 font-weight: bold;
-                vertical-align: top; /* 上揃え */
+                vertical-align: top;
                 text-align: center;
-                padding: 10px 8px;
+                padding: 4px 8px;
                 border-right: 1px solid #333;
+                height: auto !important;
             }
             .date-cell-inner {
                 display: flex;
@@ -151,6 +151,22 @@
             .risk-2 { background-color: #1a4d7c; color: #c5e4ff; }
             .risk-3 { background-color: #5c521e; color: #ffe680; }
             .risk-4 { background-color: #5c2727; color: #ffb3b3; }
+
+            /* 3℃刻みの温度カラーマップ（より薄く・淡いトーンに調整） */
+            .temp-b3 { background-color: #122238; color: #b0d4ff; } /* 0℃未満 */
+            .temp-b2 { background-color: #152b47; color: #b0d4ff; } /* 0〜3℃未満 */
+            .temp-b1 { background-color: #173456; color: #a5ccf5; } /* 3〜6℃未満 */
+            .temp-b0 { background-color: #193d5c; color: #9cdcfe; } /* 6〜9℃未満 */
+            .temp-g0 { background-color: #1a423e; color: #9cdcfe; } /* 9〜12℃未満 */
+            .temp-g1 { background-color: #1c452b; color: #b5cea8; } /* 12〜15℃未満 */
+            .temp-g2 { background-color: #1e4a1e; color: #b5cea8; } /* 15〜18℃未満 */
+            .temp-g3 { background-color: #1b5232; color: #ffffff; font-weight: bold; } /* 18〜21℃ (最も快適) */
+            .temp-r0 { background-color: #3b421a; color: #e6dfa0; } /* 21〜24℃未満 */
+            .temp-r1 { background-color: #4f3c17; color: #e6dfa0; } /* 24〜27℃未満 */
+            .temp-r2 { background-color: #4f2d17; color: #f5cca8; } /* 27〜30℃未満 */
+            .temp-r3 { background-color: #4f1d17; color: #f5b0b0; } /* 30〜33℃未満 */
+            .temp-r4 { background-color: #4f1515; color: #f5b0b0; } /* 33〜36℃未満 */
+            .temp-r5 { background-color: #470d26; color: #f5b0d8; } /* 36℃以上 */
 
             /* 数値が0の場合の半透明スタイル */
             .val-zero {
@@ -225,6 +241,26 @@
         let isFirstLoad = true;
         let pollTimer = null;
         let isFetching = false;
+
+        // 温度に応じたCSSクラスを判定するヘルパー関数
+        function getTempClass(temp) {
+            if (temp === null || temp === undefined || isNaN(temp)) return '';
+            const t = parseFloat(temp);
+            if (t < 0) return 'temp-b3';
+            if (t < 3) return 'temp-b2';
+            if (t < 6) return 'temp-b1';
+            if (t < 9) return 'temp-b0';
+            if (t < 12) return 'temp-g0';
+            if (t < 15) return 'temp-g1';
+            if (t < 18) return 'temp-g2';
+            if (t <= 21) return 'temp-g3';
+            if (t < 24) return 'temp-r0';
+            if (t < 27) return 'temp-r1';
+            if (t < 30) return 'temp-r2';
+            if (t < 33) return 'temp-r3';
+            if (t < 36) return 'temp-r4';
+            return 'temp-r5';
+        }
 
         // アプリケーションの初期化・データフェッチ処理
         async function fetchAndUpdateViewer() {
@@ -505,15 +541,16 @@
                         const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
 
                         const tempVal = h.temperature_1h;
+                        const tempClass = getTempClass(tempVal);
                         const tempDisplay = (tempVal === 0 || tempVal === '0') 
                             ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
-                            : `<span style="color: #4ec9b0; font-weight: bold;">${tempVal ?? '-'}</span>`;
+                            : (tempVal ?? '-');
 
                         rowHtml += `
                             <td>${h.displayTime}</td>
                             <td class="${riskClass}">${riskDisplay}</td>
                             <td>${formatVal(h.precipitation_1h)}</td>
-                            <td>${tempDisplay}</td>
+                            <td class="${tempClass}">${tempDisplay}</td>
                             <td>${formatVal(h.wind_speed_1h)}</td>
                             <td>${formatVal(h.pressure_1h)}</td>
                             <td>${formatVal(h.weather_code_1h)}</td>
@@ -630,15 +667,16 @@
                         const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
 
                         const tempVal = h.temperature_3h;
+                        const tempClass = getTempClass(tempVal);
                         const tempDisplay = (tempVal === 0 || tempVal === '0') 
                             ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
-                            : `<span style="color: #4ec9b0; font-weight: bold;">${tempVal ?? '-'}</span>`;
+                            : (tempVal ?? '-');
 
                         rowHtml += `
                             <td>${h.displayTime}</td>
                             <td class="${riskClass}">${riskDisplay}</td>
                             <td>${formatVal(h.precipitation_3h)}</td>
-                            <td>${tempDisplay}</td>
+                            <td class="${tempClass}">${tempDisplay}</td>
                             <td>${formatVal(h.wind_speed_3h)}</td>
                             <td>${formatVal(h.pressure_3h)}</td>
                             <td>${formatVal(h.weather_code_3h)}</td>
