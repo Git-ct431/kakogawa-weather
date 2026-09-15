@@ -38,6 +38,63 @@
                 font-size: 0.85rem;
                 color: #9cdcfe;
             }
+            /* タブ切り替え用スタイルの追加 */
+            .tab-nav {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+            .tab-btn {
+                background-color: #2d2d2d;
+                color: #d4d4d4;
+                border: 1px solid #404040;
+                padding: 6px 14px;
+                cursor: pointer;
+                font-family: monospace;
+                border-radius: 4px;
+            }
+            .tab-btn.active {
+                background-color: #0e639c;
+                border-color: #1177bb;
+                color: #ffffff;
+            }
+            .page-pane {
+                display: none;
+            }
+            .page-pane.active {
+                display: block;
+            }
+            /* ページ2（天気表示用）のシンプルスタイル */
+            .weather-section {
+                margin-bottom: 20px;
+                background-color: #252526;
+                padding: 15px;
+                border-radius: 6px;
+                border: 1px solid #333;
+            }
+            .weather-section h2 {
+                font-size: 1rem;
+                color: #4ec9b0;
+                margin-top: 0;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #333;
+                padding-bottom: 5px;
+            }
+            .weather-card-container {
+                display: flex;
+                gap: 10px;
+                overflow-x: auto;
+                padding-bottom: 5px;
+            }
+            .weather-card {
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+                padding: 10px;
+                min-width: 110px;
+                border-radius: 4px;
+                font-size: 0.85rem;
+                text-align: center;
+            }
             ul {
                 list-style-type: none;
                 padding-left: 20px;
@@ -88,6 +145,7 @@
         let isFirstLoad = true;
         let pollTimer = null;
         let isFetching = false;
+        let currentTab = 'page1'; // 現在選択されているタブを管理
 
         // アプリケーションの初期化・データフェッチ処理
         async function fetchAndUpdateViewer() {
@@ -100,7 +158,7 @@
                 const header = document.createElement('header');
                 
                 const title = document.createElement('h1');
-                title.textContent = 'JSON Debug Viewer (data.json)';
+                title.textContent = 'JSON Viewer & Weather App';
                 header.appendChild(title);
 
                 const updateInfo = document.createElement('div');
@@ -111,10 +169,41 @@
 
                 app.appendChild(header);
 
-                const container = document.createElement('main');
-                container.id = 'content-container';
-                container.textContent = '読み込み中...';
-                app.appendChild(container);
+                // タブ切り替え用のナビゲーションを生成
+                const tabNav = document.createElement('div');
+                tabNav.className = 'tab-nav';
+                
+                const btnPage1 = document.createElement('button');
+                btnPage1.className = 'tab-btn active';
+                btnPage1.textContent = 'ページ1: JSONデバッグ';
+                btnPage1.onclick = () => switchTab('page1', btnPage1, btnPage2);
+                tabNav.appendChild(btnPage1);
+
+                const btnPage2 = document.createElement('button');
+                btnPage2.className = 'tab-btn';
+                btnPage2.textContent = 'ページ2: 天気情報表示';
+                btnPage2.onclick = () => switchTab('page2', btnPage2, btnPage1);
+                tabNav.appendChild(btnPage2);
+
+                app.appendChild(tabNav);
+
+                // ページ1（デバッグ用コンテナ）を生成
+                const pane1 = document.createElement('div');
+                pane1.id = 'pane-page1';
+                pane1.className = 'page-pane active';
+                const container1 = document.createElement('main');
+                container1.id = 'content-container';
+                pane1.appendChild(container1);
+                app.appendChild(pane1);
+
+                // ページ2（天気表示用コンテナ）を生成
+                const pane2 = document.createElement('div');
+                pane2.id = 'pane-page2';
+                pane2.className = 'page-pane';
+                const container2 = document.createElement('main');
+                container2.id = 'weather-container';
+                pane2.appendChild(container2);
+                app.appendChild(pane2);
             }
 
             try {
@@ -132,19 +221,26 @@
 
                 if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
                     if (!isFirstLoad && lastKnownUpdateTime !== null) {
-                        console.log(`新着 데이터를検知しました。更新時刻: ${currentUpdateTime}`);
+                        console.log(`新着データを検知しました。更新時刻: ${currentUpdateTime}`);
                     }
                     lastKnownUpdateTime = currentUpdateTime;
 
-                    const container = document.getElementById('content-container');
-                    container.innerHTML = '';
-                    container.appendChild(createDebugList(jsonData));
+                    // ページ1の内容を更新
+                    const container1 = document.getElementById('content-container');
+                    container1.innerHTML = '';
+                    container1.appendChild(createDebugList(jsonData));
+
+                    // ページ2（天気表示）の内容を更新
+                    const container2 = document.getElementById('weather-container');
+                    container2.innerHTML = '';
+                    container2.appendChild(createWeatherView(jsonData));
+
                     isFirstLoad = false;
                 }
             } catch (error) {
                 if (isFirstLoad) {
-                    const container = document.getElementById('content-container');
-                    container.innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}<br>※ローカル環境(file://)の場合はCORS制限がかかるため、簡易サーバー等でお試しください。</span>`;
+                    const container1 = document.getElementById('content-container');
+                    container1.innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}<br>※ローカル環境(file://)の場合はCORS制限がかかるため、簡易サーバー等でお試しください。</span>`;
                 } else {
                     console.warn(`バックグラウンドでのデータ確認に失敗しました: ${error.message}`);
                 }
@@ -154,6 +250,16 @@
                     scheduleNextCheck();
                 }
             }
+        }
+
+        // タブ切り替え処理を行う関数
+        function switchTab(targetPage, activeBtn, inactiveBtn) {
+            currentTab = targetPage;
+            activeBtn.classList.add('active');
+            inactiveBtn.classList.remove('active');
+
+            document.getElementById('pane-page1').classList.toggle('active', targetPage === 'page1');
+            document.getElementById('pane-page2').classList.toggle('active', targetPage === 'page2');
         }
 
         function scheduleNextCheck() {
@@ -182,6 +288,103 @@
             }
         });
 
+        // 天気情報データを視覚的なレイアウトに変換する関数
+        function createWeatherView(data) {
+            const wrapper = document.createElement('div');
+
+            // 注意報セクションの生成
+            if (data.jma_warning_kakogawa && data.jma_warning_kakogawa.length > 0) {
+                const warnSec = document.createElement('div');
+                warnSec.className = 'weather-section';
+                warnSec.innerHTML = '<h2>気象注意報（加古川市）</h2>';
+                data.jma_warning_kakogawa.forEach(w => {
+                    const item = document.createElement('div');
+                    item.style.marginBottom = '6px';
+                    item.innerHTML = `⚠️ <strong>${w.code_jp}</strong> (${w.status})`;
+                    warnSec.appendChild(item);
+                });
+                wrapper.appendChild(warnSec);
+            }
+
+            // 1時間ごとの天気セクションの生成
+            if (data.hourly_1h && data.hourly_1h.length > 0) {
+                const h1Sec = document.createElement('div');
+                h1Sec.className = 'weather-section';
+                h1Sec.innerHTML = '<h2>1時間ごとの天気</h2>';
+                
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'weather-card-container';
+                
+                data.hourly_1h.forEach(h => {
+                    const card = document.createElement('div');
+                    card.className = 'weather-card';
+                    const timeStr = h.time_1h.replace('T', ' ');
+                    card.innerHTML = `
+                        <div>${timeStr}</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; margin: 4px 0;">${h.temperature_1h}℃</div>
+                        <div>降水: ${h.precipitation_1h}mm</div>
+                        <div>風速: ${h.wind_speed_1h}m/s</div>
+                    `;
+                    cardContainer.appendChild(card);
+                });
+                h1Sec.appendChild(cardContainer);
+                wrapper.appendChild(h1Sec);
+            }
+
+            // 3時間ごとの天気セクションの生成
+            if (data.hourly_3h && data.hourly_3h.length > 0) {
+                const h3Sec = document.createElement('div');
+                h3Sec.className = 'weather-section';
+                h3Sec.innerHTML = '<h2>3時間ごとの天気</h2>';
+                
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'weather-card-container';
+                
+                data.hourly_3h.forEach(h => {
+                    const card = document.createElement('div');
+                    card.className = 'weather-card';
+                    const timeStr = h.time_3h.replace('T', ' ');
+                    card.innerHTML = `
+                        <div>${timeStr}</div>
+                        <div style="font-size: 1.1rem; font-weight: bold; margin: 4px 0;">${h.temperature_3h}℃</div>
+                        <div>降水: ${h.precipitation_3h}mm</div>
+                    `;
+                    cardContainer.appendChild(card);
+                });
+                h3Sec.appendChild(cardContainer);
+                wrapper.appendChild(h3Sec);
+            }
+
+            // 1日ごとの天気（週間天気）セクションの生成
+            if (data.daily_1day && data.daily_1day.length > 0) {
+                const dailySec = document.createElement('div');
+                dailySec.className = 'weather-section';
+                dailySec.innerHTML = '<h2>1日ごとの天気（週間）</h2>';
+                
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'weather-card-container';
+                
+                data.daily_1day.forEach(d => {
+                    const card = document.createElement('div');
+                    card.className = 'weather-card';
+                    card.style.minWidth = '130px';
+                    card.innerHTML = `
+                        <div>${d.time_1day}</div>
+                        <div style="margin: 4px 0;">
+                            <span style="color: #f44747;">最高 ${d.temperature_max_1day}℃</span><br>
+                            <span style="color: #9cdcfe;">最低 ${d.temperature_min_1day}℃</span>
+                        </div>
+                        <div>降水確率: ${d.precipitation_probability_max_1day}%</div>
+                    `;
+                    cardContainer.appendChild(card);
+                });
+                dailySec.appendChild(cardContainer);
+                wrapper.appendChild(dailySec);
+            }
+
+            return wrapper;
+        }
+
         // オブジェクトを再帰的に走査して開閉可能なツリー状DOMを生成する関数
         function createDebugList(data) {
             const ul = document.createElement('ul');
@@ -195,7 +398,7 @@
                     const isObjOrArray = value !== null && type === 'object';
 
                     if (isObjOrArray) {
-                        li.classList.add('collapsed'); // デフォルトは折りたたみ状態（必要に応じて外せます）
+                        li.classList.add('collapsed'); // デフォルトは折りたたみ状態
 
                         // 開閉用のボタンを作成
                         const toggleBtn = document.createElement('button');
