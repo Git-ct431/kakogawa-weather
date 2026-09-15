@@ -86,19 +86,22 @@
                 border-bottom: 1px solid #333;
                 padding-bottom: 8px;
             }
-            /* 天気カード用のグリッド・レイアウト */
-            .weather-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-                gap: 12px;
+            /* 縦型レイアウト用のコンテナ（1列で縦に配置） */
+            .weather-list-vertical {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
             }
-            .weather-card {
+            /* 縦型レイアウト用のカード */
+            .weather-card-vertical {
                 background-color: #1e1e1e;
                 border: 1px solid #333;
-                padding: 15px;
+                padding: 12px 18px;
                 border-radius: 6px;
                 font-size: 0.95rem;
-                text-align: center;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             }
             ul {
                 list-style-type: none;
@@ -325,7 +328,7 @@
             }
         });
 
-        // ページ2: 1時間天気ビューの生成
+        // ページ2: 1時間天気ビュー（縦型レイアウト）の生成
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -334,21 +337,24 @@
             sec.innerHTML = '<h2>1時間ごとの天気</h2>';
 
             if (data.hourly_1h && data.hourly_1h.length > 0) {
-                const grid = document.createElement('div');
-                grid.className = 'weather-grid';
+                const listContainer = document.createElement('div');
+                listContainer.className = 'weather-list-vertical';
+                
                 data.hourly_1h.forEach(h => {
                     const card = document.createElement('div');
-                    card.className = 'weather-card';
+                    card.className = 'weather-card-vertical';
                     const timeStr = h.time_1h.replace('T', ' ');
                     card.innerHTML = `
-                        <div style="color: #9cdcfe; font-size: 0.85rem; margin-bottom: 6px;">${timeStr}</div>
-                        <div style="font-size: 1.4rem; font-weight: bold; margin: 6px 0; color: #4ec9b0;">${h.temperature_1h}℃</div>
-                        <div style="font-size: 0.85rem;">降水: ${h.precipitation_1h} mm</div>
-                        <div style="font-size: 0.85rem;">風速: ${h.wind_speed_1h} m/s</div>
+                        <div style="color: #9cdcfe; font-weight: bold;">${timeStr}</div>
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <div>降水: ${h.precipitation_1h} mm</div>
+                            <div>風速: ${h.wind_speed_1h} m/s</div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: #4ec9b0; min-width: 70px; text-align: right;">${h.temperature_1h}℃</div>
+                        </div>
                     `;
-                    grid.appendChild(card);
+                    listContainer.appendChild(card);
                 });
-                sec.appendChild(grid);
+                sec.appendChild(listContainer);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
@@ -357,7 +363,7 @@
             return wrapper;
         }
 
-        // ページ3: 3時間天気ビューの生成
+        // ページ3: 3時間天気ビュー（縦型レイアウト）の生成
         function create3HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -366,20 +372,23 @@
             sec.innerHTML = '<h2>3時間ごとの天気</h2>';
 
             if (data.hourly_3h && data.hourly_3h.length > 0) {
-                const grid = document.createElement('div');
-                grid.className = 'weather-grid';
+                const listContainer = document.createElement('div');
+                listContainer.className = 'weather-list-vertical';
+                
                 data.hourly_3h.forEach(h => {
                     const card = document.createElement('div');
-                    card.className = 'weather-card';
+                    card.className = 'weather-card-vertical';
                     const timeStr = h.time_3h.replace('T', ' ');
                     card.innerHTML = `
-                        <div style="color: #9cdcfe; font-size: 0.85rem; margin-bottom: 6px;">${timeStr}</div>
-                        <div style="font-size: 1.4rem; font-weight: bold; margin: 6px 0; color: #4ec9b0;">${h.temperature_3h}℃</div>
-                        <div style="font-size: 0.85rem;">降水: ${h.precipitation_3h} mm</div>
+                        <div style="color: #9cdcfe; font-weight: bold;">${timeStr}</div>
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <div>降水: ${h.precipitation_3h} mm</div>
+                            <div style="font-size: 1.2rem; font-weight: bold; color: #4ec9b0; min-width: 70px; text-align: right;">${h.temperature_3h}℃</div>
+                        </div>
                     `;
-                    grid.appendChild(card);
+                    listContainer.appendChild(card);
                 });
-                sec.appendChild(grid);
+                sec.appendChild(listContainer);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
@@ -388,7 +397,7 @@
             return wrapper;
         }
 
-        // ページ4: 10日天気ビューの生成
+        // ページ4: 10日天気ビュー（縦型レイアウト）の生成
         function create10DayWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -397,23 +406,25 @@
             sec.innerHTML = '<h2>10日間の天気（週間）</h2>';
 
             if (data.daily_1day && data.daily_1day.length > 0) {
-                const grid = document.createElement('div');
-                grid.className = 'weather-grid';
+                const listContainer = document.createElement('div');
+                listContainer.className = 'weather-list-vertical';
+                
                 data.daily_1day.forEach(d => {
                     const card = document.createElement('div');
-                    card.className = 'weather-card';
-                    card.style.minWidth = '200px';
+                    card.className = 'weather-card-vertical';
                     card.innerHTML = `
-                        <div style="color: #9cdcfe; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px;">${d.time_1day}</div>
-                        <div style="margin: 8px 0; font-size: 0.9rem;">
-                            <span style="color: #f44747; font-weight: bold;">最高 ${d.temperature_max_1day}℃</span><br>
-                            <span style="color: #9cdcfe; font-weight: bold;">最低 ${d.temperature_min_1day}℃</span>
+                        <div style="color: #9cdcfe; font-weight: bold;">${d.time_1day}</div>
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <div>降水確率: ${d.precipitation_probability_max_1day}%</div>
+                            <div>
+                                <span style="color: #f44747; font-weight: bold;">最高 ${d.temperature_max_1day}℃</span> / 
+                                <span style="color: #9cdcfe; font-weight: bold;">最低 ${d.temperature_min_1day}℃</span>
+                            </div>
                         </div>
-                        <div style="font-size: 0.85rem; margin-top: 6px;">降水確率: ${d.precipitation_probability_max_1day}%</div>
                     `;
-                    grid.appendChild(card);
+                    listContainer.appendChild(card);
                 });
-                sec.appendChild(grid);
+                sec.appendChild(listContainer);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
