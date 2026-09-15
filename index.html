@@ -146,6 +146,12 @@
             .risk-3 { background-color: #5c521e; color: #ffe680; } /* 黄色（薄め） */
             .risk-4 { background-color: #5c2727; color: #ffb3b3; } /* 赤（薄め） */
 
+            /* 数値が0の場合の半透明スタイル */
+            .val-zero {
+                color: #777777 !important;
+                opacity: 0.6;
+            }
+
             /* 既存の縦型レイアウト（ページ3・4用） */
             .weather-list-vertical {
                 display: flex;
@@ -388,7 +394,7 @@
             }
         });
 
-        // ページ2: 1時間天気ビュー（項目並び替え・リスク背景色対応）
+        // ページ2: 1時間天気ビュー（時刻をHH形式、数値0を半透明化対応）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -397,6 +403,14 @@
             sec.innerHTML = '<h2>1時間ごとの天気</h2>';
 
             if (data.hourly_1h && data.hourly_1h.length > 0) {
+                // 数値が 0 の場合に半透明クラスを付与するヘルパー関数
+                const formatVal = (val) => {
+                    if (val === 0 || val === '0' || val === 0.0) {
+                        return `<span class="val-zero">${val}</span>`;
+                    }
+                    return val ?? '-';
+                };
+
                 // 日付ごとにデータをグループ化する
                 const groupedByDate = {};
                 data.hourly_1h.forEach(h => {
@@ -420,7 +434,12 @@
                             dayStr = dateParts[2];
                             dateKey = `${monthStr}${dayStr}`;
                         }
-                        timeOnly = parts[1].substring(0, 5); // HH:mm
+                        
+                        // HH:mm のうち「HH」部分のみを抽出（例: "15:00" -> "15"）
+                        const timeParts = parts[1].split(':');
+                        if (timeParts.length > 0) {
+                            timeOnly = timeParts[0];
+                        }
                     }
 
                     // 曜日を一文字で取得する処理 (日月火水木金土)
@@ -450,7 +469,6 @@
                     
                     let theadHtml = '';
                     // 最初の日付のテーブルの上にのみヘッダーをつける
-                    // 順番：日付、時刻、天候リスク、降水、気温、風速、気圧、天気コード
                     if (isFirstTable) {
                         theadHtml = `
                             <thead>
@@ -496,16 +514,22 @@
                         // 天候リスクの数値に応じたクラス名を設定 (0〜4)
                         const riskVal = h.weather_risk_level_1h ?? 0;
                         const riskClass = `risk-${riskVal}`;
+                        const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
 
-                        // 指定された順序：時刻、天候リスク、降水、気温、風速、気圧、天気コード
+                        // 各項目のデータ整形（0の場合は半透明処理適用）
+                        const tempVal = h.temperature_1h;
+                        const tempDisplay = (tempVal === 0 || tempVal === '0') 
+                            ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
+                            : `<span style="color: #4ec9b0; font-weight: bold;">${tempVal ?? '-'}</span>`;
+
                         rowHtml += `
                             <td>${h.displayTime}</td>
-                            <td class="${riskClass}">${h.weather_risk_level_1h ?? '-'}</td>
-                            <td>${h.precipitation_1h ?? '-'}</td>
-                            <td><span style="color: #4ec9b0; font-weight: bold;">${h.temperature_1h ?? '-'}</span></td>
-                            <td>${h.wind_speed_1h ?? '-'}</td>
-                            <td>${h.pressure_1h ?? '-'}</td>
-                            <td>${h.weather_code_1h ?? '-'}</td>
+                            <td class="${riskClass}">${riskDisplay}</td>
+                            <td>${formatVal(h.precipitation_1h)}</td>
+                            <td>${tempDisplay}</td>
+                            <td>${formatVal(h.wind_speed_1h)}</td>
+                            <td>${formatVal(h.pressure_1h)}</td>
+                            <td>${formatVal(h.weather_code_1h)}</td>
                         `;
                         tr.innerHTML = rowHtml;
                         tbody.appendChild(tr);
