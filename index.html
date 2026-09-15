@@ -86,30 +86,7 @@
                 border-bottom: 1px solid #333;
                 padding-bottom: 8px;
             }
-            /* ページ2：日付行とテーブルを横並びにするレイアウト */
-            .weather-row-wrapper {
-                display: flex;
-                align-items: flex-start;
-                margin-bottom: 15px;
-                gap: 10px;
-            }
-            /* 左側の縦書き日付スタイル（MM\nDD\n金 を縦に並べる） */
-            .date-vertical-label {
-                background-color: #2d2d2d;
-                color: #9cdcfe;
-                border: 1px solid #333;
-                padding: 10px 8px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 0.95rem;
-                line-height: 1.2;
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-            }
-            /* テーブル用スタイル：幅を自動調整（文字がぴったり入るように） */
+            /* テーブル用スタイル：縦罫線（薄め）あり、横罫線なし */
             .weather-table {
                 width: auto;
                 border-collapse: collapse;
@@ -118,12 +95,17 @@
                 border-radius: 6px;
                 overflow: hidden;
                 font-size: 0.9rem;
+                margin-bottom: 15px;
             }
             .weather-table th, .weather-table td {
                 padding: 8px 12px;
                 text-align: center;
-                border-bottom: 1px solid #333;
+                border-bottom: none; /* 横罫線を削除 */
+                border-right: 1px solid #333; /* 薄めの縦罫線 */
                 white-space: nowrap;
+            }
+            .weather-table th:last-child, .weather-table td:last-child {
+                border-right: none;
             }
             /* ヘッダー縦書きスタイル */
             .weather-table th {
@@ -136,13 +118,26 @@
                 height: 90px;
                 vertical-align: middle;
                 padding: 6px 6px;
+                border-bottom: 1px solid #333; /* ヘッダー下部のみ境界線を保持 */
             }
             .weather-table tr:hover {
                 background-color: #252526;
             }
-            .weather-table td:first-child {
+            /* 左列の日付セル（上揃え、縦並び） */
+            .date-cell {
+                background-color: #2d2d2d;
                 color: #9cdcfe;
                 font-weight: bold;
+                vertical-align: top; /* 上揃え */
+                text-align: center;
+                padding: 10px 8px;
+                border-right: 1px solid #333;
+            }
+            .date-cell-inner {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                line-height: 1.2;
             }
             /* 既存の縦型レイアウト（ページ3・4用） */
             .weather-list-vertical {
@@ -386,7 +381,7 @@
             }
         });
 
-        // ページ2: 1時間天気ビュー（自動列幅・MM/DD/金 縦並びレイアウト）
+        // ページ2: 1時間天気ビュー（テーブル内左列に日付、上揃え、縦罫線のみ）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -443,24 +438,16 @@
 
                 // グループごとにテーブルを生成
                 for (const group of Object.values(groupedByDate)) {
-                    const rowWrapper = document.createElement('div');
-                    rowWrapper.className = 'weather-row-wrapper';
-
-                    // 左側の縦並び日付ラベル (MM / DD / 金)
-                    const dateLabel = document.createElement('div');
-                    dateLabel.className = 'date-vertical-label';
-                    dateLabel.innerHTML = `<span>${group.month}</span><span>${group.day}</span><span>${group.weekDay}</span>`;
-                    rowWrapper.appendChild(dateLabel);
-
                     const table = document.createElement('table');
                     table.className = 'weather-table';
                     
                     let theadHtml = '';
-                    // 最初の日付の上にのみヘッダー（縦書き）をつける
+                    // 最初の日付のテーブルの上にのみヘッダーをつける
                     if (isFirstTable) {
                         theadHtml = `
                             <thead>
                                 <tr>
+                                    <th>日付</th>
                                     <th>時刻</th>
                                     <th>気温</th>
                                     <th>降水</th>
@@ -482,10 +469,24 @@
 
                     const tbody = table.querySelector('tbody');
 
-                    group.items.forEach(h => {
+                    group.items.forEach((h, index) => {
                         const tr = document.createElement('tr');
-                        // 単位（℃, mm, m/s, hPa, % 等）を削除して数値のみにする
-                        tr.innerHTML = `
+                        
+                        let rowHtml = '';
+                        // 最初の一行目のみ、左列に rowspan で日付セルを配置
+                        if (index === 0) {
+                            rowHtml += `
+                                <td class="date-cell" rowspan="${group.items.length}">
+                                    <div class="date-cell-inner">
+                                        <span>${group.month}</span>
+                                        <span>${group.day}</span>
+                                        <span>${group.weekDay}</span>
+                                    </div>
+                                </td>
+                            `;
+                        }
+
+                        rowHtml += `
                             <td>${h.displayTime}</td>
                             <td><span style="color: #4ec9b0; font-weight: bold;">${h.temperature_1h ?? '-'}</span></td>
                             <td>${h.precipitation_1h ?? '-'}</td>
@@ -495,11 +496,11 @@
                             <td>${h.weather_code_1h ?? '-'}</td>
                             <td>${h.weather_risk_level_1h ?? '-'}</td>
                         `;
+                        tr.innerHTML = rowHtml;
                         tbody.appendChild(tr);
                     });
 
-                    rowWrapper.appendChild(table);
-                    sec.appendChild(rowWrapper);
+                    sec.appendChild(table);
                 }
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
