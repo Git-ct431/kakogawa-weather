@@ -9,6 +9,29 @@ LATITUDE = 34.75803345356596
 LONGITUDE = 134.8150154875823
 JST = timezone(timedelta(hours=9))
 
+# ==========================================
+# 日本語変換マッピング定義（コンパクト化）
+# ==========================================
+DATA_TYPE_NAMES = {
+    "VPWW55": "気象警報・注意報（府県予報区等）", "VPWW56": "気象警報・注意報（市区町村等）",
+    "VPWW57": "高潮警報・注意報", "VPWW58": "暴風(暴風雪)警報・注意報",
+    "VPWW59": "波浪警報・注意報", "VPWW61": "竜巻注意情報"
+}
+
+WARNING_CODE_NAMES = {
+    "00": "解除", "02": "暴風雪警報", "03": "大雨警報（レベル3）", "04": "洪水警報",
+    "05": "暴風警報", "06": "大雪警報", "07": "波浪警報", "08": "高潮警報（レベル3）",
+    "09": "土砂災害警報（レベル3）", "10": "大雨注意報（レベル2）", "12": "大雪注意報",
+    "13": "風雪注意報", "14": "雷注意報", "15": "強風注意報", "16": "波浪注意報",
+    "17": "融雪注意報", "18": "洪水注意報", "19": "高潮注意報（レベル2）", "20": "濃霧注意報",
+    "21": "乾燥注意報", "22": "なだれ注意報", "23": "低温注意報", "24": "霜注意報",
+    "25": "着氷注意報", "26": "着雪注意報", "27": "その他の注意報", "29": "土砂災害注意報（レベル2）",
+    "32": "暴風雪特別警報", "33": "大雨特別警報（レベル5）", "35": "暴風特別警報",
+    "36": "大雪特別警報", "37": "波浪特別警報", "38": "高潮特別警報（レベル5）",
+    "39": "土砂災害特別警報（レベル5）", "43": "大雨危険警報（レベル4）",
+    "48": "高潮危険警報（レベル4）", "49": "土砂災害危険警報（レベル4）"
+}
+
 
 def get_weather_risk_level(code):
   if code in [95, 96, 99]:
@@ -30,27 +53,45 @@ class JMAHyogoParser:
     def __init__(self, raw_data):
         self.raw_data = raw_data if isinstance(raw_data, list) else []
 
-    # 1. 県全体のヘッドライン・メタ情報抽出（辞書内包表記）
+    # 1. 県全体のヘッドライン・メタ情報抽出
     def get_prefecture_headers(self):
-        keys = ["controlDatetime", "reportDatetime", "infoType", "publishingOffice", "headlineText", "dataTypeCode"]
-        return [{k: entry.get(k) for k in keys} for entry in self.raw_data]
+        headers = []
+        for entry in self.raw_data:
+            dt_code = entry.get("dataTypeCode")
+            headers.append({
+                "controlDatetime": entry.get("controlDatetime"),
+                "reportDatetime": entry.get("reportDatetime"),
+                "infoType": entry.get("infoType"),
+                "publishingOffice": entry.get("publishingOffice"),
+                "headlineText": entry.get("headlineText"),
+                "dataTypeCode": dt_code,
+                "dataTypeCode_jp": DATA_TYPE_NAMES.get(dt_code, "不明な情報")
+            })
+        return headers
 
-    # 2. 指定エリアコードのフラット抽出（階層を意識しない全方位探索）
+    # 2. 指定エリアコードのフラット抽出（dataTypeCode_jp と code_jp を付与）
     def get_warnings_by_area(self, target_area_code):
-        return [
-            {
-                "dataTypeCode": entry.get("dataTypeCode"),
-                "headlineText": entry.get("headlineText", ""),
-                "areaCode": item.get("areaCode"),
-                "code": k.get("code"),
-                "status": k.get("status"),
-                "additions": k.get("additions", [])
-            }
-            for entry in self.raw_data
-            for items in entry.get("warning", {}).values() if isinstance(items, list)
-            for item in items if item.get("areaCode") == target_area_code
-            for k in item.get("kinds", [])
-        ]
+        results = []
+        for entry in self.raw_data:
+            dt_code = entry.get("dataTypeCode")
+            dt_code_jp = DATA_TYPE_NAMES.get(dt_code, "不明な情報")
+            
+            for items in entry.get("warning", {}).values():
+                if isinstance(items, list):
+                    for item in items:
+                        if item.get("areaCode") == target_area_code:
+                            for k in item.get("kinds", []):
+                                w_code = k.get("code")
+                                results.append({
+                                    "dataTypeCode": dt_code,
+                                    "dataTypeCode_jp": dt_code_jp,
+                                    "areaCode": item.get("areaCode"),
+                                    "code": w_code,
+                                    "code_jp": WARNING_CODE_NAMES.get(w_code, "不明なコード"),
+                                    "status": k.get("status"),
+                                    "additions": k.get("additions", [])
+                                })
+        return results
 
 
 def fetch_hourly(lat, lon):
