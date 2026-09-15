@@ -129,19 +129,19 @@
                 background-color: #252526;
             }
 
-            /* 現在時刻行のうっすら下線スタイル */
-            .current-time-row td {
+            /* 現在時刻行：日付セル以外（時刻から右側）に下線を引く */
+            .current-time-row td:not(.date-cell) {
                 border-bottom: 2px solid #3d887a !important;
             }
 
-            /* 左列の日付セル */
+            /* 左列の日付セル（ページ2,3用：縦並び） */
             .date-cell {
                 background-color: #2d2d2d;
                 color: #9cdcfe;
                 font-weight: bold;
-                vertical-align: top;
+                vertical-align: middle;
                 text-align: center;
-                padding: 4px 8px;
+                padding: 4px 10px;
                 border-right: 1px solid #333;
                 height: auto !important;
             }
@@ -151,6 +151,25 @@
                 align-items: center;
                 line-height: 1.2;
             }
+
+            /* ページ4専用の日付セル（横並び・左寄せ） */
+            .date-cell-horizontal {
+                background-color: #2d2d2d;
+                color: #9cdcfe;
+                font-weight: bold;
+                vertical-align: middle;
+                text-align: left !important;
+                padding: 4px 12px;
+                border-right: 1px solid #333;
+                white-space: nowrap;
+            }
+            .date-cell-horizontal-inner {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 6px;
+            }
+
             /* 天候リスクごとの背景色 */
             .risk-0 { }
             .risk-1 { background-color: #1c3b57; color: #9cdcfe; }
@@ -194,22 +213,6 @@
                 opacity: 0.6;
             }
 
-            .weather-list-vertical {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-            .weather-card-vertical {
-                background-color: #1e1e1e;
-                border: 1px solid #333;
-                padding: 10px 15px;
-                border-radius: 6px;
-                font-size: 0.9rem;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 15px;
-                align-items: center;
-            }
             ul {
                 list-style-type: none;
                 padding-left: 20px;
@@ -302,32 +305,26 @@
             return '';
         }
 
-        // --- 1時間天気用の現在時刻包含判定 (行時刻 ≦ 現在時刻 ＜ 行時刻 + 1時間) ---
         function isCurrentTimeRow(rawTime) {
             if (!rawTime) return false;
             try {
                 const rowStartTime = new Date(rawTime.replace(' ', 'T'));
                 if (isNaN(rowStartTime.getTime())) return false;
-
-                const rowEndTime = new Date(rowStartTime.getTime() + 60 * 60 * 1000); // +1時間
+                const rowEndTime = new Date(rowStartTime.getTime() + 60 * 60 * 1000);
                 const now = new Date();
-
                 return now >= rowStartTime && now < rowEndTime;
             } catch (e) {
                 return false;
             }
         }
 
-        // --- 3時間天気用の現在時刻包含判定 (行時刻 ≦ 現在時刻 ＜ 行時刻 + 3時間) ---
         function isCurrentTimeRow3H(rawTime) {
             if (!rawTime) return false;
             try {
                 const rowStartTime = new Date(rawTime.replace(' ', 'T'));
                 if (isNaN(rowStartTime.getTime())) return false;
-
-                const rowEndTime = new Date(rowStartTime.getTime() + 3 * 60 * 60 * 1000); // +3時間
+                const rowEndTime = new Date(rowStartTime.getTime() + 3 * 60 * 60 * 1000);
                 const now = new Date();
-
                 return now >= rowStartTime && now < rowEndTime;
             } catch (e) {
                 return false;
@@ -586,7 +583,6 @@
                     group.items.forEach((h, index) => {
                         const tr = document.createElement('tr');
                         
-                        // 現在時刻がこの行の1時間枠に含まれるか判定
                         if (isCurrentTimeRow(h.time_1h)) {
                             tr.className = 'current-time-row';
                         }
@@ -728,7 +724,6 @@
                     group.items.forEach((h, index) => {
                         const tr = document.createElement('tr');
                         
-                        // 現在時刻がこの行の3時間枠に含まれるか判定
                         if (isCurrentTimeRow3H(h.time_3h)) {
                             tr.className = 'current-time-row';
                         }
@@ -791,7 +786,7 @@
             return wrapper;
         }
 
-        // ページ4: 10日天気ビュー
+        // ページ4: 10日天気ビュー（横並び左寄せ日付 ＆ pressure_mean_1day を参照）
         function create10DayWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -799,25 +794,102 @@
             sec.innerHTML = '<h2>10日間の天気（週間）</h2>';
 
             if (data.daily_1day && data.daily_1day.length > 0) {
-                const listContainer = document.createElement('div');
-                listContainer.className = 'weather-list-vertical';
+                const table = document.createElement('table');
+                table.className = 'weather-table';
                 
+                let theadHtml = `
+                    <thead>
+                        <tr>
+                            <th>日付</th>
+                            <th>天候リスク</th>
+                            <th>総雨量</th>
+                            <th>最低気温</th>
+                            <th>最高気温</th>
+                            <th>最大風速</th>
+                            <th>気圧</th>
+                        </tr>
+                    </thead>
+                `;
+
+                table.innerHTML = `${theadHtml}<tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+
                 data.daily_1day.forEach(d => {
-                    const card = document.createElement('div');
-                    card.className = 'weather-card-vertical';
-                    card.innerHTML = `
-                        <div style="color: #9cdcfe; font-weight: bold;">${d.time_1day}</div>
-                        <div style="display: flex; gap: 20px; align-items: center;">
-                            <div>降水確率: ${d.precipitation_probability_max_1day}%</div>
-                            <div>
-                                <span style="color: #f44747; font-weight: bold;">最高 ${d.temperature_max_1day}℃</span> / 
-                                <span style="color: #9cdcfe; font-weight: bold;">最低 ${d.temperature_min_1day}℃</span>
+                    const tr = document.createElement('tr');
+
+                    let monthStr = '';
+                    let dayStr = '';
+                    let dayOfWeekChar = '';
+                    const rawTime = d.time_1day || '';
+
+                    if (rawTime.includes('T') || rawTime.includes(' ')) {
+                        const parts = rawTime.split(/[\sT]/);
+                        const dateParts = parts[0].split('-');
+                        if (dateParts.length === 3) {
+                            const year = parseInt(dateParts[0], 10);
+                            const month = parseInt(dateParts[1], 10);
+                            const day = parseInt(dateParts[2], 10);
+                            const dateObj = new Date(year, month - 1, day);
+                            
+                            monthStr = dateParts[1];
+                            dayStr = dateParts[2];
+                            if (!isNaN(dateObj.getTime())) {
+                                const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+                                dayOfWeekChar = weekDays[dateObj.getDay()];
+                            }
+                        }
+                    }
+
+                    const riskVal = d.weather_risk_level_1day ?? 0;
+                    const riskClass = `risk-${riskVal}`;
+                    const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
+
+                    const rainVal = d.precipitation_sum_1day ?? d.precipitation_probability_max_1day;
+                    const rainClass = getRainClass(rainVal);
+                    const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
+                        ? `<span class="val-zero">${rainVal}</span>`
+                        : (rainVal ?? '-');
+
+                    const minTempVal = d.temperature_min_1day;
+                    const minTempClass = getTempClass(minTempVal);
+                    const minTempDisplay = (minTempVal === 0 || minTempVal === '0') 
+                        ? `<span class="val-zero">${minTempVal}</span>` 
+                        : (minTempVal ?? '-');
+
+                    const maxTempVal = d.temperature_max_1day;
+                    const maxTempClass = getTempClass(maxTempVal);
+                    const maxTempDisplay = (maxTempVal === 0 || maxTempVal === '0') 
+                        ? `<span class="val-zero" style="font-weight: bold;">${maxTempVal}</span>` 
+                        : (maxTempVal ?? '-');
+
+                    const windVal = d.wind_speed_max_1day;
+                    const windClass = getWindClass(windVal);
+                    const windDisplay = (windVal === 0 || windVal === '0')
+                        ? `<span class="val-zero">${windVal}</span>`
+                        : (windVal ?? '-');
+
+                    // pressure_mean_1day を直接参照
+                    const pressureVal = d.pressure_mean_1day;
+
+                    tr.innerHTML = `
+                        <td class="date-cell-horizontal">
+                            <div class="date-cell-horizontal-inner">
+                                <span>${monthStr}</span>
+                                <span>${dayStr}</span>
+                                <span>${dayOfWeekChar}</span>
                             </div>
-                        </div>
+                        </td>
+                        <td class="${riskClass}">${riskDisplay}</td>
+                        <td class="${rainClass}">${rainDisplay}</td>
+                        <td class="${minTempClass}">${minTempDisplay}</td>
+                        <td class="${maxTempClass}">${maxTempDisplay}</td>
+                        <td class="${windClass}">${windDisplay}</td>
+                        <td>${formatVal(pressureVal)}</td>
                     `;
-                    listContainer.appendChild(card);
+                    tbody.appendChild(tr);
                 });
-                sec.appendChild(listContainer);
+
+                sec.appendChild(table);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
