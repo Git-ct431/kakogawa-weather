@@ -302,35 +302,33 @@
             return '';
         }
 
-        // --- 1時間天気用の現在時刻判定 (0時間以上〜1時間未満) ---
+        // --- 1時間天気用の現在時刻包含判定 (行時刻 ≦ 現在時刻 ＜ 行時刻 + 1時間) ---
         function isCurrentTimeRow(rawTime) {
             if (!rawTime) return false;
             try {
-                const rowDate = new Date(rawTime.replace(' ', 'T'));
-                if (isNaN(rowDate.getTime())) return false;
+                const rowStartTime = new Date(rawTime.replace(' ', 'T'));
+                if (isNaN(rowStartTime.getTime())) return false;
 
+                const rowEndTime = new Date(rowStartTime.getTime() + 60 * 60 * 1000); // +1時間
                 const now = new Date();
-                const diffMs = rowDate.getTime() - now.getTime();
-                const diffHours = diffMs / (1000 * 60 * 60);
-                
-                return diffHours >= 0 && diffHours < 1;
+
+                return now >= rowStartTime && now < rowEndTime;
             } catch (e) {
                 return false;
             }
         }
 
-        // --- 3時間天気用の現在時刻判定 (0時間以上〜3時間未満) ---
+        // --- 3時間天気用の現在時刻包含判定 (行時刻 ≦ 現在時刻 ＜ 行時刻 + 3時間) ---
         function isCurrentTimeRow3H(rawTime) {
             if (!rawTime) return false;
             try {
-                const rowDate = new Date(rawTime.replace(' ', 'T'));
-                if (isNaN(rowDate.getTime())) return false;
+                const rowStartTime = new Date(rawTime.replace(' ', 'T'));
+                if (isNaN(rowStartTime.getTime())) return false;
 
+                const rowEndTime = new Date(rowStartTime.getTime() + 3 * 60 * 60 * 1000); // +3時間
                 const now = new Date();
-                const diffMs = rowDate.getTime() - now.getTime();
-                const diffHours = diffMs / (1000 * 60 * 60);
-                
-                return diffHours >= 0 && diffHours < 3;
+
+                return now >= rowStartTime && now < rowEndTime;
             } catch (e) {
                 return false;
             }
@@ -588,7 +586,7 @@
                     group.items.forEach((h, index) => {
                         const tr = document.createElement('tr');
                         
-                        // 1時間用の判定関数を使用
+                        // 現在時刻がこの行の1時間枠に含まれるか判定
                         if (isCurrentTimeRow(h.time_1h)) {
                             tr.className = 'current-time-row';
                         }
@@ -730,7 +728,7 @@
                     group.items.forEach((h, index) => {
                         const tr = document.createElement('tr');
                         
-                        // 3時間用の判定関数を使用 (0〜3時間未満)
+                        // 現在時刻がこの行の3時間枠に含まれるか判定
                         if (isCurrentTimeRow3H(h.time_3h)) {
                             tr.className = 'current-time-row';
                         }
