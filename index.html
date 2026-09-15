@@ -139,6 +139,13 @@
                 align-items: center;
                 line-height: 1.2;
             }
+            /* 天候リスクごとの背景色（目が痛くならない薄めの色） */
+            .risk-0 { /* なし */ }
+            .risk-1 { background-color: #1c3b57; color: #9cdcfe; } /* 薄い青 */
+            .risk-2 { background-color: #1a4d7c; color: #c5e4ff; } /* 濃い青（薄め） */
+            .risk-3 { background-color: #5c521e; color: #ffe680; } /* 黄色（薄め） */
+            .risk-4 { background-color: #5c2727; color: #ffb3b3; } /* 赤（薄め） */
+
             /* 既存の縦型レイアウト（ページ3・4用） */
             .weather-list-vertical {
                 display: flex;
@@ -381,7 +388,7 @@
             }
         });
 
-        // ページ2: 1時間天気ビュー（テーブル内左列に日付、上揃え、縦罫線のみ）
+        // ページ2: 1時間天気ビュー（項目並び替え・リスク背景色対応）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -443,19 +450,19 @@
                     
                     let theadHtml = '';
                     // 最初の日付のテーブルの上にのみヘッダーをつける
+                    // 順番：日付、時刻、天候リスク、降水、気温、風速、気圧、天気コード
                     if (isFirstTable) {
                         theadHtml = `
                             <thead>
                                 <tr>
                                     <th>日付</th>
                                     <th>時刻</th>
-                                    <th>気温</th>
+                                    <th>天候リスク</th>
                                     <th>降水</th>
+                                    <th>気温</th>
                                     <th>風速</th>
                                     <th>気圧</th>
-                                    <th>降水確率</th>
                                     <th>天気コード</th>
-                                    <th>天候リスク</th>
                                 </tr>
                             </thead>
                         `;
@@ -486,15 +493,19 @@
                             `;
                         }
 
+                        // 天候リスクの数値に応じたクラス名を設定 (0〜4)
+                        const riskVal = h.weather_risk_level_1h ?? 0;
+                        const riskClass = `risk-${riskVal}`;
+
+                        // 指定された順序：時刻、天候リスク、降水、気温、風速、気圧、天気コード
                         rowHtml += `
                             <td>${h.displayTime}</td>
-                            <td><span style="color: #4ec9b0; font-weight: bold;">${h.temperature_1h ?? '-'}</span></td>
+                            <td class="${riskClass}">${h.weather_risk_level_1h ?? '-'}</td>
                             <td>${h.precipitation_1h ?? '-'}</td>
+                            <td><span style="color: #4ec9b0; font-weight: bold;">${h.temperature_1h ?? '-'}</span></td>
                             <td>${h.wind_speed_1h ?? '-'}</td>
                             <td>${h.pressure_1h ?? '-'}</td>
-                            <td>${h.precipitation_probability_1h ?? '-'}</td>
                             <td>${h.weather_code_1h ?? '-'}</td>
-                            <td>${h.weather_risk_level_1h ?? '-'}</td>
                         `;
                         tr.innerHTML = rowHtml;
                         tbody.appendChild(tr);
