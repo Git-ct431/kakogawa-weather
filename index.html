@@ -90,17 +90,45 @@
             .date-group-title {
                 font-size: 1.05rem;
                 color: #9cdcfe;
-                margin: 15px 0 8px 0;
+                margin: 20px 0 8px 0;
                 border-left: 3px solid #4ec9b0;
                 padding-left: 8px;
             }
-            /* 縦型レイアウト用のコンテナ */
+            /* テーブル用スタイル */
+            .weather-table {
+                width: 100%;
+                border-collapse: collapse;
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+                border-radius: 6px;
+                overflow: hidden;
+                font-size: 0.9rem;
+                margin-bottom: 10px;
+            }
+            .weather-table th, .weather-table td {
+                padding: 10px 12px;
+                text-align: center;
+                border-bottom: 1px solid #333;
+            }
+            .weather-table th {
+                background-color: #2d2d2d;
+                color: #4ec9b0;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+            .weather-table tr:hover {
+                background-color: #252526;
+            }
+            .weather-table td:first-child {
+                color: #9cdcfe;
+                font-weight: bold;
+            }
+            /* 既存の縦型レイアウト（ページ3・4用） */
             .weather-list-vertical {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
             }
-            /* 縦型レイアウト用のカード（指定された項目を整然と配置） */
             .weather-card-vertical {
                 background-color: #1e1e1e;
                 border: 1px solid #333;
@@ -337,7 +365,7 @@
             }
         });
 
-        // ページ2: 1時間天気ビュー（日付ごとにグループ化・指定形式に準拠）
+        // ページ2: 1時間天気ビュー（テーブルレイアウト版）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             
@@ -349,7 +377,6 @@
                 // 日付ごとにデータをグループ化する
                 const groupedByDate = {};
                 data.hourly_1h.forEach(h => {
-                    // time_1h 例: "2026-09-15T09:00" または "2026-09-15 09:00" から日付部分を抽出して "MM/DD" に変換
                     const rawTime = h.time_1h || '';
                     let dateKey = 'その他';
                     let timeOnly = rawTime;
@@ -369,34 +396,51 @@
                     groupedByDate[dateKey].push({ ...h, displayTime: timeOnly });
                 });
 
-                // グループごとに描画
+                // グループ（日付）ごとにテーブルを生成
                 for (const [dateStr, items] of Object.entries(groupedByDate)) {
                     const dateTitle = document.createElement('div');
                     dateTitle.className = 'date-group-title';
                     dateTitle.textContent = dateStr; // 例: 09/15
                     sec.appendChild(dateTitle);
 
-                    const listContainer = document.createElement('div');
-                    listContainer.className = 'weather-list-vertical';
+                    const table = document.createElement('table');
+                    table.className = 'weather-table';
+                    
+                    // テーブルヘッダーの作成
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>時刻</th>
+                                <th>気温</th>
+                                <th>降水</th>
+                                <th>風速</th>
+                                <th>気圧</th>
+                                <th>降水確率</th>
+                                <th>天気コード</th>
+                                <th>天候リスク</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    `;
+
+                    const tbody = table.querySelector('tbody');
 
                     items.forEach(h => {
-                        const card = document.createElement('div');
-                        card.className = 'weather-card-vertical';
-                        
-                        // 指定された項目の順番で構築
-                        card.innerHTML = `
-                            <div style="color: #9cdcfe; font-weight: bold; min-width: 50px;">${h.displayTime}</div>
-                            <div>気温<span style="color: #4ec9b0; font-weight: bold;">${h.temperature_1h ?? '-'}</span>℃</div>
-                            <div>降水:${h.precipitation_1h ?? '-'}mm</div>
-                            <div>風速:${h.wind_speed_1h ?? '-'}m/s</div>
-                            <div>気圧:${h.pressure_1h ?? '-'}hPa</div>
-                            <div>降水確率:${h.precipitation_probability_1h ?? '-'}%</div>
-                            <div>天気コード:${h.weather_code_1h ?? '-'}</div>
-                            <div>天候リスク:${h.weather_risk_level_1h ?? '-'}</div>
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${h.displayTime}</td>
+                            <td><span style="color: #4ec9b0; font-weight: bold;">${h.temperature_1h ?? '-'}</span>℃</td>
+                            <td>${h.precipitation_1h ?? '-'} mm</td>
+                            <td>${h.wind_speed_1h ?? '-'} m/s</td>
+                            <td>${h.pressure_1h ?? '-'} hPa</td>
+                            <td>${h.precipitation_probability_1h ?? '-'} %</td>
+                            <td>${h.weather_code_1h ?? '-'}</td>
+                            <td>${h.weather_risk_level_1h ?? '-'}</td>
                         `;
-                        listContainer.appendChild(card);
+                        tbody.appendChild(tr);
                     });
-                    sec.appendChild(listContainer);
+
+                    sec.appendChild(table);
                 }
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
