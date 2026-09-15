@@ -23,6 +23,36 @@ def get_weather_risk_level(code):
     return 0
 
 
+# ==========================================
+# 気象庁データ専用の軽量パーサークラス
+# ==========================================
+class JMAHyogoParser:
+    def __init__(self, raw_data):
+        self.raw_data = raw_data if isinstance(raw_data, list) else []
+
+    # 1. 県全体のヘッドライン・メタ情報抽出（辞書内包表記）
+    def get_prefecture_headers(self):
+        keys = ["controlDatetime", "reportDatetime", "infoType", "publishingOffice", "headlineText", "dataTypeCode"]
+        return [{k: entry.get(k) for k in keys} for entry in self.raw_data]
+
+    # 2. 指定エリアコードのフラット抽出（階層を意識しない全方位探索）
+    def get_warnings_by_area(self, target_area_code):
+        return [
+            {
+                "dataTypeCode": entry.get("dataTypeCode"),
+                "headlineText": entry.get("headlineText", ""),
+                "areaCode": item.get("areaCode"),
+                "code": k.get("code"),
+                "status": k.get("status"),
+                "additions": k.get("additions", [])
+            }
+            for entry in self.raw_data
+            for items in entry.get("warning", {}).values() if isinstance(items, list)
+            for item in items if item.get("areaCode") == target_area_code
+            for k in item.get("kinds", [])
+        ]
+
+
 def fetch_hourly(lat, lon):
   try:
     url = (
@@ -172,80 +202,14 @@ def fetch_jma():
 
     if res.status_code == 200:
       raw_data = res.json()
-      
-      jma_warning_raw = raw_data
-      hyogo_warnings = []
-      nanbu_warnings = []
-      hokubu_warnings = []
-      kakogawa_warnings = []
-
-      # エリアコードの定義（必要に応じて調整してください）
-      NANBU_CODE = "280010"    # 南部（広域）
-      HOKUBU_CODE = "280020"   # 北部（広域）
-      KAKOGAWA_CODE = "2821000" # 加古川市コード
-
-      # 取得したJSONはリスト形式（各警報種別ごとのオブジェクトの配列）
-      if isinstance(raw_data, list):
-        for entry in raw_data:
-          warning_obj = entry.get("warning", {})
-          headline = entry.get("headlineText", "")
-          data_type = entry.get("dataTypeCode", "")
-
-          # 1. class10Items（広域：南部・北部など）の走査
-          for item in warning_obj.get("class10Items", []):
-            code = item.get("areaCode")
-            kinds = item.get("kinds", [])
-            
-            if code == NANBU_CODE:
-              for k in kinds:
-                nanbu_warnings.append({
-                    "dataTypeCode": data_type,
-                    "headlineText": headline,
-                    "code": k.get("code"),
-                    "status": k.get("status"),
-                    "additions": k.get("additions", [])
-                })
-            elif code == HOKUBU_CODE:
-              for k in kinds:
-                hokubu_warnings.append({
-                    "dataTypeCode": data_type,
-                    "headlineText": headline,
-                    "code": k.get("code"),
-                    "status": k.get("status"),
-                    "additions": k.get("additions", [])
-                })
-
-          # 2. class20Items（市町村単位：加古川市など）の走査
-          for item in warning_obj.get("class20Items", []):
-            code = item.get("areaCode")
-            kinds = item.get("kinds", [])
-            
-            if code == KAKOGAWA_CODE:
-              for k in kinds:
-                kakogawa_warnings.append({
-                    "dataTypeCode": data_type,
-                    "headlineText": headline,
-                    "code": k.get("code"),
-                    "status": k.get("status"),
-                    "properties": k.get("properties", [])
-                })
-
-            # 兵庫県全体のリスト（すべてのclass20Itemsを網羅する場合など）を必要に応じて格納
-            # ここでは例として全件を対象にするか、特定の条件でhyogo_warningsに入れます
-            for k in kinds:
-              hyogo_warnings.append({
-                  "areaCode": code,
-                  "dataTypeCode": data_type,
-                  "code": k.get("code"),
-                  "status": k.get("status")
-              })
+      parser = JMAHyogoParser(raw_data)
 
       return {
-          "jma_warning": jma_warning_raw,
-          "jma_warning_hyogo": hyogo_warnings,
-          "jma_warning_nanbu": nanbu_warnings,
-          "jma_warning_hokubu": hokubu_warnings,
-          "jma_warning_kakogawa": kakogawa_warnings
+          "jma_warning": raw_data,
+          "jma_warning_hyogo": parser.get_prefecture_headers(),
+          "jma_warning_nanbu": parser.get_warnings_by_area("280010"),   # 南部
+          "jma_warning_hokubu": parser.get_warnings_by_area("280020"),  # 北部
+          "jma_warning_kakogawa": parser.get_warnings_by_area("2821000") # 加古川市
       }
     else:
       print(f"JMA warning HTTP error: {res.status_code}")
