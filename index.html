@@ -43,6 +43,7 @@
                 display: flex;
                 gap: 10px;
                 margin-bottom: 15px;
+                flex-wrap: wrap;
             }
             .tab-btn {
                 background-color: #2d2d2d;
@@ -212,6 +213,41 @@
                 opacity: 0.6;
             }
 
+            /* ページ5専用の警告表示スタイル（余白を詰める調整） */
+            .warning-region-block {
+                margin-bottom: 8px;
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+                padding: 6px 12px;
+                border-radius: 4px;
+            }
+            .warning-region-title {
+                font-size: 1.05rem;
+                color: #9cdcfe;
+                font-weight: bold;
+                margin-bottom: 2px;
+                border-bottom: 1px dotted #404040;
+                padding-bottom: 2px;
+            }
+            .warning-item-row {
+                display: flex;
+                gap: 15px;
+                margin: 1px 0;
+                font-size: 0.95rem;
+            }
+            .warning-level {
+                color: #ce9178;
+                font-weight: bold;
+                min-width: 50px;
+            }
+            .warning-names {
+                color: #d4d4d4;
+            }
+            .warning-none {
+                color: #858585;
+                margin: 1px 0;
+            }
+
             ul {
                 list-style-type: none;
                 padding-left: 20px;
@@ -378,6 +414,12 @@
                 btnPage4.onclick = () => switchTab('page4', btnPage4);
                 tabNav.appendChild(btnPage4);
 
+                const btnPage5 = document.createElement('button');
+                btnPage5.className = 'tab-btn';
+                btnPage5.textContent = 'ページ5: 気象警報';
+                btnPage5.onclick = () => switchTab('page5', btnPage5);
+                tabNav.appendChild(btnPage5);
+
                 app.appendChild(tabNav);
 
                 const pane1 = document.createElement('div');
@@ -411,6 +453,14 @@
                 container4.id = 'weather-10d-container';
                 pane4.appendChild(container4);
                 app.appendChild(pane4);
+
+                const pane5 = document.createElement('div');
+                pane5.id = 'pane-page5';
+                pane5.className = 'page-pane fixed-size-pane';
+                const container5 = document.createElement('div');
+                container5.id = 'weather-warnings-container';
+                pane5.appendChild(container5);
+                app.appendChild(pane5);
             }
 
             try {
@@ -444,6 +494,10 @@
                     const container4 = document.getElementById('weather-10d-container');
                     container4.innerHTML = '';
                     container4.appendChild(create10DayWeatherView(jsonData));
+
+                    const container5 = document.getElementById('weather-warnings-container');
+                    container5.innerHTML = '';
+                    container5.appendChild(createWeatherWarningsView(jsonData));
 
                     isFirstLoad = false;
                 }
@@ -889,6 +943,83 @@
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
+
+            wrapper.appendChild(sec);
+            return wrapper;
+        }
+
+        // ページ5: 気象警報ビュー（北部、南部、加古川の指定レイアウト・余白削減）
+        function createWeatherWarningsView(data) {
+            const wrapper = document.createElement('div');
+            const sec = document.createElement('div');
+            sec.className = 'weather-section';
+            sec.innerHTML = '<h2>気象警報・注意報</h2>';
+
+            const regions = [
+                { key: 'jma_warning_hokubu', label: '北部' },
+                { key: 'jma_warning_nanbu', label: '南部' },
+                { key: 'jma_warning_kakogawa', label: '加古川' }
+            ];
+
+            regions.forEach(reg => {
+                const regionBlock = document.createElement('div');
+                regionBlock.className = 'warning-region-block';
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'warning-region-title';
+                titleDiv.textContent = `${reg.label}：`;
+                regionBlock.appendChild(titleDiv);
+
+                const rawWarnings = data[reg.key];
+                
+                let warningList = [];
+                if (Array.isArray(rawWarnings)) {
+                    warningList = rawWarnings;
+                } else if (rawWarnings && typeof rawWarnings === 'object') {
+                    warningList = [rawWarnings];
+                }
+
+                if (warningList.length > 0) {
+                    const groupedByLevel = {};
+                    warningList.forEach(w => {
+                        let lv = w.code_lv !== undefined ? w.code_lv : (w.level !== undefined ? w.level : null);
+                        let lvKey = lv !== null ? `LV${lv}` : 'LV?';
+                        let name = w.code_jp || w.type || w.name || '不明';
+
+                        if (!groupedByLevel[lvKey]) {
+                            groupedByLevel[lvKey] = [];
+                        }
+                        groupedByLevel[lvKey].push(name);
+                    });
+
+                    const sortedLevels = Object.keys(groupedByLevel).sort().reverse();
+
+                    sortedLevels.forEach(lvKey => {
+                        const names = groupedByLevel[lvKey].join(' ');
+                        const rowDiv = document.createElement('div');
+                        rowDiv.className = 'warning-item-row';
+                        
+                        const lvSpan = document.createElement('span');
+                        lvSpan.className = 'warning-level';
+                        lvSpan.textContent = lvKey;
+
+                        const namesSpan = document.createElement('span');
+                        namesSpan.className = 'warning-names';
+                        namesSpan.textContent = names;
+
+                        rowDiv.appendChild(lvSpan);
+                        rowDiv.appendChild(namesSpan);
+                        regionBlock.appendChild(rowDiv);
+                    });
+                } else {
+                    const noneDiv = document.createElement('div');
+                    noneDiv.className = 'warning-item-row warning-none';
+                    noneDiv.textContent = '発令なし';
+                    regionBlock.appendChild(noneDiv);
+                }
+
+                sec.appendChild(regionBlock);
+            });
 
             wrapper.appendChild(sec);
             return wrapper;
