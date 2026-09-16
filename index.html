@@ -9,7 +9,7 @@
     <div id="app"></div>
 
     <script>
-        // スタイルを動的に生成して適用
+        // スタイルを定義してheadに追加
         const style = document.createElement('style');
         style.textContent = `
             body {
@@ -38,7 +38,6 @@
                 font-size: 0.85rem;
                 color: #9cdcfe;
             }
-            /* タブ切り替え用スタイル */
             .tab-nav {
                 display: flex;
                 gap: 10px;
@@ -65,7 +64,6 @@
             .page-pane.active {
                 display: block;
             }
-            /* ページ2以降の固定サイズコンテナ (1060 x 2180) */
             .fixed-size-pane {
                 width: 1060px;
                 height: 2180px;
@@ -87,7 +85,6 @@
                 border-bottom: 1px solid #333;
                 padding-bottom: 8px;
             }
-            /* テーブル用スタイル */
             .weather-table {
                 width: auto;
                 border-collapse: collapse;
@@ -96,124 +93,27 @@
                 font-size: 0.9rem;
                 margin-bottom: 0;
             }
-            .weather-table + .weather-table {
-                border-top: none; 
-            }
             .weather-table th, .weather-table td {
-                padding: 0 12px;
+                padding: 4px 8px;
                 text-align: center;
-                border-bottom: none; 
+                border-bottom: none;
                 border-right: 1px solid #333;
                 white-space: nowrap;
-                height: 26px;
             }
             .weather-table th:last-child, .weather-table td:last-child {
                 border-right: none;
             }
-            /* ヘッダー縦書きスタイル */
             .weather-table th {
                 background-color: #2d2d2d;
                 color: #4ec9b0;
                 font-weight: bold;
-                writing-mode: vertical-rl;
-                text-orientation: upright;
-                letter-spacing: 2px;
-                height: 90px;
-                vertical-align: middle;
-                padding: 6px 6px;
+                text-align: center;
+                padding: 6px 8px;
                 border-bottom: 1px solid #333;
-            }
-            .weather-table ~ .weather-table thead {
-                display: none;
             }
             .weather-table tr:hover {
                 background-color: #252526;
             }
-
-            /* 現在時刻行：日付セル以外（時刻から右側）に下線を引く */
-            .current-time-row td:not(.date-cell) {
-                border-bottom: 2px solid #3d887a !important;
-            }
-
-            /* 左列の日付セル（ページ2,3用：縦並び・上揃え） */
-            .date-cell {
-                background-color: #2d2d2d;
-                color: #9cdcfe;
-                font-weight: bold;
-                vertical-align: top;
-                text-align: center;
-                padding: 6px 10px;
-                border-right: 1px solid #333;
-                height: auto !important;
-            }
-            .date-cell-inner {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                line-height: 1.2;
-            }
-
-            /* ページ4専用の日付セル（横並び・左寄せ） */
-            .date-cell-horizontal {
-                color: #9cdcfe;
-                font-weight: bold;
-                vertical-align: middle;
-                text-align: left !important;
-                padding: 4px 12px;
-                border-right: 1px solid #333;
-                white-space: nowrap;
-            }
-            .date-cell-horizontal-inner {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                gap: 6px;
-            }
-
-            /* 天候リスクごとの背景色 */
-            .risk-0 { }
-            .risk-1 { background-color: #1c3b57; color: #9cdcfe; }
-            .risk-2 { background-color: #1a4d7c; color: #c5e4ff; }
-            .risk-3 { background-color: #5c521e; color: #ffe680; }
-            .risk-4 { background-color: #5c2727; color: #ffb3b3; }
-
-            /* 3℃刻みの温度カラーマップ */
-            .temp-b3 { background-color: #0c1824; color: #9ac2ff; }
-            .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; }
-            .temp-b1 { background-color: #102334; color: #92b8ea; }
-            .temp-b0 { background-color: #12283c; color: #9cdcfe; }
-            .temp-g0 { background-color: #132a28; color: #9cdcfe; }
-            .temp-g1 { background-color: #142d1e; color: #b5cea8; }
-            .temp-g2 { background-color: #163116; color: #b5cea8; }
-            .temp-g3 { background-color: #153722; color: #ffffff; font-weight: bold; }
-            .temp-r0 { background-color: #282d12; color: #d4cc8c; }
-            .temp-r1 { background-color: #332710; color: #d4cc8c; }
-            .temp-r2 { background-color: #331e10; color: #e8b894; }
-            .temp-r3 { background-color: #331310; color: #e89494; }
-            .temp-r4 { background-color: #330e0e; color: #e89494; }
-            .temp-r5 { background-color: #2c0919; color: #e894c7; }
-
-            /* 風速のカラーマップ */
-            .wind-w1 { background-color: #1b2a24; color: #a8c5b3; }
-            .wind-w2 { background-color: #2b2812; color: #d4cc8c; }
-            .wind-w3 { background-color: #2b1c12; color: #e8b894; }
-            .wind-w4 { background-color: #2b1212; color: #e89494; font-weight: bold; }
-
-            /* 降水量のカラーマップ（ページ2,3用） */
-            .rain-1 { background-color: #16222b; color: #9cdcfe; }
-            .rain-2 { background-color: #142b3b; color: #a6e3e9; }
-            .rain-3 { background-color: #11324d; color: #79c0ff; }
-            .rain-4 { background-color: #2b2812; color: #d4cc8c; }
-            .rain-5 { background-color: #332510; color: #f0b875; }
-            .rain-6 { background-color: #2b1212; color: #e89494; }
-
-            /* 数値0の半透明 */
-            .val-zero {
-                color: #777777 !important;
-                opacity: 0.6;
-            }
-
-            /* ページ5専用の警告表示スタイル（余白を詰める調整） */
             .warning-region-block {
                 margin-bottom: 8px;
                 background-color: #1e1e1e;
@@ -235,19 +135,10 @@
                 margin: 1px 0;
                 font-size: 0.95rem;
             }
-            .warning-level {
-                color: #ce9178;
-                font-weight: bold;
-                min-width: 50px;
-            }
-            .warning-names {
-                color: #d4d4d4;
-            }
             .warning-none {
                 color: #858585;
                 margin: 1px 0;
             }
-
             ul {
                 list-style-type: none;
                 padding-left: 20px;
@@ -272,9 +163,6 @@
                 cursor: pointer;
                 user-select: none;
             }
-            .type-tag:hover {
-                color: #d4d4d4;
-            }
             .toggle-btn {
                 background: none;
                 border: none;
@@ -283,12 +171,6 @@
                 font-family: monospace;
                 font-size: 0.9rem;
                 padding: 0 4px 0 0;
-            }
-            .toggle-btn:hover {
-                color: #9cdcfe;
-            }
-            .collapsed > ul {
-                display: none;
             }
             .error { color: #f44747; }
         `;
@@ -299,73 +181,7 @@
         let pollTimer = null;
         let isFetching = false;
 
-        function getTempClass(temp) {
-            if (temp === null || temp === undefined || isNaN(temp)) return '';
-            const t = parseFloat(temp);
-            if (t < 0) return 'temp-b3';
-            if (t < 3) return 'temp-b2';
-            if (t < 6) return 'temp-b1';
-            if (t < 9) return 'temp-b0';
-            if (t < 12) return 'temp-g0';
-            if (t < 15) return 'temp-g1';
-            if (t < 18) return 'temp-g2';
-            if (t <= 21) return 'temp-g3';
-            if (t < 24) return 'temp-r0';
-            if (t < 27) return 'temp-r1';
-            if (t < 30) return 'temp-r2';
-            if (t < 33) return 'temp-r3';
-            if (t < 36) return 'temp-r4';
-            return 'temp-r5';
-        }
-
-        function getWindClass(windSpeed) {
-            if (windSpeed === null || windSpeed === undefined || isNaN(windSpeed)) return '';
-            const w = parseFloat(windSpeed);
-            if (w >= 15) return 'wind-w4';
-            if (w >= 11) return 'wind-w3';
-            if (w >= 8)  return 'wind-w2';
-            if (w >= 5)  return 'wind-w1';
-            return '';
-        }
-
-        function getRainClass(rain) {
-            if (rain === null || rain === undefined || isNaN(rain)) return '';
-            const r = parseFloat(rain);
-            if (r >= 20) return 'rain-6';
-            if (r >= 10) return 'rain-5';
-            if (r >= 6)  return 'rain-4';
-            if (r >= 3)  return 'rain-3';
-            if (r >= 2)  return 'rain-2';
-            if (r >= 1)  return 'rain-1';
-            return '';
-        }
-
-        function isCurrentTimeRow(rawTime) {
-            if (!rawTime) return false;
-            try {
-                const rowStartTime = new Date(rawTime.replace(' ', 'T'));
-                if (isNaN(rowStartTime.getTime())) return false;
-                const rowEndTime = new Date(rowStartTime.getTime() + 60 * 60 * 1000);
-                const now = new Date();
-                return now >= rowStartTime && now < rowEndTime;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function isCurrentTimeRow3H(rawTime) {
-            if (!rawTime) return false;
-            try {
-                const rowStartTime = new Date(rawTime.replace(' ', 'T'));
-                if (isNaN(rowStartTime.getTime())) return false;
-                const rowEndTime = new Date(rowStartTime.getTime() + 3 * 60 * 60 * 1000);
-                const now = new Date();
-                return now >= rowStartTime && now < rowEndTime;
-            } catch (e) {
-                return false;
-            }
-        }
-
+        // データの取得と各画面の更新を行う
         async function fetchAndUpdateViewer() {
             if (isFetching) return;
             isFetching = true;
@@ -470,7 +286,6 @@
                 }
                 const jsonData = await response.json();
                 
-                // ▼ ここを my_json_updatetime に変更しました[cite: 2]
                 const currentUpdateTime = jsonData.my_json_updatetime || '不明';
 
                 const updateInfoEl = document.getElementById('update-info');
@@ -481,32 +296,26 @@
                 if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
                     lastKnownUpdateTime = currentUpdateTime;
 
-                    const container1 = document.getElementById('content-container');
-                    container1.innerHTML = '';
-                    container1.appendChild(createDebugList(jsonData));
+                    document.getElementById('content-container').innerHTML = '';
+                    document.getElementById('content-container').appendChild(createDebugList(jsonData));
 
-                    const container2 = document.getElementById('weather-1h-container');
-                    container2.innerHTML = '';
-                    container2.appendChild(create1HourWeatherView(jsonData));
+                    document.getElementById('weather-1h-container').innerHTML = '';
+                    document.getElementById('weather-1h-container').appendChild(create1HourWeatherView(jsonData));
 
-                    const container3 = document.getElementById('weather-3h-container');
-                    container3.innerHTML = '';
-                    container3.appendChild(create3HourWeatherView(jsonData));
+                    document.getElementById('weather-3h-container').innerHTML = '';
+                    document.getElementById('weather-3h-container').appendChild(create3HourWeatherView(jsonData));
 
-                    const container4 = document.getElementById('weather-10d-container');
-                    container4.innerHTML = '';
-                    container4.appendChild(create10DayWeatherView(jsonData));
+                    document.getElementById('weather-10d-container').innerHTML = '';
+                    document.getElementById('weather-10d-container').appendChild(create10DayWeatherView(jsonData));
 
-                    const container5 = document.getElementById('weather-warnings-container');
-                    container5.innerHTML = '';
-                    container5.appendChild(createWeatherWarningsView(jsonData));
+                    document.getElementById('weather-warnings-container').innerHTML = '';
+                    document.getElementById('weather-warnings-container').appendChild(createWeatherWarningsView(jsonData));
 
                     isFirstLoad = false;
                 }
             } catch (error) {
                 if (isFirstLoad) {
-                    const container1 = document.getElementById('content-container');
-                    container1.innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}<br>※ローカル環境(file://)の場合はCORS制限がかかるため、簡易サーバー等でお試しください。</span>`;
+                    document.getElementById('content-container').innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}</span>`;
                 } else {
                     console.warn(`バックグラウンドでのデータ確認に失敗しました: ${error.message}`);
                 }
@@ -518,6 +327,7 @@
             }
         }
 
+        // タブの切り替え処理
         function switchTab(targetId, activeBtn) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-pane').forEach(pane => pane.classList.remove('active'));
@@ -526,6 +336,7 @@
             document.getElementById(`pane-${targetId}`).classList.add('active');
         }
 
+        // 次回のデータ確認タイミングをスケジュール
         function scheduleNextCheck() {
             if (pollTimer) clearTimeout(pollTimer);
             let delayMs = 60000;
@@ -543,6 +354,7 @@
             pollTimer = setTimeout(fetchAndUpdateViewer, delayMs);
         }
 
+        // ページの表示状態に応じてポーリングを制御
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 if (pollTimer) clearTimeout(pollTimer);
@@ -552,65 +364,51 @@
             }
         });
 
-        function formatVal(val) {
-            if (val === 0 || val === '0' || val === 0.0) {
-                return `<span class="val-zero">${val}</span>`;
-            }
-            return val ?? '-';
-        }
-
-        // ページ2: 1時間天気ビュー（変数再割り当て適用済み）[cite: 2]
+        // ページ2: 1時間ごとの天気ビューを生成（指定の日時以降のデータに絞り込み）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
             sec.className = 'weather-section';
-            sec.innerHTML = '<h2>1時間ごとの天気</h2>';
+            sec.innerHTML = '<h2>1時間ごとの天気（指定日時以降）</h2>';
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
-                const groupedByDate = {};
-                data.my_weather_1h.forEach(h => {
-                    const rawTime = h.time || '';
-                    let dateKey = 'その他';
-                    let timeOnly = rawTime;
-                    let monthStr = h.month || '';
-                    let dayStr = h.day || '';
-                    let dayOfWeekChar = h.day_of_week || '';
+                // 指定された基準日時 (2026-09-15 00:00) をDateオブジェクト化
+                const baseDateTime = new Date("2026-09-15T00:00");
 
-                    if (rawTime.includes('T') || rawTime.includes(' ')) {
-                        const parts = rawTime.split(/[\sT]/);
-                        const timeParts = parts[1].split(':');
-                        if (timeParts.length > 0) {
-                            timeOnly = timeParts[0];
-                        }
-                    }
-                    dateKey = `${monthStr}${dayStr}`;
-
-                    if (!groupedByDate[dateKey]) {
-                        groupedByDate[dateKey] = {
-                            month: monthStr,
-                            day: dayStr,
-                            weekDay: dayOfWeekChar,
-                            items: []
-                        };
-                    }
-                    groupedByDate[dateKey].items.push({ ...h, displayTime: timeOnly });
+                // 基準日時以降のデータのみにフィルタリング
+                const filteredData = data.my_weather_1h.filter(h => {
+                    const hYear = String(h.year ?? '');
+                    const hMonth = String(h.month ?? '').padStart(2, '0');
+                    const hDay = String(h.day ?? '').padStart(2, '0');
+                    // timeプロンプトが "HH:MM" や "HH" の形式であると仮定してISO文字列を構築
+                    const hTime = String(h.time ?? '00:00');
+                    const timeStr = hTime.includes(':') ? hTime : `${hTime.padStart(2, '0')}:00`;
+                    
+                    const itemDateTime = new Date(`${hYear}-${hMonth}-${hDay}T${timeStr}`);
+                    return itemDateTime >= baseDateTime;
                 });
 
-                for (const group of Object.values(groupedByDate)) {
+                if (filteredData.length > 0) {
                     const table = document.createElement('table');
                     table.className = 'weather-table';
                     
                     let theadHtml = `
                         <thead>
                             <tr>
-                                <th>日付</th>
-                                <th>時刻</th>
-                                <th>天候リスク</th>
-                                <th>降水</th>
-                                <th>気温</th>
-                                <th>風速</th>
-                                <th>気圧</th>
-                                <th>天気コード</th>
+                                <th>time</th>
+                                <th>year</th>
+                                <th>month</th>
+                                <th>day</th>
+                                <th>day_of_week</th>
+                                <th>temperature</th>
+                                <th>precipitation</th>
+                                <th>wind_speed</th>
+                                <th>pressure</th>
+                                <th>pressure_diff</th>
+                                <th>pressure_risk_level</th>
+                                <th>precipitation_probability</th>
+                                <th>weather_code</th>
+                                <th>weather_risk_level</th>
                             </tr>
                         </thead>
                     `;
@@ -618,62 +416,30 @@
                     table.innerHTML = `${theadHtml}<tbody></tbody>`;
                     const tbody = table.querySelector('tbody');
 
-                    group.items.forEach((h, index) => {
+                    filteredData.forEach(h => {
                         const tr = document.createElement('tr');
-                        
-                        if (isCurrentTimeRow(h.time)) {
-                            tr.className = 'current-time-row';
-                        }
-
-                        let rowHtml = '';
-                        if (index === 0) {
-                            rowHtml += `
-                                <td class="date-cell" rowspan="${group.items.length}">
-                                    <div class="date-cell-inner">
-                                        <span>${group.month}</span>
-                                        <span>${group.day}</span>
-                                        <span>${group.weekDay}</span>
-                                    </div>
-                                </td>
-                            `;
-                        }
-
-                        const riskVal = h.weather_risk_level ?? 0;
-                        const riskClass = `risk-${riskVal}`;
-                        const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
-
-                        const tempVal = h.temperature;
-                        const tempClass = getTempClass(tempVal);
-                        const tempDisplay = (tempVal === 0 || tempVal === '0') 
-                            ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
-                            : (tempVal ?? '-');
-
-                        const windVal = h.wind_speed;
-                        const windClass = getWindClass(windVal);
-                        const windDisplay = (windVal === 0 || windVal === '0')
-                            ? `<span class="val-zero">${windVal}</span>`
-                            : (windVal ?? '-');
-
-                        const rainVal = h.precipitation;
-                        const rainClass = getRainClass(rainVal);
-                        const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
-                            ? `<span class="val-zero">${rainVal}</span>`
-                            : (rainVal ?? '-');
-
-                        rowHtml += `
-                            <td>${h.displayTime}</td>
-                            <td class="${riskClass}">${riskDisplay}</td>
-                            <td class="${rainClass}">${rainDisplay}</td>
-                            <td class="${tempClass}">${tempDisplay}</td>
-                            <td class="${windClass}">${windDisplay}</td>
-                            <td>${formatVal(h.pressure)}</td>
-                            <td>${formatVal(h.weather_code)}</td>
+                        tr.innerHTML = `
+                            <td>${h.time ?? '-'}</td>
+                            <td>${h.year ?? '-'}</td>
+                            <td>${h.month ?? '-'}</td>
+                            <td>${h.day ?? '-'}</td>
+                            <td>${h.day_of_week ?? '-'}</td>
+                            <td>${h.temperature ?? '-'}</td>
+                            <td>${h.precipitation ?? '-'}</td>
+                            <td>${h.wind_speed ?? '-'}</td>
+                            <td>${h.pressure ?? '-'}</td>
+                            <td>${h.pressure_diff ?? '-'}</td>
+                            <td>${h.pressure_risk_level ?? '-'}</td>
+                            <td>${h.precipitation_probability ?? '-'}</td>
+                            <td>${h.weather_code ?? '-'}</td>
+                            <td>${h.weather_risk_level ?? '-'}</td>
                         `;
-                        tr.innerHTML = rowHtml;
                         tbody.appendChild(tr);
                     });
 
                     sec.appendChild(table);
+                } else {
+                    sec.innerHTML += '<p>指定日時以降のデータがありません。</p>';
                 }
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -683,7 +449,7 @@
             return wrapper;
         }
 
-        // ページ3: 3時間天気ビュー
+        // ページ3: 3時間ごとの天気ビューを生成
         function create3HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -691,131 +457,40 @@
             sec.innerHTML = '<h2>3時間ごとの天気</h2>';
 
             if (data.hourly_3h && data.hourly_3h.length > 0) {
-                const groupedByDate = {};
+                const table = document.createElement('table');
+                table.className = 'weather-table';
+                
+                let theadHtml = `
+                    <thead>
+                        <tr>
+                            <th>time_3h</th>
+                            <th>temperature_3h</th>
+                            <th>precipitation_3h</th>
+                            <th>wind_speed_3h</th>
+                            <th>pressure_3h</th>
+                            <th>weather_code_3h</th>
+                            <th>weather_risk_level_3h</th>
+                        </tr>
+                    </thead>
+                `;
+
+                table.innerHTML = `${theadHtml}<tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+
                 data.hourly_3h.forEach(h => {
-                    const rawTime = h.time_3h || '';
-                    let dateKey = 'その他';
-                    let timeOnly = rawTime;
-                    let dateObj = null;
-                    let monthStr = '';
-                    let dayStr = '';
-
-                    if (rawTime.includes('T') || rawTime.includes(' ')) {
-                        const parts = rawTime.split(/[\sT]/);
-                        const dateParts = parts[0].split('-'); 
-                        if (dateParts.length === 3) {
-                            const year = parseInt(dateParts[0], 10);
-                            const month = parseInt(dateParts[1], 10);
-                            const day = parseInt(dateParts[2], 10);
-                            dateObj = new Date(year, month - 1, day);
-                            
-                            monthStr = dateParts[1];
-                            dayStr = dateParts[2];
-                            dateKey = `${monthStr}${dayStr}`;
-                        }
-                        
-                        const timeParts = parts[1].split(':');
-                        if (timeParts.length > 0) {
-                            timeOnly = timeParts[0];
-                        }
-                    }
-
-                    let dayOfWeekChar = '';
-                    if (dateObj && !isNaN(dateObj.getTime())) {
-                        const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
-                        dayOfWeekChar = weekDays[dateObj.getDay()];
-                    }
-
-                    if (!groupedByDate[dateKey]) {
-                        groupedByDate[dateKey] = {
-                            month: monthStr,
-                            day: dayStr,
-                            weekDay: dayOfWeekChar,
-                            items: []
-                        };
-                    }
-                    groupedByDate[dateKey].items.push({ ...h, displayTime: timeOnly });
-                });
-
-                for (const group of Object.values(groupedByDate)) {
-                    const table = document.createElement('table');
-                    table.className = 'weather-table';
-                    
-                    let theadHtml = `
-                        <thead>
-                            <tr>
-                                <th>日付</th>
-                                <th>時刻</th>
-                                <th>天候リスク</th>
-                                <th>降水</th>
-                                <th>気温</th>
-                                <th>風速</th>
-                                <th>気圧</th>
-                                <th>天気コード</th>
-                            </tr>
-                        </thead>
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${h.time_3h ?? '-'}</td>
+                        <td>${h.temperature_3h ?? '-'}</td>
+                        <td>${h.precipitation_3h ?? '-'}</td>
+                        <td>${h.wind_speed_3h ?? '-'}</td>
+                        <td>${h.pressure_3h ?? '-'}</td>
+                        <td>${h.weather_code_3h ?? '-'}</td>
+                        <td>${h.weather_risk_level_3h ?? '-'}</td>
                     `;
-
-                    table.innerHTML = `${theadHtml}<tbody></tbody>`;
-                    const tbody = table.querySelector('tbody');
-
-                    group.items.forEach((h, index) => {
-                        const tr = document.createElement('tr');
-                        
-                        if (isCurrentTimeRow3H(h.time_3h)) {
-                            tr.className = 'current-time-row';
-                        }
-
-                        let rowHtml = '';
-                        if (index === 0) {
-                            rowHtml += `
-                                <td class="date-cell" rowspan="${group.items.length}">
-                                    <div class="date-cell-inner">
-                                        <span>${group.month}</span>
-                                        <span>${group.day}</span>
-                                        <span>${group.weekDay}</span>
-                                    </div>
-                                </td>
-                            `;
-                        }
-
-                        const riskVal = h.weather_risk_level_3h ?? 0;
-                        const riskClass = `risk-${riskVal}`;
-                        const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
-
-                        const tempVal = h.temperature_3h;
-                        const tempClass = getTempClass(tempVal);
-                        const tempDisplay = (tempVal === 0 || tempVal === '0') 
-                            ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
-                            : (tempVal ?? '-');
-
-                        const windVal = h.wind_speed_3h;
-                        const windClass = getWindClass(windVal);
-                        const windDisplay = (windVal === 0 || windVal === '0')
-                            ? `<span class="val-zero">${windVal}</span>`
-                            : (windVal ?? '-');
-
-                        const rainVal = h.precipitation_3h;
-                        const rainClass = getRainClass(rainVal);
-                        const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
-                            ? `<span class="val-zero">${rainVal}</span>`
-                            : (rainVal ?? '-');
-
-                        rowHtml += `
-                            <td>${h.displayTime}</td>
-                            <td class="${riskClass}">${riskDisplay}</td>
-                            <td class="${rainClass}">${rainDisplay}</td>
-                            <td class="${tempClass}">${tempDisplay}</td>
-                            <td class="${windClass}">${windDisplay}</td>
-                            <td>${formatVal(h.pressure_3h)}</td>
-                            <td>${formatVal(h.weather_code_3h)}</td>
-                        `;
-                        tr.innerHTML = rowHtml;
-                        tbody.appendChild(tr);
-                    });
-
-                    sec.appendChild(table);
-                }
+                    tbody.appendChild(tr);
+                });
+                sec.appendChild(table);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
@@ -824,7 +499,7 @@
             return wrapper;
         }
 
-        // ページ4: 10日天気ビュー
+        // ページ4: 10日間の天気ビューを生成
         function create10DayWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -838,13 +513,13 @@
                 let theadHtml = `
                     <thead>
                         <tr>
-                            <th>日付</th>
-                            <th>天候リスク</th>
-                            <th>総雨量</th>
-                            <th>最低気温</th>
-                            <th>最高気温</th>
-                            <th>最大風速</th>
-                            <th>気圧</th>
+                            <th>time_1day</th>
+                            <th>temperature_min_1day</th>
+                            <th>temperature_max_1day</th>
+                            <th>precipitation_sum_1day</th>
+                            <th>wind_speed_max_1day</th>
+                            <th>pressure_mean_1day</th>
+                            <th>weather_risk_level_1day</th>
                         </tr>
                     </thead>
                 `;
@@ -854,76 +529,17 @@
 
                 data.daily_1day.forEach(d => {
                     const tr = document.createElement('tr');
-
-                    const rawTime = d.time_1day || '';
-                    let monthStr = '';
-                    let dayStr = '';
-                    let dayOfWeekChar = '';
-
-                    if (rawTime) {
-                        const dateParts = rawTime.split('-');
-                        if (dateParts.length === 3) {
-                            const year = parseInt(dateParts[0], 10);
-                            const month = parseInt(dateParts[1], 10);
-                            const day = parseInt(dateParts[2], 10);
-                            const dateObj = new Date(year, month - 1, day);
-                            
-                            monthStr = dateParts[1];
-                            dayStr = dateParts[2];
-                            if (!isNaN(dateObj.getTime())) {
-                                const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
-                                dayOfWeekChar = weekDays[dateObj.getDay()];
-                            }
-                        }
-                    }
-
-                    const riskVal = d.weather_risk_level_1day ?? 0;
-                    const riskClass = `risk-${riskVal}`;
-                    const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
-
-                    const rainVal = d.precipitation_sum_1day ?? d.precipitation_probability_max_1day;
-                    const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
-                        ? `<span class="val-zero">${rainVal}</span>`
-                        : (rainVal ?? '-');
-
-                    const minTempVal = d.temperature_min_1day;
-                    const minTempClass = getTempClass(minTempVal);
-                    const minTempDisplay = (minTempVal === 0 || minTempVal === '0') 
-                        ? `<span class="val-zero">${minTempVal}</span>` 
-                        : (minTempVal ?? '-');
-
-                    const maxTempVal = d.temperature_max_1day;
-                    const maxTempClass = getTempClass(maxTempVal);
-                    const maxTempDisplay = (maxTempVal === 0 || maxTempVal === '0') 
-                        ? `<span class="val-zero" style="font-weight: bold;">${maxTempVal}</span>` 
-                        : (maxTempVal ?? '-');
-
-                    const windVal = d.wind_speed_max_1day;
-                    const windClass = getWindClass(windVal);
-                    const windDisplay = (windVal === 0 || windVal === '0')
-                        ? `<span class="val-zero">${windVal}</span>`
-                        : (windVal ?? '-');
-
-                    const pressureVal = d.pressure_mean_1day;
-
                     tr.innerHTML = `
-                        <td class="date-cell-horizontal">
-                            <div class="date-cell-horizontal-inner">
-                                <span>${monthStr || '-'}</span>
-                                <span>${dayStr || '-'}</span>
-                                <span>${dayOfWeekChar ? `(${dayOfWeekChar})` : ''}</span>
-                            </div>
-                        </td>
-                        <td class="${riskClass}">${riskDisplay}</td>
-                        <td>${rainDisplay}</td>
-                        <td class="${minTempClass}">${minTempDisplay}</td>
-                        <td class="${maxTempClass}">${maxTempDisplay}</td>
-                        <td class="${windClass}">${windDisplay}</td>
-                        <td>${formatVal(pressureVal)}</td>
+                        <td>${d.time_1day ?? '-'}</td>
+                        <td>${d.temperature_min_1day ?? '-'}</td>
+                        <td>${d.temperature_max_1day ?? '-'}</td>
+                        <td>${d.precipitation_sum_1day ?? '-'}</td>
+                        <td>${d.wind_speed_max_1day ?? '-'}</td>
+                        <td>${d.pressure_mean_1day ?? '-'}</td>
+                        <td>${d.weather_risk_level_1day ?? '-'}</td>
                     `;
                     tbody.appendChild(tr);
                 });
-
                 sec.appendChild(table);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -933,7 +549,7 @@
             return wrapper;
         }
 
-        // ページ5: 気象警報ビュー
+        // ページ5: 気象警報ビューを生成
         function createWeatherWarningsView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -956,7 +572,6 @@
                 regionBlock.appendChild(titleDiv);
 
                 const rawWarnings = data[reg.key];
-                
                 let warningList = [];
                 if (Array.isArray(rawWarnings)) {
                     warningList = rawWarnings;
@@ -965,35 +580,10 @@
                 }
 
                 if (warningList.length > 0) {
-                    const groupedByLevel = {};
                     warningList.forEach(w => {
-                        let lv = w.code_lv !== undefined ? w.code_lv : (w.level !== undefined ? w.level : null);
-                        let lvKey = lv !== null ? `LV${lv}` : 'LV?';
-                        let name = w.code_jp || w.type || w.name || '不明';
-
-                        if (!groupedByLevel[lvKey]) {
-                            groupedByLevel[lvKey] = [];
-                        }
-                        groupedByLevel[lvKey].push(name);
-                    });
-
-                    const sortedLevels = Object.keys(groupedByLevel).sort().reverse();
-
-                    sortedLevels.forEach(lvKey => {
-                        const names = groupedByLevel[lvKey].join(' ');
                         const rowDiv = document.createElement('div');
                         rowDiv.className = 'warning-item-row';
-                        
-                        const lvSpan = document.createElement('span');
-                        lvSpan.className = 'warning-level';
-                        lvSpan.textContent = lvKey;
-
-                        const namesSpan = document.createElement('span');
-                        namesSpan.className = 'warning-names';
-                        namesSpan.textContent = names;
-
-                        rowDiv.appendChild(lvSpan);
-                        rowDiv.appendChild(namesSpan);
+                        rowDiv.textContent = JSON.stringify(w);
                         regionBlock.appendChild(rowDiv);
                     });
                 } else {
@@ -1010,6 +600,7 @@
             return wrapper;
         }
 
+        // ページ1: JSONデータをツリー構造でデバッグ表示する要素を生成
         function createDebugList(data) {
             const ul = document.createElement('ul');
 
@@ -1066,6 +657,7 @@
             return ul;
         }
 
+        // 初期実行
         fetchAndUpdateViewer();
     </script>
 </body>
