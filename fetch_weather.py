@@ -83,23 +83,26 @@ def get_pressure_risk_level(pressure_diff):
 
 def parse_datetime_fields(time_str):
     """
-    ISO形式の日時文字列から、year, month, day, day_of_week を抽出して辞書で返す
-    例: "2026-09-15T00:00" -> {"year": 2026, "month": "09", "day": "15", "day_of_week": "火"}
+    ISO形式の日時文字列から、日本語キーの日時情報を抽出して辞書で返す
     """
     try:
         dt = datetime.fromisoformat(time_str.replace("Z", ""))
         return {
-            "year": dt.year,
-            "month": f"{dt.month:02d}",  # 2桁のゼロ埋め（例: "09"）
-            "day": f"{dt.day:02d}",        # 2桁のゼロ埋め（例: "15"）
-            "day_of_week": WEEKDAYS_JP[dt.weekday()]
+            "時刻": time_str,
+            "年": dt.year,
+            "月": f"{dt.month:02d}",
+            "日": f"{dt.day:02d}",
+            "曜日": WEEKDAYS_JP[dt.weekday()],
+            "時": f"{dt.hour:02d}"
         }
     except Exception:
         return {
-            "year": 0,
-            "month": "00",
-            "day": "00",
-            "day_of_week": ""
+            "時刻": time_str,
+            "年": 0,
+            "月": "00",
+            "日": "00",
+            "曜日": "",
+            "時": "00"
         }
 
 
@@ -115,13 +118,13 @@ class JMAHyogoParser:
         for entry in self.raw_data:
             dt_code = entry.get("dataTypeCode")
             headers.append({
-                "controlDatetime": entry.get("controlDatetime"),
-                "reportDatetime": entry.get("reportDatetime"),
-                "infoType": entry.get("infoType"),
-                "publishingOffice": entry.get("publishingOffice"),
-                "headlineText": entry.get("headlineText"),
-                "dataTypeCode": dt_code,
-                "dataTypeCode_jp": DATA_TYPE_NAMES.get(dt_code, "不明な情報")
+                "制御日時": entry.get("controlDatetime"),
+                "発表日時": entry.get("reportDatetime"),
+                "情報種別": entry.get("infoType"),
+                "発表官署": entry.get("publishingOffice"),
+                "見出しテキスト": entry.get("headlineText"),
+                "データ型コード": dt_code,
+                "データ型名称": DATA_TYPE_NAMES.get(dt_code, "不明な情報")
             })
         return headers
 
@@ -148,14 +151,14 @@ class JMAHyogoParser:
                         if status in ("継続", "発表"):
                             w_code = k.get("code")
                             results.append({
-                                "dataTypeCode": dt_code,
-                                "dataTypeCode_jp": dt_code_jp,
-                                "areaCode": item.get("areaCode"),
-                                "code": w_code,
-                                "code_jp": WARNING_CODE_NAMES.get(w_code, "不明なコード"),
-                                "code_lv": get_warning_level(w_code),
-                                "status": status,
-                                "additions": k.get("additions", [])
+                                "データ型コード": dt_code,
+                                "データ型名称": dt_code_jp,
+                                "エリアコード": item.get("areaCode"),
+                                "コード": w_code,
+                                "警報注意報名": WARNING_CODE_NAMES.get(w_code, "不明なコード"),
+                                "警報レベル": get_warning_level(w_code),
+                                "ステータス": status,
+                                "付加情報": k.get("additions", [])
                             })
         return results
 
@@ -205,17 +208,20 @@ def fetch_hourly(lat, lon):
                 dt_fields = parse_datetime_fields(time_str)
 
                 my_weather_1h.append({
-                    "time": time_str,
-                    **dt_fields,  # year, month, day, day_of_week を展開
-                    "temperature": round(item["temperature_1h"]),
-                    "precipitation": round(item["precipitation_1h"]),
-                    "wind_speed": round(item["wind_speed_1h"]),
-                    "pressure": round(item["pressure_1h"]),
-                    "pressure_diff": pressure_diff,
-                    "pressure_risk_level": get_pressure_risk_level(pressure_diff),
-                    "precipitation_probability": item["precipitation_probability_1h"],
-                    "weather_code": w_code,
-                    "weather_risk_level": get_weather_risk_level(w_code),
+                    "時刻": dt_fields["時刻"],
+                    "年": dt_fields["年"],
+                    "月": dt_fields["月"],
+                    "日": dt_fields["日"],
+                    "曜日": dt_fields["曜日"],
+                    "詳細": {
+                        "時": dt_fields["時"],
+                        "天気リスク": get_weather_risk_level(w_code),
+                        "降水量": round(item["precipitation_1h"]),
+                        "気温": round(item["temperature_1h"]),
+                        "風速": round(item["wind_speed_1h"]),
+                        "気圧変化": get_pressure_risk_level(pressure_diff),
+                        "天気コード": w_code,
+                    }
                 })
 
             my_weather_3h = []
@@ -224,28 +230,32 @@ def fetch_hourly(lat, lon):
                 if not chunk:
                     break
 
-                avg_temp = sum(c["temperature"] for c in chunk) / len(chunk)
-                max_precip = max(c["precipitation"] for c in chunk)
-                max_wind = max(c["wind_speed"] for c in chunk)
-                max_pop = max(c["precipitation_probability"] for c in chunk)
-                min_pressure = min(c["pressure"] for c in chunk)
-                max_pressure_risk = max(c["pressure_risk_level"] for c in chunk)
-                rep_weather = max(chunk, key=lambda x: get_weather_risk_level(x["weather_code"]))["weather_code"]
+                # 3時間ごとの集計
+                avg_temp = sum(c["詳細"]["気温"] for c in chunk) / len(chunk)
+                max_precip = max(c["詳細"]["降水量"] for c in chunk)
+                max_wind = max(c["詳細"]["風速"] for c in chunk)
+                max_pressure_risk = max(c["詳細"]["気圧変化"] for c in chunk)
+                rep_weather = max(chunk, key=lambda x: get_weather_risk_level(x["詳細"]["天気コード"]))["詳細"]["天気コード"]
+                max_weather_risk = get_weather_risk_level(rep_weather)
 
-                time_str = chunk[0]["time"]
+                time_str = chunk[0]["時刻"]
                 dt_fields = parse_datetime_fields(time_str)
 
                 my_weather_3h.append({
-                    "time": time_str,
-                    **dt_fields,
-                    "temperature": round(avg_temp),
-                    "precipitation": round(max_precip),
-                    "wind_speed": round(max_wind),
-                    "pressure": round(min_pressure),
-                    "pressure_risk_level": max_pressure_risk,
-                    "precipitation_probability": max_pop,
-                    "weather_code": rep_weather,
-                    "weather_risk_level": get_weather_risk_level(rep_weather),
+                    "時刻": dt_fields["時刻"],
+                    "年": dt_fields["年"],
+                    "月": dt_fields["月"],
+                    "日": dt_fields["日"],
+                    "曜日": dt_fields["曜日"],
+                    "詳細": {
+                        "時": dt_fields["時"],
+                        "天気リスク": max_weather_risk,
+                        "降水量": round(max_precip),
+                        "気温": round(avg_temp),
+                        "風速": round(max_wind),
+                        "気圧変化": max_pressure_risk,
+                        "天気コード": rep_weather,
+                    }
                 })
 
             return {"my_weather_1h": my_weather_1h, "my_weather_3h": my_weather_3h}
@@ -272,7 +282,6 @@ def fetch_daily(lat, lon):
             d_tmin = daily_raw.get("temperature_2m_min", [])
             d_precip_sum = daily_raw.get("precipitation_sum", [])
             d_pop_max = daily_raw.get("precipitation_probability_max", [])
-            d_pressure = daily_raw.get("pressure_msl_mean", [])
             d_wind = daily_raw.get("wind_speed_10m_max", [])
             d_sunrise = daily_raw.get("sunrise", [])
             d_sunset = daily_raw.get("sunset", [])
@@ -284,7 +293,6 @@ def fetch_daily(lat, lon):
                 tmin = d_tmin[i] if i < len(d_tmin) and d_tmin[i] is not None else 0
                 p_sum = d_precip_sum[i] if i < len(d_precip_sum) and d_precip_sum[i] is not None else 0
                 p_max = d_pop_max[i] if i < len(d_pop_max) and d_pop_max[i] is not None else 0
-                pres = d_pressure[i] if i < len(d_pressure) and d_pressure[i] is not None else 0
                 wind = d_wind[i] if i < len(d_wind) and d_wind[i] is not None else 0
                 sr = d_sunrise[i] if i < len(d_sunrise) and d_sunrise[i] is not None else ""
                 ss = d_sunset[i] if i < len(d_sunset) and d_sunset[i] is not None else ""
@@ -292,18 +300,24 @@ def fetch_daily(lat, lon):
                 dt_fields = parse_datetime_fields(t)
 
                 my_weather_1day.append({
-                    "time": t,
-                    **dt_fields,
-                    "temperature_max": round(tmax) if isinstance(tmax, (int, float)) else tmax,
-                    "temperature_min": round(tmin) if isinstance(tmin, (int, float)) else tmin,
-                    "precipitation_sum": round(p_sum) if isinstance(p_sum, (int, float)) else p_sum,
-                    "precipitation_probability_max": p_max,
-                    "pressure_mean": round(pres) if isinstance(pres, (int, float)) else pres,
-                    "wind_speed_max": round(wind) if isinstance(wind, (int, float)) else wind,
-                    "weather_code": w_code,
-                    "weather_risk_level": get_weather_risk_level(w_code),
-                    "sunrise": sr,
-                    "sunset": ss,
+                    "時刻": dt_fields["時刻"],
+                    "年": dt_fields["年"],
+                    "月": dt_fields["月"],
+                    "日": dt_fields["日"],
+                    "曜日": dt_fields["曜日"],
+                    "詳細": {
+                        "時": dt_fields["時"],
+                        "天気リスク": get_weather_risk_level(w_code),
+                        "降水量": round(p_sum) if isinstance(p_sum, (int, float)) else p_sum,
+                        "気温": round(tmax) if isinstance(tmax, (int, float)) else tmax,
+                        "風速": round(wind) if isinstance(wind, (int, float)) else wind,
+                        "天気コード": w_code,
+                    },
+                    "最高気温": round(tmax) if isinstance(tmax, (int, float)) else tmax,
+                    "最低気温": round(tmin) if isinstance(tmin, (int, float)) else tmin,
+                    "降水確率": p_max,
+                    "日の出": sr,
+                    "日の入": ss,
                 })
             return {"my_weather_1day": my_weather_1day}
     except Exception as e:
