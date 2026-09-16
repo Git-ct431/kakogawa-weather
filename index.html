@@ -86,8 +86,8 @@
                 padding-bottom: 8px;
             }
             
-            /* --- ご指定の .default-style-1 設定 --- */
-            .default-style-1 {
+            /* --- 共通のテーブルスタイル --- */
+            .table-style-1 {
                 width: max-content;
                 height: auto;
                 border-collapse: collapse;
@@ -95,27 +95,39 @@
                 border: 1px solid #333;
                 font-size: 0.9rem;
             }
-            .default-style-1 th, 
-            .default-style-1 td {
+            .table-style-1 th, 
+            .table-style-1 td {
                 text-align: center;
-                border-bottom: none;
-                border-right: none;
+                border-bottom: 1px solid #333;
+                border-right: 1px solid #333;
                 white-space: nowrap;
+                padding: 6px 10px;
             }
-            .default-style-1 th:last-child, 
-            .default-style-1 td:last-child {
+            .table-style-1 tr:last-child td {
+                border-bottom: none;
+            }
+            .table-style-1 th:last-child, 
+            .table-style-1 td:last-child {
                 border-right: none;
             }
-            .default-style-1 th {
+            .table-style-1 th {
                 background-color: #2d2d2d;
                 color: #4ec9b0;
                 font-weight: bold;
-                text-align: center;
-                border-bottom: 1px solid #333;
                 writing-mode: vertical-rl;
                 text-orientation: upright;
+                padding: 0;
             }
-            .default-style-1 tr:hover {
+            .table-style-1 th span {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                height: 100%;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 4px;
+            }
+            .table-style-1 tr:hover {
                 background-color: #252526;
             }
 
@@ -186,11 +198,11 @@
         let pollTimer = null;
         let isFetching = false;
 
-        // 共通のテーブル生成関数（default-style-1 クラスを適用）
+        // 共通の生成関数
         const renderTable = (data, container) => {
             if (!data.length) return;
             const keys = Object.keys(data[0]);
-            container.innerHTML = `<table class="default-style-1"><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody>${data.map(h => `<tr>${keys.map(k => `<td>${h[k] ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+            container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${data.map(h => `<tr>${keys.map(k => `<td>${h[k] ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
         };
 
         // データの取得と各画面の更新を行う
@@ -376,7 +388,7 @@
             }
         });
 
-        // ページ2: 1時間ごとの天気ビューを生成（詳細データのみを抽出して表にする）
+        // ページ2: 1時間ごとの天気ビューを生成
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -384,25 +396,13 @@
             sec.innerHTML = '<h2>1時間ごとの天気（詳細データのみ）</h2>';
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
-                const baseDateTime = new Date("2026-09-15T00:00");
-
-                const filteredData = data.my_weather_1h.filter(h => {
-                    const hYear = String(h.年 ?? '');
-                    const hMonth = String(h.月 ?? '').padStart(2, '0');
-                    const hDay = String(h.日 ?? '').padStart(2, '0');
-                    const hHour = String(h.詳細?.時 ?? '00').padStart(2, '0');
-                    const itemDateTime = new Date(`${hYear}-${hMonth}-${hDay}T${hHour}:00`);
-                    return itemDateTime >= baseDateTime;
-                });
-
-                if (filteredData.length > 0) {
-                    const detailList = filteredData.map(h => h.詳細 || {});
-                    const tableContainer = document.createElement('div');
-                    renderTable(detailList, tableContainer);
-                    sec.appendChild(tableContainer);
-                } else {
-                    sec.innerHTML += '<p>指定日時以降のデータがありません。</p>';
-                }
+                const container = document.createElement('div');
+                
+                // 詳細データのみを抽出して一撃で表にする
+                const detailsList = data.my_weather_1h.map(h => h.詳細 || {});
+                renderTable(detailsList, container);
+                
+                sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
@@ -411,7 +411,7 @@
             return wrapper;
         }
 
-        // ページ3: 3時間ごとの天気ビューを生成（以前の状態）
+        // ページ3: 3時間ごとの天気ビューを生成
         function create3HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -419,40 +419,9 @@
             sec.innerHTML = '<h2>3時間ごとの天気</h2>';
 
             if (data.hourly_3h && data.hourly_3h.length > 0) {
-                const table = document.createElement('table');
-                table.className = 'weather-table';
-                
-                let theadHtml = `
-                    <thead>
-                        <tr>
-                            <th>time_3h</th>
-                            <th>temperature_3h</th>
-                            <th>precipitation_3h</th>
-                            <th>wind_speed_3h</th>
-                            <th>pressure_3h</th>
-                            <th>weather_code_3h</th>
-                            <th>weather_risk_level_3h</th>
-                        </tr>
-                    </thead>
-                `;
-
-                table.innerHTML = `${theadHtml}<tbody></tbody>`;
-                const tbody = table.querySelector('tbody');
-
-                data.hourly_3h.forEach(h => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${h.time_3h ?? '-'}</td>
-                        <td>${h.temperature_3h ?? '-'}</td>
-                        <td>${h.precipitation_3h ?? '-'}</td>
-                        <td>${h.wind_speed_3h ?? '-'}</td>
-                        <td>${h.pressure_3h ?? '-'}</td>
-                        <td>${h.weather_code_3h ?? '-'}</td>
-                        <td>${h.weather_risk_level_3h ?? '-'}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                sec.appendChild(table);
+                const container = document.createElement('div');
+                renderTable(data.hourly_3h, container);
+                sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
@@ -461,7 +430,7 @@
             return wrapper;
         }
 
-        // ページ4: 10日間の天気ビューを生成（以前の状態）
+        // ページ4: 10日間の天気ビューを生成
         function create10DayWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -469,40 +438,9 @@
             sec.innerHTML = '<h2>10日間の天気（週間）</h2>';
 
             if (data.daily_1day && data.daily_1day.length > 0) {
-                const table = document.createElement('table');
-                table.className = 'weather-table';
-                
-                let theadHtml = `
-                    <thead>
-                        <tr>
-                            <th>time_1day</th>
-                            <th>temperature_min_1day</th>
-                            <th>temperature_max_1day</th>
-                            <th>precipitation_sum_1day</th>
-                            <th>wind_speed_max_1day</th>
-                            <th>pressure_mean_1day</th>
-                            <th>weather_risk_level_1day</th>
-                        </tr>
-                    </thead>
-                `;
-
-                table.innerHTML = `${theadHtml}<tbody></tbody>`;
-                const tbody = table.querySelector('tbody');
-
-                data.daily_1day.forEach(d => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${d.time_1day ?? '-'}</td>
-                        <td>${d.temperature_min_1day ?? '-'}</td>
-                        <td>${d.temperature_max_1day ?? '-'}</td>
-                        <td>${d.precipitation_sum_1day ?? '-'}</td>
-                        <td>${d.wind_speed_max_1day ?? '-'}</td>
-                        <td>${d.pressure_mean_1day ?? '-'}</td>
-                        <td>${d.weather_risk_level_1day ?? '-'}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                sec.appendChild(table);
+                const container = document.createElement('div');
+                renderTable(data.daily_1day, container);
+                sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
             }
@@ -511,7 +449,7 @@
             return wrapper;
         }
 
-        // ページ5: 気象警報ビューを生成（以前の状態）
+        // ページ5: 気象警報ビューを生成
         function createWeatherWarningsView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
