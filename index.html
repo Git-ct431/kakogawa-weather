@@ -101,7 +101,7 @@
                 border-bottom: 1px solid #333;
                 border-right: 1px solid #333;
                 white-space: nowrap;
-                padding: 6px 10px;
+                padding: 0;
             }
             .table-style-1 tr:last-child td {
                 border-bottom: none;
@@ -161,6 +161,10 @@
                 padding-left: 20px;
                 margin: 4px 0;
                 border-left: 1px dotted #404040;
+            }
+            /* 折りたたみ時のスタイル */
+            li.collapsed > ul {
+                display: none;
             }
             li {
                 margin: 2px 0;
@@ -397,11 +401,8 @@
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
                 const container = document.createElement('div');
-                
-                // 詳細データのみを抽出して一撃で表にする
                 const detailsList = data.my_weather_1h.map(h => h.詳細 || {});
                 renderTable(detailsList, container);
-                
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
