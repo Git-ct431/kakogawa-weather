@@ -9,190 +9,48 @@
     <div id="app"></div>
 
     <script>
-        // スタイルを定義してheadに追加
         const style = document.createElement('style');
         style.textContent = `
-            body {
-                font-family: monospace;
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                padding: 20px;
-                margin: 0;
-            }
-            header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid #333;
-                padding-bottom: 10px;
-                margin-bottom: 15px;
-            }
-            h1 {
-                font-size: 1.2rem;
-                color: #4ec9b0;
-                margin: 0;
-                border: none;
-                padding: 0;
-            }
-            .update-info {
-                font-size: 0.85rem;
-                color: #9cdcfe;
-            }
-            .tab-nav {
-                display: flex;
-                gap: 10px;
-                margin-bottom: 15px;
-                flex-wrap: wrap;
-            }
-            .tab-btn {
-                background-color: #2d2d2d;
-                color: #d4d4d4;
-                border: 1px solid #404040;
-                padding: 6px 14px;
-                cursor: pointer;
-                font-family: monospace;
-                border-radius: 4px;
-            }
-            .tab-btn.active {
-                background-color: #0e639c;
-                border-color: #1177bb;
-                color: #ffffff;
-            }
-            .page-pane {
-                display: none;
-            }
-            .page-pane.active {
-                display: block;
-            }
-            .fixed-size-pane {
-                width: 1060px;
-                height: 2180px;
-                background-color: #252526;
-                border: 1px solid #333;
-                overflow: auto;
-                box-sizing: border-box;
-                padding: 20px;
-                border-radius: 6px;
-            }
-            .weather-section {
-                margin-bottom: 20px;
-            }
-            .weather-section h2 {
-                font-size: 1.2rem;
-                color: #4ec9b0;
-                margin-top: 0;
-                margin-bottom: 15px;
-                border-bottom: 1px solid #333;
-                padding-bottom: 8px;
-            }
+            body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; margin: 0; }
+            header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+            h1 { font-size: 1.2rem; color: #4ec9b0; margin: 0; border: none; padding: 0; }
+            .update-info { font-size: 0.85rem; color: #9cdcfe; }
+            .tab-nav { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+            .tab-btn { background-color: #2d2d2d; color: #d4d4d4; border: 1px solid #404040; padding: 6px 14px; cursor: pointer; font-family: monospace; border-radius: 4px; }
+            .tab-btn.active { background-color: #0e639c; border-color: #1177bb; color: #ffffff; }
+            .page-pane { display: none; }
+            .page-pane.active { display: block; }
+            .fixed-size-pane { width: 1060px; height: 2180px; background-color: #252526; border: 1px solid #333; overflow: auto; box-sizing: border-box; padding: 20px; border-radius: 6px; }
+            .weather-section { margin-bottom: 20px; }
+            .weather-section h2 { font-size: 1.2rem; color: #4ec9b0; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
             
             /* --- 共通のテーブルスタイル --- */
-            .table-style-1 {
-                width: max-content;
-                height: auto;
-                border-collapse: collapse;
-                background-color: #1e1e1e;
-                border: 1px solid #333;
-                font-size: 0.9rem;
-            }
-            .table-style-1 th, 
-            .table-style-1 td {
-                text-align: center;
-                border-bottom: 1px solid #333;
-                border-right: 1px solid #333;
-                white-space: nowrap;
-                padding: 0;
-            }
-            .table-style-1 tr:last-child td {
-                border-bottom: none;
-            }
-            .table-style-1 th:last-child, 
-            .table-style-1 td:last-child {
-                border-right: none;
-            }
-            .table-style-1 th {
-                background-color: #2d2d2d;
-                color: #4ec9b0;
-                font-weight: bold;
-                writing-mode: vertical-rl;
-                text-orientation: upright;
-                padding: 0;
-            }
-            .table-style-1 th span {
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                height: 100%;
-                width: 100%;
-                box-sizing: border-box;
-                padding: 4px;
-            }
-            .table-style-1 tr:hover {
-                background-color: #252526;
-            }
+            .table-style-1 { width: max-content; height: auto; border-collapse: collapse; background-color: #1e1e1e; border: 1px solid #333; font-size: 0.9rem; }
+            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; padding: 0; }
+            .table-style-1 tr:last-child td { border-bottom: none; }
+            .table-style-1 th:last-child, .table-style-1 td:last-child { border-right: none; }
+            .table-style-1 th { background-color: #2d2d2d; color: #4ec9b0; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; padding: 0; }
+            .table-style-1 th span { display: flex; align-items: center; justify-content: flex-end; height: 100%; width: 100%; box-sizing: border-box; padding: 4px; }
+            .table-style-1 tr:hover { background-color: #252526; }
 
-            .warning-region-block {
-                margin-bottom: 8px;
-                background-color: #1e1e1e;
-                border: 1px solid #333;
-                padding: 6px 12px;
-                border-radius: 4px;
-            }
-            .warning-region-title {
-                font-size: 1.05rem;
-                color: #9cdcfe;
-                font-weight: bold;
-                margin-bottom: 2px;
-                border-bottom: 1px dotted #404040;
-                padding-bottom: 2px;
-            }
-            .warning-item-row {
-                display: flex;
-                gap: 15px;
-                margin: 1px 0;
-                font-size: 0.95rem;
-            }
-            .warning-none {
-                color: #858585;
-                margin: 1px 0;
-            }
-            ul {
-                list-style-type: none;
-                padding-left: 20px;
-                margin: 4px 0;
-                border-left: 1px dotted #404040;
-            }
-            /* 折りたたみ時のスタイル */
-            li.collapsed > ul {
-                display: none;
-            }
-            li {
-                margin: 2px 0;
-            }
-            .key {
-                color: #9cdcfe;
-                font-weight: bold;
-            }
+            /* 3℃刻みの温度カラーマップ（5つずつ配置） */
+            .temp-b3 { background-color: #0c1824; color: #9ac2ff; } .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; } .temp-b1 { background-color: #102334; color: #92b8ea; } .temp-b0 { background-color: #12283c; color: #9cdcfe; } .temp-g0 { background-color: #132a28; color: #9cdcfe; }
+            .temp-g1 { background-color: #142d1e; color: #b5cea8; } .temp-g2 { background-color: #163116; color: #b5cea8; } .temp-g3 { background-color: #153722; color: #ffffff; } .temp-r0 { background-color: #282d12; color: #d4cc8c; } .temp-r1 { background-color: #332710; color: #d4cc8c; }
+            .temp-r2 { background-color: #331e10; color: #e8b894; } .temp-r3 { background-color: #331310; color: #e89494; } .temp-r4 { background-color: #330e0e; color: #e89494; } .temp-r5 { background-color: #2c0919; color: #e894c7; }
+
+            .warning-region-block { margin-bottom: 8px; background-color: #1e1e1e; border: 1px solid #333; padding: 6px 12px; border-radius: 4px; }
+            .warning-region-title { font-size: 1.05rem; color: #9cdcfe; font-weight: bold; margin-bottom: 2px; border-bottom: 1px dotted #404040; padding-bottom: 2px; }
+            .warning-item-row { display: flex; gap: 15px; margin: 1px 0; font-size: 0.95rem; }
+            .warning-none { color: #858585; margin: 1px 0; }
+            ul { list-style-type: none; padding-left: 20px; margin: 4px 0; border-left: 1px dotted #404040; }
+            li.collapsed > ul { display: none; }
+            li { margin: 2px 0; }
+            .key { color: #9cdcfe; font-weight: bold; }
             .string { color: #ce9178; }
             .number { color: #b5cea8; }
-            .boolean { color: #569cd6; }
-            .null { color: #569cd6; }
-            .type-tag {
-                font-size: 0.8rem;
-                color: #858585;
-                margin-left: 6px;
-                cursor: pointer;
-                user-select: none;
-            }
-            .toggle-btn {
-                background: none;
-                border: none;
-                color: #4ec9b0;
-                cursor: pointer;
-                font-family: monospace;
-                font-size: 0.9rem;
-                padding: 0 4px 0 0;
-            }
+            .boolean, .null { color: #569cd6; }
+            .type-tag { font-size: 0.8rem; color: #858585; margin-left: 6px; cursor: pointer; user-select: none; }
+            .toggle-btn { background: none; border: none; color: #4ec9b0; cursor: pointer; font-family: monospace; font-size: 0.9rem; padding: 0 4px 0 0; }
             .error { color: #f44747; }
         `;
         document.head.appendChild(style);
@@ -202,14 +60,37 @@
         let pollTimer = null;
         let isFetching = false;
 
-        // 共通の生成関数
-        const renderTable = (data, container) => {
+        function getTempClass(key, val) {
+            if (!key.includes('気温')) return '';
+            const num = parseFloat(val);
+            if (isNaN(num)) return '';
+            const idx = Math.floor(num / 3);
+            if (idx <= -2) return 'temp-b3';
+            if (idx === -1) return 'temp-b2';
+            if (idx === 0) return 'temp-b1';
+            if (idx === 1) return 'temp-b0';
+            if (idx === 2) return 'temp-g0';
+            if (idx === 3) return 'temp-g1';
+            if (idx === 4) return 'temp-g2';
+            if (idx === 5) return 'temp-g3';
+            if (idx === 6) return 'temp-r0';
+            if (idx === 7) return 'temp-r1';
+            if (idx === 8) return 'temp-r2';
+            if (idx === 9) return 'temp-r3';
+            if (idx === 10) return 'temp-r4';
+            return 'temp-r5';
+        }
+
+        const renderTable = (data, container, customClassFn = null) => {
             if (!data.length) return;
             const keys = Object.keys(data[0]);
-            container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${data.map(h => `<tr>${keys.map(k => `<td>${h[k] ?? '-'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+            container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${data.map(h => `<tr>${keys.map(k => {
+                const val = h[k] ?? '-';
+                const cls = customClassFn ? customClassFn(k, val) : '';
+                return `<td${cls ? ` class="${cls}"` : ''}>${val}</td>`;
+            }).join('')}</tr>`).join('')}</tbody></table>`;
         };
 
-        // データの取得と各画面の更新を行う
         async function fetchAndUpdateViewer() {
             if (isFetching) return;
             isFetching = true;
@@ -218,7 +99,6 @@
             
             if (isFirstLoad) {
                 const header = document.createElement('header');
-                
                 const title = document.createElement('h1');
                 title.textContent = '天気ツール';
                 header.appendChild(title);
@@ -228,7 +108,6 @@
                 updateInfo.className = 'update-info';
                 updateInfo.textContent = '更新時刻を確認中...';
                 header.appendChild(updateInfo);
-
                 app.appendChild(header);
 
                 const tabNav = document.createElement('div');
@@ -309,17 +188,12 @@
 
             try {
                 const response = await fetch(`data.json?_=${Date.now()}`, { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const jsonData = await response.json();
                 
                 const currentUpdateTime = jsonData.my_json_updatetime || '不明';
-
                 const updateInfoEl = document.getElementById('update-info');
-                if (updateInfoEl) {
-                    updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
-                }
+                if (updateInfoEl) updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
 
                 if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
                     lastKnownUpdateTime = currentUpdateTime;
@@ -349,13 +223,10 @@
                 }
             } finally {
                 isFetching = false;
-                if (!document.hidden) {
-                    scheduleNextCheck();
-                }
+                if (!document.hidden) scheduleNextCheck();
             }
         }
 
-        // タブの切り替え処理
         function switchTab(targetId, activeBtn) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-pane').forEach(pane => pane.classList.remove('active'));
@@ -364,7 +235,6 @@
             document.getElementById(`pane-${targetId}`).classList.add('active');
         }
 
-        // 次回のデータ確認タイミングをスケジュール
         function scheduleNextCheck() {
             if (pollTimer) clearTimeout(pollTimer);
             let delayMs = 60000;
@@ -373,16 +243,11 @@
                 const nowMs = Date.now();
                 const tenMinutesMs = 10 * 60 * 1000;
                 const elapsedMs = nowMs - updateTimeMs;
-                if (elapsedMs < tenMinutesMs) {
-                    delayMs = tenMinutesMs - elapsedMs;
-                } else {
-                    delayMs = 60 * 1000;
-                }
+                delayMs = (elapsedMs < tenMinutesMs) ? (tenMinutesMs - elapsedMs) : 60000;
             }
             pollTimer = setTimeout(fetchAndUpdateViewer, delayMs);
         }
 
-        // ページの状態に応じてポーリングを制御
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 if (pollTimer) clearTimeout(pollTimer);
@@ -392,7 +257,6 @@
             }
         });
 
-        // ページ2: 1時間ごとの天気ビューを生成（共通の renderTable を使用）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -402,7 +266,7 @@
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
                 const container = document.createElement('div');
                 const detailsList = data.my_weather_1h.map(h => h.詳細 || {});
-                renderTable(detailsList, container);
+                renderTable(detailsList, container, getTempClass);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -412,7 +276,6 @@
             return wrapper;
         }
 
-        // ページ3: 3時間ごとの天気ビューを生成
         function create3HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -421,7 +284,7 @@
 
             if (data.hourly_3h && data.hourly_3h.length > 0) {
                 const container = document.createElement('div');
-                renderTable(data.hourly_3h, container);
+                renderTable(data.hourly_3h, container, getTempClass);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -431,7 +294,6 @@
             return wrapper;
         }
 
-        // ページ4: 10日間の天気ビューを生成
         function create10DayWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -440,7 +302,7 @@
 
             if (data.daily_1day && data.daily_1day.length > 0) {
                 const container = document.createElement('div');
-                renderTable(data.daily_1day, container);
+                renderTable(data.daily_1day, container, getTempClass);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -450,7 +312,6 @@
             return wrapper;
         }
 
-        // ページ5: 気象警報ビューを生成
         function createWeatherWarningsView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -473,12 +334,7 @@
                 regionBlock.appendChild(titleDiv);
 
                 const rawWarnings = data[reg.key];
-                let warningList = [];
-                if (Array.isArray(rawWarnings)) {
-                    warningList = rawWarnings;
-                } else if (rawWarnings && typeof rawWarnings === 'object') {
-                    warningList = [rawWarnings];
-                }
+                let warningList = Array.isArray(rawWarnings) ? rawWarnings : (rawWarnings && typeof rawWarnings === 'object' ? [rawWarnings] : []);
 
                 if (warningList.length > 0) {
                     warningList.forEach(w => {
@@ -501,7 +357,6 @@
             return wrapper;
         }
 
-        // ページ1: JSONデータをツリー構造でデバッグ表示する要素を生成
         function createDebugList(data) {
             const ul = document.createElement('ul');
 
@@ -509,7 +364,6 @@
                 if (Object.prototype.hasOwnProperty.call(data, key)) {
                     const value = data[key];
                     const li = document.createElement('li');
-                    
                     const type = typeof value;
                     const isObjOrArray = value !== null && type === 'object';
 
@@ -558,7 +412,6 @@
             return ul;
         }
 
-        // 初期実行
         fetchAndUpdateViewer();
     </script>
 </body>
