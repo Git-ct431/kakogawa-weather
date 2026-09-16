@@ -9,6 +9,9 @@ LATITUDE = 34.75803345356596
 LONGITUDE = 134.8150154875823
 JST = timezone(timedelta(hours=9))
 
+# 曜日の漢字変換用リスト
+WEEKDAYS_JP = ["月", "火", "水", "木", "金", "土", "日"]
+
 # ==========================================
 # 日本語変換マッピング定義
 # ==========================================
@@ -35,34 +38,15 @@ WARNING_CODE_NAMES = {
     "48": "高潮危険警報", "49": "土砂災害危険警報"
 }
 
-# 警戒レベルの明示的定義（レベル2〜5、および解除）
 WARNING_CODE_LEVELS = {
-    "00": 0,    # 解除
-    
-    # レベル2（注意報）
-    "10": 2,    # 大雨注意報
-    "14": 2,    # 雷注意報
-    "18": 2,    # 洪水注意報
-    "19": 2,    # 高潮注意報
-    "29": 2,    # 土砂災害注意報
-    
-    # レベル3（警報）
-    "02": 3, "03": 3, "04": 3, "05": 3, 
-    "06": 3, "07": 3, "08": 3, "09": 3,
-    
-    # レベル4（危険警報）
+    "00": 0, "10": 2, "14": 2, "18": 2, "19": 2, "29": 2,
+    "02": 3, "03": 3, "04": 3, "05": 3, "06": 3, "07": 3, "08": 3, "09": 3,
     "43": 4, "48": 4, "49": 4,
-    
-    # レベル5（特別警報）
-    "32": 5, "33": 5, "35": 5, "36": 5, 
-    "37": 5, "38": 5, "39": 5
+    "32": 5, "33": 5, "35": 5, "36": 5, "37": 5, "38": 5, "39": 5
 }
 
 
 def get_warning_level(w_code):
-    """
-    警報コードから警戒レベルを判定する
-    """
     if not w_code:
         return None
     if w_code in WARNING_CODE_LEVELS:
@@ -71,9 +55,6 @@ def get_warning_level(w_code):
 
 
 def get_weather_risk_level(code):
-    """
-    天気コードからリスクレベルを判定する
-    """
     if code in [95, 96, 99]:
         return 4
     elif code in [65, 66, 67, 75, 81, 82, 85, 86]:
@@ -84,6 +65,42 @@ def get_weather_risk_level(code):
         return 1
     else:
         return 0
+
+
+def get_pressure_risk_level(pressure_diff):
+    """
+    気圧差から気圧変化リスクレベルを判定する
+    """
+    if pressure_diff <= -5:
+        return 3  # 警戒（大きな気圧低下）
+    elif pressure_diff <= -3:
+        return 2  # 注意（気圧低下）
+    elif pressure_diff <= -1 or pressure_diff >= 2:
+        return 1  # やや注意
+    else:
+        return 0  # 安定
+
+
+def parse_datetime_fields(time_str):
+    """
+    ISO形式の日時文字列から、year, month, day, day_of_week を抽出して辞書で返す
+    例: "2026-09-15T00:00" -> {"year": 2026, "month": "09", "day": "15", "day_of_week": "火"}
+    """
+    try:
+        dt = datetime.fromisoformat(time_str.replace("Z", ""))
+        return {
+            "year": dt.year,
+            "month": f"{dt.month:02d}",  # 2桁のゼロ埋め（例: "09"）
+            "day": f"{dt.day:02d}",        # 2桁のゼロ埋め（例: "15"）
+            "day_of_week": WEEKDAYS_JP[dt.weekday()]
+        }
+    except Exception:
+        return {
+            "year": 0,
+            "month": "00",
+            "day": "00",
+            "day_of_week": ""
+        }
 
 
 # ==========================================
@@ -145,7 +162,6 @@ class JMAHyogoParser:
 
 def fetch_hourly(lat, lon):
     try:
-        # 【ソース1】時間ごとデータ（昨日分＋未来3日間）
         url = (
             f"https://api.open-meteo.com/v1/jma?latitude={lat}&longitude={lon}"
             "&hourly=temperature_2m,precipitation,wind_speed_10m,pressure_msl,weather_code,precipitation_probability"
@@ -164,7 +180,6 @@ def fetch_hourly(lat, lon):
             weather_codes = hourly_raw.get("weather_code", [])
             pop_list = hourly_raw.get("precipitation_probability", [])
 
-            # ステップ1: 生データの抽出・基本整形
             base_1h_list = []
             for i, t in enumerate(times):
                 base_1h_list.append({
@@ -177,29 +192,32 @@ def fetch_hourly(lat, lon):
                     "weather_code_1h": weather_codes[i] if i < len(weather_codes) and weather_codes[i] is not None else 0,
                 })
 
-            # ステップ2: 派生データ（気圧差分やリスクなど）の計算と付与
             my_weather_1h = []
             for i, item in enumerate(base_1h_list):
                 if i > 0:
                     prev_pressure = base_1h_list[i - 1]["pressure_1h"]
-                    pressure_diff = round(item["pressure_1h"] - prev_pressure, 1)
+                    pressure_diff = round(item["pressure_1h"] - prev_pressure)
                 else:
-                    pressure_diff = 0.0
+                    pressure_diff = 0
 
                 w_code = item["weather_code_1h"]
+                time_str = item["time_1h"]
+                dt_fields = parse_datetime_fields(time_str)
+
                 my_weather_1h.append({
-                    "time": item["time_1h"],
+                    "time": time_str,
+                    **dt_fields,  # year, month, day, day_of_week を展開
                     "temperature": round(item["temperature_1h"]),
                     "precipitation": round(item["precipitation_1h"]),
                     "wind_speed": round(item["wind_speed_1h"]),
                     "pressure": round(item["pressure_1h"]),
                     "pressure_diff": pressure_diff,
+                    "pressure_risk_level": get_pressure_risk_level(pressure_diff),
                     "precipitation_probability": item["precipitation_probability_1h"],
                     "weather_code": w_code,
                     "weather_risk_level": get_weather_risk_level(w_code),
                 })
 
-            # ステップ3: 3時間ごとのブロック集約
             my_weather_3h = []
             for i in range(0, len(my_weather_1h), 3):
                 chunk = my_weather_1h[i : i + 3]
@@ -211,14 +229,20 @@ def fetch_hourly(lat, lon):
                 max_wind = max(c["wind_speed"] for c in chunk)
                 max_pop = max(c["precipitation_probability"] for c in chunk)
                 min_pressure = min(c["pressure"] for c in chunk)
+                max_pressure_risk = max(c["pressure_risk_level"] for c in chunk)
                 rep_weather = max(chunk, key=lambda x: get_weather_risk_level(x["weather_code"]))["weather_code"]
 
+                time_str = chunk[0]["time"]
+                dt_fields = parse_datetime_fields(time_str)
+
                 my_weather_3h.append({
-                    "time": chunk[0]["time"],
+                    "time": time_str,
+                    **dt_fields,
                     "temperature": round(avg_temp),
                     "precipitation": round(max_precip),
                     "wind_speed": round(max_wind),
                     "pressure": round(min_pressure),
+                    "pressure_risk_level": max_pressure_risk,
                     "precipitation_probability": max_pop,
                     "weather_code": rep_weather,
                     "weather_risk_level": get_weather_risk_level(rep_weather),
@@ -232,7 +256,6 @@ def fetch_hourly(lat, lon):
 
 def fetch_daily(lat, lon):
     try:
-        # 【ソース2】日ごとデータ（昨日分＋未来10日間）
         url = (
             f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,pressure_msl_mean,wind_speed_10m_max,sunrise,sunset"
@@ -266,8 +289,11 @@ def fetch_daily(lat, lon):
                 sr = d_sunrise[i] if i < len(d_sunrise) and d_sunrise[i] is not None else ""
                 ss = d_sunset[i] if i < len(d_sunset) and d_sunset[i] is not None else ""
 
+                dt_fields = parse_datetime_fields(t)
+
                 my_weather_1day.append({
                     "time": t,
+                    **dt_fields,
                     "temperature_max": round(tmax) if isinstance(tmax, (int, float)) else tmax,
                     "temperature_min": round(tmin) if isinstance(tmin, (int, float)) else tmin,
                     "precipitation_sum": round(p_sum) if isinstance(p_sum, (int, float)) else p_sum,
@@ -287,7 +313,6 @@ def fetch_daily(lat, lon):
 
 def fetch_jma():
     try:
-        # 【ソース3】気象庁警報JSON（現在の公式発表データを取得）
         url = "https://www.jma.go.jp/bosai/warning/data/r8/280000.json"
         res = requests.get(url, timeout=10)
         print(f"JMA HTTP Status: {res.status_code}")
