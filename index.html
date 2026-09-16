@@ -1,4 +1,563 @@
-// ページ2: 1時間天気ビュー
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天気ツール</title>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // スタイルを動的に生成して適用
+        const style = document.createElement('style');
+        style.textContent = `
+            body {
+                font-family: monospace;
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+                padding: 20px;
+                margin: 0;
+            }
+            header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #333;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+            h1 {
+                font-size: 1.2rem;
+                color: #4ec9b0;
+                margin: 0;
+                border: none;
+                padding: 0;
+            }
+            .update-info {
+                font-size: 0.85rem;
+                color: #9cdcfe;
+            }
+            /* タブ切り替え用スタイル */
+            .tab-nav {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+                flex-wrap: wrap;
+            }
+            .tab-btn {
+                background-color: #2d2d2d;
+                color: #d4d4d4;
+                border: 1px solid #404040;
+                padding: 6px 14px;
+                cursor: pointer;
+                font-family: monospace;
+                border-radius: 4px;
+            }
+            .tab-btn.active {
+                background-color: #0e639c;
+                border-color: #1177bb;
+                color: #ffffff;
+            }
+            .page-pane {
+                display: none;
+            }
+            .page-pane.active {
+                display: block;
+            }
+            /* ページ2以降の固定サイズコンテナ (1060 x 2180) */
+            .fixed-size-pane {
+                width: 1060px;
+                height: 2180px;
+                background-color: #252526;
+                border: 1px solid #333;
+                overflow: auto;
+                box-sizing: border-box;
+                padding: 20px;
+                border-radius: 6px;
+            }
+            .weather-section {
+                margin-bottom: 20px;
+            }
+            .weather-section h2 {
+                font-size: 1.2rem;
+                color: #4ec9b0;
+                margin-top: 0;
+                margin-bottom: 15px;
+                border-bottom: 1px solid #333;
+                padding-bottom: 8px;
+            }
+            /* テーブル用スタイル */
+            .weather-table {
+                width: auto;
+                border-collapse: collapse;
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+                font-size: 0.9rem;
+                margin-bottom: 0;
+            }
+            .weather-table + .weather-table {
+                border-top: none; 
+            }
+            .weather-table th, .weather-table td {
+                padding: 0 12px;
+                text-align: center;
+                border-bottom: none; 
+                border-right: 1px solid #333;
+                white-space: nowrap;
+                height: 26px;
+            }
+            .weather-table th:last-child, .weather-table td:last-child {
+                border-right: none;
+            }
+            /* ヘッダー縦書きスタイル */
+            .weather-table th {
+                background-color: #2d2d2d;
+                color: #4ec9b0;
+                font-weight: bold;
+                writing-mode: vertical-rl;
+                text-orientation: upright;
+                letter-spacing: 2px;
+                height: 90px;
+                vertical-align: middle;
+                padding: 6px 6px;
+                border-bottom: 1px solid #333;
+            }
+            .weather-table ~ .weather-table thead {
+                display: none;
+            }
+            .weather-table tr:hover {
+                background-color: #252526;
+            }
+
+            /* 現在時刻行：日付セル以外（時刻から右側）に下線を引く */
+            .current-time-row td:not(.date-cell) {
+                border-bottom: 2px solid #3d887a !important;
+            }
+
+            /* 左列の日付セル（ページ2,3用：縦並び・上揃え） */
+            .date-cell {
+                background-color: #2d2d2d;
+                color: #9cdcfe;
+                font-weight: bold;
+                vertical-align: top;
+                text-align: center;
+                padding: 6px 10px;
+                border-right: 1px solid #333;
+                height: auto !important;
+            }
+            .date-cell-inner {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                line-height: 1.2;
+            }
+
+            /* ページ4専用の日付セル（横並び・左寄せ） */
+            .date-cell-horizontal {
+                color: #9cdcfe;
+                font-weight: bold;
+                vertical-align: middle;
+                text-align: left !important;
+                padding: 4px 12px;
+                border-right: 1px solid #333;
+                white-space: nowrap;
+            }
+            .date-cell-horizontal-inner {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 6px;
+            }
+
+            /* 天候リスクごとの背景色 */
+            .risk-0 { }
+            .risk-1 { background-color: #1c3b57; color: #9cdcfe; }
+            .risk-2 { background-color: #1a4d7c; color: #c5e4ff; }
+            .risk-3 { background-color: #5c521e; color: #ffe680; }
+            .risk-4 { background-color: #5c2727; color: #ffb3b3; }
+
+            /* 3℃刻みの温度カラーマップ */
+            .temp-b3 { background-color: #0c1824; color: #9ac2ff; }
+            .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; }
+            .temp-b1 { background-color: #102334; color: #92b8ea; }
+            .temp-b0 { background-color: #12283c; color: #9cdcfe; }
+            .temp-g0 { background-color: #132a28; color: #9cdcfe; }
+            .temp-g1 { background-color: #142d1e; color: #b5cea8; }
+            .temp-g2 { background-color: #163116; color: #b5cea8; }
+            .temp-g3 { background-color: #153722; color: #ffffff; font-weight: bold; }
+            .temp-r0 { background-color: #282d12; color: #d4cc8c; }
+            .temp-r1 { background-color: #332710; color: #d4cc8c; }
+            .temp-r2 { background-color: #331e10; color: #e8b894; }
+            .temp-r3 { background-color: #331310; color: #e89494; }
+            .temp-r4 { background-color: #330e0e; color: #e89494; }
+            .temp-r5 { background-color: #2c0919; color: #e894c7; }
+
+            /* 風速のカラーマップ */
+            .wind-w1 { background-color: #1b2a24; color: #a8c5b3; }
+            .wind-w2 { background-color: #2b2812; color: #d4cc8c; }
+            .wind-w3 { background-color: #2b1c12; color: #e8b894; }
+            .wind-w4 { background-color: #2b1212; color: #e89494; font-weight: bold; }
+
+            /* 降水量のカラーマップ（ページ2,3用） */
+            .rain-1 { background-color: #16222b; color: #9cdcfe; }
+            .rain-2 { background-color: #142b3b; color: #a6e3e9; }
+            .rain-3 { background-color: #11324d; color: #79c0ff; }
+            .rain-4 { background-color: #2b2812; color: #d4cc8c; }
+            .rain-5 { background-color: #332510; color: #f0b875; }
+            .rain-6 { background-color: #2b1212; color: #e89494; }
+
+            /* 数値0の半透明 */
+            .val-zero {
+                color: #777777 !important;
+                opacity: 0.6;
+            }
+
+            /* ページ5専用の警告表示スタイル（余白を詰める調整） */
+            .warning-region-block {
+                margin-bottom: 8px;
+                background-color: #1e1e1e;
+                border: 1px solid #333;
+                padding: 6px 12px;
+                border-radius: 4px;
+            }
+            .warning-region-title {
+                font-size: 1.05rem;
+                color: #9cdcfe;
+                font-weight: bold;
+                margin-bottom: 2px;
+                border-bottom: 1px dotted #404040;
+                padding-bottom: 2px;
+            }
+            .warning-item-row {
+                display: flex;
+                gap: 15px;
+                margin: 1px 0;
+                font-size: 0.95rem;
+            }
+            .warning-level {
+                color: #ce9178;
+                font-weight: bold;
+                min-width: 50px;
+            }
+            .warning-names {
+                color: #d4d4d4;
+            }
+            .warning-none {
+                color: #858585;
+                margin: 1px 0;
+            }
+
+            ul {
+                list-style-type: none;
+                padding-left: 20px;
+                margin: 4px 0;
+                border-left: 1px dotted #404040;
+            }
+            li {
+                margin: 2px 0;
+            }
+            .key {
+                color: #9cdcfe;
+                font-weight: bold;
+            }
+            .string { color: #ce9178; }
+            .number { color: #b5cea8; }
+            .boolean { color: #569cd6; }
+            .null { color: #569cd6; }
+            .type-tag {
+                font-size: 0.8rem;
+                color: #858585;
+                margin-left: 6px;
+                cursor: pointer;
+                user-select: none;
+            }
+            .type-tag:hover {
+                color: #d4d4d4;
+            }
+            .toggle-btn {
+                background: none;
+                border: none;
+                color: #4ec9b0;
+                cursor: pointer;
+                font-family: monospace;
+                font-size: 0.9rem;
+                padding: 0 4px 0 0;
+            }
+            .toggle-btn:hover {
+                color: #9cdcfe;
+            }
+            .collapsed > ul {
+                display: none;
+            }
+            .error { color: #f44747; }
+        `;
+        document.head.appendChild(style);
+
+        let lastKnownUpdateTime = null;
+        let isFirstLoad = true;
+        let pollTimer = null;
+        let isFetching = false;
+
+        function getTempClass(temp) {
+            if (temp === null || temp === undefined || isNaN(temp)) return '';
+            const t = parseFloat(temp);
+            if (t < 0) return 'temp-b3';
+            if (t < 3) return 'temp-b2';
+            if (t < 6) return 'temp-b1';
+            if (t < 9) return 'temp-b0';
+            if (t < 12) return 'temp-g0';
+            if (t < 15) return 'temp-g1';
+            if (t < 18) return 'temp-g2';
+            if (t <= 21) return 'temp-g3';
+            if (t < 24) return 'temp-r0';
+            if (t < 27) return 'temp-r1';
+            if (t < 30) return 'temp-r2';
+            if (t < 33) return 'temp-r3';
+            if (t < 36) return 'temp-r4';
+            return 'temp-r5';
+        }
+
+        function getWindClass(windSpeed) {
+            if (windSpeed === null || windSpeed === undefined || isNaN(windSpeed)) return '';
+            const w = parseFloat(windSpeed);
+            if (w >= 15) return 'wind-w4';
+            if (w >= 11) return 'wind-w3';
+            if (w >= 8)  return 'wind-w2';
+            if (w >= 5)  return 'wind-w1';
+            return '';
+        }
+
+        function getRainClass(rain) {
+            if (rain === null || rain === undefined || isNaN(rain)) return '';
+            const r = parseFloat(rain);
+            if (r >= 20) return 'rain-6';
+            if (r >= 10) return 'rain-5';
+            if (r >= 6)  return 'rain-4';
+            if (r >= 3)  return 'rain-3';
+            if (r >= 2)  return 'rain-2';
+            if (r >= 1)  return 'rain-1';
+            return '';
+        }
+
+        function isCurrentTimeRow(rawTime) {
+            if (!rawTime) return false;
+            try {
+                const rowStartTime = new Date(rawTime.replace(' ', 'T'));
+                if (isNaN(rowStartTime.getTime())) return false;
+                const rowEndTime = new Date(rowStartTime.getTime() + 60 * 60 * 1000);
+                const now = new Date();
+                return now >= rowStartTime && now < rowEndTime;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function isCurrentTimeRow3H(rawTime) {
+            if (!rawTime) return false;
+            try {
+                const rowStartTime = new Date(rawTime.replace(' ', 'T'));
+                if (isNaN(rowStartTime.getTime())) return false;
+                const rowEndTime = new Date(rowStartTime.getTime() + 3 * 60 * 60 * 1000);
+                const now = new Date();
+                return now >= rowStartTime && now < rowEndTime;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function fetchAndUpdateViewer() {
+            if (isFetching) return;
+            isFetching = true;
+
+            const app = document.getElementById('app');
+            
+            if (isFirstLoad) {
+                const header = document.createElement('header');
+                
+                const title = document.createElement('h1');
+                title.textContent = '天気ツール';
+                header.appendChild(title);
+
+                const updateInfo = document.createElement('div');
+                updateInfo.id = 'update-info';
+                updateInfo.className = 'update-info';
+                updateInfo.textContent = '更新時刻を確認中...';
+                header.appendChild(updateInfo);
+
+                app.appendChild(header);
+
+                const tabNav = document.createElement('div');
+                tabNav.className = 'tab-nav';
+                
+                const btnPage1 = document.createElement('button');
+                btnPage1.className = 'tab-btn active';
+                btnPage1.textContent = 'ページ1: JSONデバッグ';
+                btnPage1.onclick = () => switchTab('page1', btnPage1);
+                tabNav.appendChild(btnPage1);
+
+                const btnPage2 = document.createElement('button');
+                btnPage2.className = 'tab-btn';
+                btnPage2.textContent = 'ページ2: 1時間天気';
+                btnPage2.onclick = () => switchTab('page2', btnPage2);
+                tabNav.appendChild(btnPage2);
+
+                const btnPage3 = document.createElement('button');
+                btnPage3.className = 'tab-btn';
+                btnPage3.textContent = 'ページ3: 3時間天気';
+                btnPage3.onclick = () => switchTab('page3', btnPage3);
+                tabNav.appendChild(btnPage3);
+
+                const btnPage4 = document.createElement('button');
+                btnPage4.className = 'tab-btn';
+                btnPage4.textContent = 'ページ4: 10日天気';
+                btnPage4.onclick = () => switchTab('page4', btnPage4);
+                tabNav.appendChild(btnPage4);
+
+                const btnPage5 = document.createElement('button');
+                btnPage5.className = 'tab-btn';
+                btnPage5.textContent = 'ページ5: 気象警報';
+                btnPage5.onclick = () => switchTab('page5', btnPage5);
+                tabNav.appendChild(btnPage5);
+
+                app.appendChild(tabNav);
+
+                const pane1 = document.createElement('div');
+                pane1.id = 'pane-page1';
+                pane1.className = 'page-pane active';
+                const container1 = document.createElement('main');
+                container1.id = 'content-container';
+                pane1.appendChild(container1);
+                app.appendChild(pane1);
+
+                const pane2 = document.createElement('div');
+                pane2.id = 'pane-page2';
+                pane2.className = 'page-pane fixed-size-pane';
+                const container2 = document.createElement('div');
+                container2.id = 'weather-1h-container';
+                pane2.appendChild(container2);
+                app.appendChild(pane2);
+
+                const pane3 = document.createElement('div');
+                pane3.id = 'pane-page3';
+                pane3.className = 'page-pane fixed-size-pane';
+                const container3 = document.createElement('div');
+                container3.id = 'weather-3h-container';
+                pane3.appendChild(container3);
+                app.appendChild(pane3);
+
+                const pane4 = document.createElement('div');
+                pane4.id = 'pane-page4';
+                pane4.className = 'page-pane fixed-size-pane';
+                const container4 = document.createElement('div');
+                container4.id = 'weather-10d-container';
+                pane4.appendChild(container4);
+                app.appendChild(pane4);
+
+                const pane5 = document.createElement('div');
+                pane5.id = 'pane-page5';
+                pane5.className = 'page-pane fixed-size-pane';
+                const container5 = document.createElement('div');
+                container5.id = 'weather-warnings-container';
+                pane5.appendChild(container5);
+                app.appendChild(pane5);
+            }
+
+            try {
+                const response = await fetch(`data.json?_=${Date.now()}`, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const jsonData = await response.json();
+                const currentUpdateTime = jsonData.json_updatetime || '不明';
+
+                const updateInfoEl = document.getElementById('update-info');
+                if (updateInfoEl) {
+                    updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
+                }
+
+                if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
+                    lastKnownUpdateTime = currentUpdateTime;
+
+                    const container1 = document.getElementById('content-container');
+                    container1.innerHTML = '';
+                    container1.appendChild(createDebugList(jsonData));
+
+                    const container2 = document.getElementById('weather-1h-container');
+                    container2.innerHTML = '';
+                    container2.appendChild(create1HourWeatherView(jsonData));
+
+                    const container3 = document.getElementById('weather-3h-container');
+                    container3.innerHTML = '';
+                    container3.appendChild(create3HourWeatherView(jsonData));
+
+                    const container4 = document.getElementById('weather-10d-container');
+                    container4.innerHTML = '';
+                    container4.appendChild(create10DayWeatherView(jsonData));
+
+                    const container5 = document.getElementById('weather-warnings-container');
+                    container5.innerHTML = '';
+                    container5.appendChild(createWeatherWarningsView(jsonData));
+
+                    isFirstLoad = false;
+                }
+            } catch (error) {
+                if (isFirstLoad) {
+                    const container1 = document.getElementById('content-container');
+                    container1.innerHTML = `<span class="error">データの読み込みに失敗しました: ${error.message}<br>※ローカル環境(file://)の場合はCORS制限がかかるため、簡易サーバー等でお試しください。</span>`;
+                } else {
+                    console.warn(`バックグラウンドでのデータ確認に失敗しました: ${error.message}`);
+                }
+            } finally {
+                isFetching = false;
+                if (!document.hidden) {
+                    scheduleNextCheck();
+                }
+            }
+        }
+
+        function switchTab(targetId, activeBtn) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.page-pane').forEach(pane => pane.classList.remove('active'));
+
+            activeBtn.classList.add('active');
+            document.getElementById(`pane-${targetId}`).classList.add('active');
+        }
+
+        function scheduleNextCheck() {
+            if (pollTimer) clearTimeout(pollTimer);
+            let delayMs = 60000;
+            if (lastKnownUpdateTime) {
+                const updateTimeMs = new Date(lastKnownUpdateTime.replace(' ', 'T') + '+09:00').getTime();
+                const nowMs = Date.now();
+                const tenMinutesMs = 10 * 60 * 1000;
+                const elapsedMs = nowMs - updateTimeMs;
+                if (elapsedMs < tenMinutesMs) {
+                    delayMs = tenMinutesMs - elapsedMs;
+                } else {
+                    delayMs = 60 * 1000;
+                }
+            }
+            pollTimer = setTimeout(fetchAndUpdateViewer, delayMs);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                if (pollTimer) clearTimeout(pollTimer);
+                fetchAndUpdateViewer();
+            } else {
+                if (pollTimer) clearTimeout(pollTimer);
+            }
+        });
+
+        function formatVal(val) {
+            if (val === 0 || val === '0' || val === 0.0) {
+                return `<span class="val-zero">${val}</span>`;
+            }
+            return val ?? '-';
+        }
+
+        // ページ2: 1時間天気ビュー（変数再割り当て適用済み）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
@@ -121,3 +680,391 @@
             wrapper.appendChild(sec);
             return wrapper;
         }
+
+        // ページ3: 3時間天気ビュー
+        function create3HourWeatherView(data) {
+            const wrapper = document.createElement('div');
+            const sec = document.createElement('div');
+            sec.className = 'weather-section';
+            sec.innerHTML = '<h2>3時間ごとの天気</h2>';
+
+            if (data.hourly_3h && data.hourly_3h.length > 0) {
+                const groupedByDate = {};
+                data.hourly_3h.forEach(h => {
+                    const rawTime = h.time_3h || '';
+                    let dateKey = 'その他';
+                    let timeOnly = rawTime;
+                    let dateObj = null;
+                    let monthStr = '';
+                    let dayStr = '';
+
+                    if (rawTime.includes('T') || rawTime.includes(' ')) {
+                        const parts = rawTime.split(/[\sT]/);
+                        const dateParts = parts[0].split('-'); 
+                        if (dateParts.length === 3) {
+                            const year = parseInt(dateParts[0], 10);
+                            const month = parseInt(dateParts[1], 10);
+                            const day = parseInt(dateParts[2], 10);
+                            dateObj = new Date(year, month - 1, day);
+                            
+                            monthStr = dateParts[1];
+                            dayStr = dateParts[2];
+                            dateKey = `${monthStr}${dayStr}`;
+                        }
+                        
+                        const timeParts = parts[1].split(':');
+                        if (timeParts.length > 0) {
+                            timeOnly = timeParts[0];
+                        }
+                    }
+
+                    let dayOfWeekChar = '';
+                    if (dateObj && !isNaN(dateObj.getTime())) {
+                        const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+                        dayOfWeekChar = weekDays[dateObj.getDay()];
+                    }
+
+                    if (!groupedByDate[dateKey]) {
+                        groupedByDate[dateKey] = {
+                            month: monthStr,
+                            day: dayStr,
+                            weekDay: dayOfWeekChar,
+                            items: []
+                        };
+                    }
+                    groupedByDate[dateKey].items.push({ ...h, displayTime: timeOnly });
+                });
+
+                for (const group of Object.values(groupedByDate)) {
+                    const table = document.createElement('table');
+                    table.className = 'weather-table';
+                    
+                    let theadHtml = `
+                        <thead>
+                            <tr>
+                                <th>日付</th>
+                                <th>時刻</th>
+                                <th>天候リスク</th>
+                                <th>降水</th>
+                                <th>気温</th>
+                                <th>風速</th>
+                                <th>気圧</th>
+                                <th>天気コード</th>
+                            </tr>
+                        </thead>
+                    `;
+
+                    table.innerHTML = `${theadHtml}<tbody></tbody>`;
+                    const tbody = table.querySelector('tbody');
+
+                    group.items.forEach((h, index) => {
+                        const tr = document.createElement('tr');
+                        
+                        if (isCurrentTimeRow3H(h.time_3h)) {
+                            tr.className = 'current-time-row';
+                        }
+
+                        let rowHtml = '';
+                        if (index === 0) {
+                            rowHtml += `
+                                <td class="date-cell" rowspan="${group.items.length}">
+                                    <div class="date-cell-inner">
+                                        <span>${group.month}</span>
+                                        <span>${group.day}</span>
+                                        <span>${group.weekDay}</span>
+                                    </div>
+                                </td>
+                            `;
+                        }
+
+                        const riskVal = h.weather_risk_level_3h ?? 0;
+                        const riskClass = `risk-${riskVal}`;
+                        const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
+
+                        const tempVal = h.temperature_3h;
+                        const tempClass = getTempClass(tempVal);
+                        const tempDisplay = (tempVal === 0 || tempVal === '0') 
+                            ? `<span class="val-zero" style="font-weight: bold;">${tempVal}</span>` 
+                            : (tempVal ?? '-');
+
+                        const windVal = h.wind_speed_3h;
+                        const windClass = getWindClass(windVal);
+                        const windDisplay = (windVal === 0 || windVal === '0')
+                            ? `<span class="val-zero">${windVal}</span>`
+                            : (windVal ?? '-');
+
+                        const rainVal = h.precipitation_3h;
+                        const rainClass = getRainClass(rainVal);
+                        const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
+                            ? `<span class="val-zero">${rainVal}</span>`
+                            : (rainVal ?? '-');
+
+                        rowHtml += `
+                            <td>${h.displayTime}</td>
+                            <td class="${riskClass}">${riskDisplay}</td>
+                            <td class="${rainClass}">${rainDisplay}</td>
+                            <td class="${tempClass}">${tempDisplay}</td>
+                            <td class="${windClass}">${windDisplay}</td>
+                            <td>${formatVal(h.pressure_3h)}</td>
+                            <td>${formatVal(h.weather_code_3h)}</td>
+                        `;
+                        tr.innerHTML = rowHtml;
+                        tbody.appendChild(tr);
+                    });
+
+                    sec.appendChild(table);
+                }
+            } else {
+                sec.innerHTML += '<p>データがありません。</p>';
+            }
+
+            wrapper.appendChild(sec);
+            return wrapper;
+        }
+
+        // ページ4: 10日天気ビュー
+        function create10DayWeatherView(data) {
+            const wrapper = document.createElement('div');
+            const sec = document.createElement('div');
+            sec.className = 'weather-section';
+            sec.innerHTML = '<h2>10日間の天気（週間）</h2>';
+
+            if (data.daily_1day && data.daily_1day.length > 0) {
+                const table = document.createElement('table');
+                table.className = 'weather-table';
+                
+                let theadHtml = `
+                    <thead>
+                        <tr>
+                            <th>日付</th>
+                            <th>天候リスク</th>
+                            <th>総雨量</th>
+                            <th>最低気温</th>
+                            <th>最高気温</th>
+                            <th>最大風速</th>
+                            <th>気圧</th>
+                        </tr>
+                    </thead>
+                `;
+
+                table.innerHTML = `${theadHtml}<tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+
+                data.daily_1day.forEach(d => {
+                    const tr = document.createElement('tr');
+
+                    const rawTime = d.time_1day || '';
+                    let monthStr = '';
+                    let dayStr = '';
+                    let dayOfWeekChar = '';
+
+                    if (rawTime) {
+                        const dateParts = rawTime.split('-');
+                        if (dateParts.length === 3) {
+                            const year = parseInt(dateParts[0], 10);
+                            const month = parseInt(dateParts[1], 10);
+                            const day = parseInt(dateParts[2], 10);
+                            const dateObj = new Date(year, month - 1, day);
+                            
+                            monthStr = dateParts[1];
+                            dayStr = dateParts[2];
+                            if (!isNaN(dateObj.getTime())) {
+                                const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+                                dayOfWeekChar = weekDays[dateObj.getDay()];
+                            }
+                        }
+                    }
+
+                    const riskVal = d.weather_risk_level_1day ?? 0;
+                    const riskClass = `risk-${riskVal}`;
+                    const riskDisplay = (riskVal === 0) ? `<span class="val-zero">${riskVal}</span>` : riskVal;
+
+                    const rainVal = d.precipitation_sum_1day ?? d.precipitation_probability_max_1day;
+                    const rainDisplay = (rainVal === 0 || rainVal === '0' || rainVal === 0.0)
+                        ? `<span class="val-zero">${rainVal}</span>`
+                        : (rainVal ?? '-');
+
+                    const minTempVal = d.temperature_min_1day;
+                    const minTempClass = getTempClass(minTempVal);
+                    const minTempDisplay = (minTempVal === 0 || minTempVal === '0') 
+                        ? `<span class="val-zero">${minTempVal}</span>` 
+                        : (minTempVal ?? '-');
+
+                    const maxTempVal = d.temperature_max_1day;
+                    const maxTempClass = getTempClass(maxTempVal);
+                    const maxTempDisplay = (maxTempVal === 0 || maxTempVal === '0') 
+                        ? `<span class="val-zero" style="font-weight: bold;">${maxTempVal}</span>` 
+                        : (maxTempVal ?? '-');
+
+                    const windVal = d.wind_speed_max_1day;
+                    const windClass = getWindClass(windVal);
+                    const windDisplay = (windVal === 0 || windVal === '0')
+                        ? `<span class="val-zero">${windVal}</span>`
+                        : (windVal ?? '-');
+
+                    const pressureVal = d.pressure_mean_1day;
+
+                    tr.innerHTML = `
+                        <td class="date-cell-horizontal">
+                            <div class="date-cell-horizontal-inner">
+                                <span>${monthStr || '-'}</span>
+                                <span>${dayStr || '-'}</span>
+                                <span>${dayOfWeekChar ? `(${dayOfWeekChar})` : ''}</span>
+                            </div>
+                        </td>
+                        <td class="${riskClass}">${riskDisplay}</td>
+                        <td>${rainDisplay}</td>
+                        <td class="${minTempClass}">${minTempDisplay}</td>
+                        <td class="${maxTempClass}">${maxTempDisplay}</td>
+                        <td class="${windClass}">${windDisplay}</td>
+                        <td>${formatVal(pressureVal)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                sec.appendChild(table);
+            } else {
+                sec.innerHTML += '<p>データがありません。</p>';
+            }
+
+            wrapper.appendChild(sec);
+            return wrapper;
+        }
+
+        // ページ5: 気象警報ビュー
+        function createWeatherWarningsView(data) {
+            const wrapper = document.createElement('div');
+            const sec = document.createElement('div');
+            sec.className = 'weather-section';
+            sec.innerHTML = '<h2>気象警報・注意報</h2>';
+
+            const regions = [
+                { key: 'jma_warning_hokubu', label: '北部' },
+                { key: 'jma_warning_nanbu', label: '南部' },
+                { key: 'jma_warning_kakogawa', label: '加古川' }
+            ];
+
+            regions.forEach(reg => {
+                const regionBlock = document.createElement('div');
+                regionBlock.className = 'warning-region-block';
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'warning-region-title';
+                titleDiv.textContent = `${reg.label}：`;
+                regionBlock.appendChild(titleDiv);
+
+                const rawWarnings = data[reg.key];
+                
+                let warningList = [];
+                if (Array.isArray(rawWarnings)) {
+                    warningList = rawWarnings;
+                } else if (rawWarnings && typeof rawWarnings === 'object') {
+                    warningList = [rawWarnings];
+                }
+
+                if (warningList.length > 0) {
+                    const groupedByLevel = {};
+                    warningList.forEach(w => {
+                        let lv = w.code_lv !== undefined ? w.code_lv : (w.level !== undefined ? w.level : null);
+                        let lvKey = lv !== null ? `LV${lv}` : 'LV?';
+                        let name = w.code_jp || w.type || w.name || '不明';
+
+                        if (!groupedByLevel[lvKey]) {
+                            groupedByLevel[lvKey] = [];
+                        }
+                        groupedByLevel[lvKey].push(name);
+                    });
+
+                    const sortedLevels = Object.keys(groupedByLevel).sort().reverse();
+
+                    sortedLevels.forEach(lvKey => {
+                        const names = groupedByLevel[lvKey].join(' ');
+                        const rowDiv = document.createElement('div');
+                        rowDiv.className = 'warning-item-row';
+                        
+                        const lvSpan = document.createElement('span');
+                        lvSpan.className = 'warning-level';
+                        lvSpan.textContent = lvKey;
+
+                        const namesSpan = document.createElement('span');
+                        namesSpan.className = 'warning-names';
+                        namesSpan.textContent = names;
+
+                        rowDiv.appendChild(lvSpan);
+                        rowDiv.appendChild(namesSpan);
+                        regionBlock.appendChild(rowDiv);
+                    });
+                } else {
+                    const noneDiv = document.createElement('div');
+                    noneDiv.className = 'warning-item-row warning-none';
+                    noneDiv.textContent = '発令なし';
+                    regionBlock.appendChild(noneDiv);
+                }
+
+                sec.appendChild(regionBlock);
+            });
+
+            wrapper.appendChild(sec);
+            return wrapper;
+        }
+
+        function createDebugList(data) {
+            const ul = document.createElement('ul');
+
+            for (const key in data) {
+                if (Object.prototype.hasOwnProperty.call(data, key)) {
+                    const value = data[key];
+                    const li = document.createElement('li');
+                    
+                    const type = typeof value;
+                    const isObjOrArray = value !== null && type === 'object';
+
+                    if (isObjOrArray) {
+                        li.classList.add('collapsed');
+
+                        const toggleBtn = document.createElement('button');
+                        toggleBtn.className = 'toggle-btn';
+                        toggleBtn.textContent = '▶';
+                        toggleBtn.onclick = () => {
+                            const isCollapsed = li.classList.toggle('collapsed');
+                            toggleBtn.textContent = isCollapsed ? '▶' : '▼';
+                        };
+                        li.appendChild(toggleBtn);
+
+                        const keySpan = document.createElement('span');
+                        keySpan.className = 'key';
+                        keySpan.textContent = key + ': ';
+                        li.appendChild(keySpan);
+
+                        const typeTag = document.createElement('span');
+                        typeTag.className = 'type-tag';
+                        typeTag.textContent = Array.isArray(value) ? `[Array(${value.length})]` : '{Object}';
+                        typeTag.onclick = () => {
+                            const isCollapsed = li.classList.toggle('collapsed');
+                            toggleBtn.textContent = isCollapsed ? '▶' : '▼';
+                        };
+                        li.appendChild(typeTag);
+                        
+                        li.appendChild(createDebugList(value));
+                    } else {
+                        const keySpan = document.createElement('span');
+                        keySpan.className = 'key';
+                        keySpan.textContent = key + ': ';
+                        li.appendChild(keySpan);
+
+                        const valSpan = document.createElement('span');
+                        valSpan.className = type;
+                        valSpan.textContent = JSON.stringify(value);
+                        li.appendChild(valSpan);
+                    }
+
+                    ul.appendChild(li);
+                }
+            }
+            return ul;
+        }
+
+        fetchAndUpdateViewer();
+    </script>
+</body>
+</html>
