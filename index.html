@@ -382,7 +382,7 @@
             pollTimer = setTimeout(fetchAndUpdateViewer, delayMs);
         }
 
-        // ページの表示状態に応じてポーリングを制御
+        // ページの状態に応じてポーリングを制御
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 if (pollTimer) clearTimeout(pollTimer);
@@ -392,7 +392,7 @@
             }
         });
 
-        // ページ2: 1時間ごとの天気ビューを生成
+        // ページ2: 1時間ごとの天気ビューを生成（共通の renderTable を使用）
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
