@@ -145,10 +145,13 @@ class JMAHyogoParser:
 
 def fetch_hourly(lat, lon):
     try:
+        # 【ソース1】時間ごとデータ（昨日分＋未来3日間）
         url = (
             f"https://api.open-meteo.com/v1/jma?latitude={lat}&longitude={lon}"
             "&hourly=temperature_2m,precipitation,wind_speed_10m,pressure_msl,weather_code,precipitation_probability"
-            "&wind_speed_unit=ms&timezone=Asia%2FTokyo&forecast_days=3"
+            "&wind_speed_unit=ms&timezone=Asia%2FTokyo"
+            "&past_days=1"
+            "&forecast_days=3"
         )
         res = requests.get(url, timeout=10)
         if res.status_code == 200:
@@ -229,10 +232,13 @@ def fetch_hourly(lat, lon):
 
 def fetch_daily(lat, lon):
     try:
+        # 【ソース2】日ごとデータ（昨日分＋未来10日間）
         url = (
             f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,pressure_msl_mean,wind_speed_10m_max,sunrise,sunset"
-            "&wind_speed_unit=ms&timezone=Asia%2FTokyo&forecast_days=10"
+            "&wind_speed_unit=ms&timezone=Asia%2FTokyo"
+            "&past_days=1"
+            "&forecast_days=10"
         )
         res = requests.get(url, timeout=10)
         if res.status_code == 200:
@@ -281,6 +287,7 @@ def fetch_daily(lat, lon):
 
 def fetch_jma():
     try:
+        # 【ソース3】気象庁警報JSON（現在の公式発表データを取得）
         url = "https://www.jma.go.jp/bosai/warning/data/r8/280000.json"
         res = requests.get(url, timeout=10)
         print(f"JMA HTTP Status: {res.status_code}")
