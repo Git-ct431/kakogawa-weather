@@ -469,7 +469,9 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const jsonData = await response.json();
-                const currentUpdateTime = jsonData.json_updatetime || '不明';
+                
+                // ▼ ここを my_json_updatetime に変更しました[cite: 2]
+                const currentUpdateTime = jsonData.my_json_updatetime || '不明';
 
                 const updateInfoEl = document.getElementById('update-info');
                 if (updateInfoEl) {
@@ -557,7 +559,7 @@
             return val ?? '-';
         }
 
-        // ページ2: 1時間天気ビュー（変数再割り当て適用済み）
+        // ページ2: 1時間天気ビュー（変数再割り当て適用済み）[cite: 2]
         function create1HourWeatherView(data) {
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
