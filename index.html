@@ -21,15 +21,14 @@
             .page-pane { display: none; }
             .page-pane.active { display: block; }
             
-            /* --- 固定サイズペインの設定を解除 --- */
             .fixed-size-pane { width: auto; height: auto; border: 1px solid #333; overflow: auto; box-sizing: border-box; padding: 20px; }
             
             .weather-section { margin-bottom: 20px; }
             .weather-section h2 { font-size: 1.2rem; color: #4ec9b0; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
             
             /* --- 共通のテーブルスタイル --- */
-            .table-style-1 { width: auto; height: auto; border-collapse: collapse; background-color: #1e1e1e; border: 1px solid #333; font-size: 0.9rem; }
-            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: none; border-right: 1px solid #333; white-space: nowrap; padding: 0px 8px 0px 8px; }
+            .table-style-1 { width: auto; height: auto; border-collapse: collapse; background-color: #1e1e1e; border: 0.1em solid #333; font-size: 0.9rem; }
+            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: none; border-right: 0.1em solid #333; white-space: nowrap; padding: 0px 8px 0px 8px; }
             .table-style-1 td { border-bottom: none; }
             .table-style-1 th:last-child, .table-style-1 td:last-child { border-right: none; }
             
@@ -53,9 +52,9 @@
                 transform: translateX(-50%);
             }
 
-            /* 現在時刻が含まれる行の下線スタイル */
+            /* 現在時刻が含まれる行の下線スタイル（0.2emに変更） */
             .table-style-1 tr.current-time-row td {
-                border-bottom: 2px solid #4ec9b0 !important;
+                border-bottom: 0.2em solid #4ec9b0 !important;
             }
 
             /* 数値0の半透明 */
@@ -119,10 +118,9 @@
             const tbodyHtml = data.map((h, rowIndex) => {
                 let rowClass = (rowIndex === highlightIndex) ? 'current-time-row' : '';
 
-                // ページ3専用：月または日に値が入っている行（1行目以外）に枠線と同じ色（#333）の上線を引く
                 let rowStyle = '';
                 if (enableMonthBoundary && rowIndex > 0 && (h.月 || h.日)) {
-                    rowStyle = ' style="border-top: 1px solid #333;"';
+                    rowStyle = ' style="border-top: 0.1em solid #333;"';
                 }
 
                 const cellsHtml = keys.map(k => {
