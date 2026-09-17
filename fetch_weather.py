@@ -1,3 +1,5 @@
+# 1時間および3時間ごとの気象データを取得し、過去分を除外した上で日付の重複を整理した独自変数を生成するスクリプト
+
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 import json
@@ -12,9 +14,7 @@ JST = timezone(timedelta(hours=9))
 # 曜日の漢字変換用リスト
 WEEKDAYS_JP = ["月", "火", "水", "木", "金", "土", "日"]
 
-# ==========================================
 # 日本語変換マッピング定義
-# ==========================================
 DATA_TYPE_NAMES = {
     "VPWW55": "大雨警報・注意報", "VPWW56": "土砂災害警報・注意報",
     "VPWW57": "高潮警報・注意報", "VPWW58": "暴風雪警報・注意報",
@@ -68,23 +68,17 @@ def get_weather_risk_level(code):
 
 
 def get_pressure_risk_level(pressure_diff):
-    """
-    気圧差から気圧変化リスクレベルを判定する
-    """
     if pressure_diff <= -5:
-        return 3  # 警戒（大きな気圧低下）
+        return 3
     elif pressure_diff <= -3:
-        return 2  # 注意（気圧低下）
+        return 2
     elif pressure_diff <= -1 or pressure_diff >= 2:
-        return 1  # やや注意
+        return 1
     else:
-        return 0  # 安定
+        return 0
 
 
 def parse_datetime_fields(time_str):
-    """
-    ISO形式の日時文字列から、日本語キーの日時情報を抽出して辞書で返す
-    """
     try:
         dt = datetime.fromisoformat(time_str.replace("Z", ""))
         return {
@@ -106,9 +100,7 @@ def parse_datetime_fields(time_str):
         }
 
 
-# ==========================================
 # 気象庁データ専用のパーサークラス
-# ==========================================
 class JMAHyogoParser:
     def __init__(self, raw_data):
         self.raw_data = raw_data if isinstance(raw_data, list) else []
@@ -183,8 +175,15 @@ def fetch_hourly(lat, lon):
             weather_codes = hourly_raw.get("weather_code", [])
             pop_list = hourly_raw.get("precipitation_probability", [])
 
+            # 本日の日付を取得して過去分をスキップするための基準日を設定
+            today_str = datetime.now(JST).strftime("%Y-%m-%d")
+
             base_1h_list = []
             for i, t in enumerate(times):
+                date_part = t.split("T")[0]
+                if date_part < today_str:
+                    continue
+
                 base_1h_list.append({
                     "time_1h": t,
                     "temperature_1h": temps[i] if i < len(temps) and temps[i] is not None else 0.0,
@@ -206,14 +205,16 @@ def fetch_hourly(lat, lon):
                 w_code = item["weather_code_1h"]
                 time_str = item["time_1h"]
                 dt_fields = parse_datetime_fields(time_str)
+                
+                is_midnight = (dt_fields["時"] == "00")
 
                 my_weather_1h.append({
                     "時刻": dt_fields["時刻"],
                     "年": dt_fields["年"],
                     "詳細": {
-                        "月": dt_fields["月"],
-                        "日": dt_fields["日"],
-                        "曜日": dt_fields["曜日"],
+                        "月": dt_fields["月"] if is_midnight else "",
+                        "日": dt_fields["日"] if is_midnight else "",
+                        "曜日": dt_fields["曜日"] if is_midnight else "",
                         "時": dt_fields["時"],
                         "天気リスク": get_weather_risk_level(w_code),
                         "降水量": round(item["precipitation_1h"]),
@@ -230,7 +231,6 @@ def fetch_hourly(lat, lon):
                 if not chunk:
                     break
 
-                # 3時間ごとの集計
                 avg_temp = sum(c["詳細"]["気温"] for c in chunk) / len(chunk)
                 max_precip = max(c["詳細"]["降水量"] for c in chunk)
                 max_wind = max(c["詳細"]["風速"] for c in chunk)
@@ -238,16 +238,17 @@ def fetch_hourly(lat, lon):
                 rep_weather = max(chunk, key=lambda x: get_weather_risk_level(x["詳細"]["天気コード"]))["詳細"]["天気コード"]
                 max_weather_risk = get_weather_risk_level(rep_weather)
 
-                time_str = chunk[0]["時刻"]
+                time_str = base_1h_list[i]["time_1h"]
                 dt_fields = parse_datetime_fields(time_str)
+                is_midnight_3h = (dt_fields["時"] == "00")
 
                 my_weather_3h.append({
                     "時刻": dt_fields["時刻"],
                     "年": dt_fields["年"],
                     "詳細": {
-                        "月": dt_fields["月"],
-                        "日": dt_fields["日"],
-                        "曜日": dt_fields["曜日"],
+                        "月": dt_fields["月"] if is_midnight_3h else "",
+                        "日": dt_fields["日"] if is_midnight_3h else "",
+                        "曜日": dt_fields["曜日"] if is_midnight_3h else "",
                         "時": dt_fields["時"],
                         "天気リスク": max_weather_risk,
                         "降水量": round(max_precip),
@@ -286,8 +287,15 @@ def fetch_daily(lat, lon):
             d_sunrise = daily_raw.get("sunrise", [])
             d_sunset = daily_raw.get("sunset", [])
 
+            # 本日の日付を取得して過去分をスキップするための基準日を設定
+            today_str = datetime.now(JST).strftime("%Y-%m-%d")
+
             my_weather_1day = []
             for i, t in enumerate(d_times):
+                date_part = t.split("T")[0] if "T" in t else t
+                if date_part < today_str:
+                    continue
+
                 w_code = d_codes[i] if i < len(d_codes) and d_codes[i] is not None else 0
                 tmax = d_tmax[i] if i < len(d_tmax) and d_tmax[i] is not None else 0
                 tmin = d_tmin[i] if i < len(d_tmin) and d_tmin[i] is not None else 0
