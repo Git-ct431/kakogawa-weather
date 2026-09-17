@@ -32,7 +32,7 @@
             .table-style-1 td { border-bottom: none; }
             .table-style-1 th:last-child, .table-style-1 td:last-child { border-right: none; }
             
-            /* ヘッダーの文字を下揃え（縦書きの下部寄せ）に修正 */
+            /* ヘッダーの文字を下揃えに修正 */
             .table-style-1 th { 
                 background-color: #2d2d2d; 
                 color: #4ec9b0; 
@@ -63,7 +63,7 @@
                 opacity: 0.6;
             }
 
-            /* 3℃刻みの温度カラーマップ（5つずつ配置） */
+            /* 3℃刻みの温度カラーマップ */
             .temp-b3 { background-color: #0c1824; color: #9ac2ff; } .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; } .temp-b1 { background-color: #102334; color: #92b8ea; } .temp-b0 { background-color: #12283c; color: #9cdcfe; } .temp-g0 { background-color: #132a28; color: #9cdcfe; }
             .temp-g1 { background-color: #142d1e; color: #b5cea8; } .temp-g2 { background-color: #163116; color: #b5cea8; } .temp-g3 { background-color: #153722; color: #ffffff; } .temp-r0 { background-color: #282d12; color: #d4cc8c; } .temp-r1 { background-color: #332710; color: #d4cc8c; }
             .temp-r2 { background-color: #331e10; color: #e8b894; } .temp-r3 { background-color: #331310; color: #e89494; } .temp-r4 { background-color: #330e0e; color: #e89494; } .temp-r5 { background-color: #2c0919; color: #e894c7; }
@@ -141,26 +141,26 @@
             container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${tbodyHtml}</tbody></table>`;
         };
 
-        // データの間隔（1時間か3時間か）を自動判別し、現在時刻がその範囲内にある行を探す
+        // Python側の時刻文字列（例: "2026-09-17T00:00"）をJST（+09:00）として正確に解釈し、現在時刻が含まれる行を探す
         function findCurrentTimeIndex(rawDataList) {
             if (!rawDataList || !rawDataList.length) return -1;
             const now = new Date().getTime();
             
-            // データの間隔を算出（デフォルトは3時間）
+            // データの間隔を自動算出（1時間天気や3時間天気に対応）
             let intervalMs = 3 * 60 * 60 * 1000;
             if (rawDataList.length > 1 && rawDataList[0].時刻 && rawDataList[1].時刻) {
-                const t1 = new Date(rawDataList[0].時刻.replace('T', ' ')).getTime();
-                const t2 = new Date(rawDataList[1].時刻.replace('T', ' ')).getTime();
+                const t1 = new Date(rawDataList[0].時刻.replace('T', ' ') + '+09:00').getTime();
+                const t2 = new Date(rawDataList[1].時刻.replace('T', ' ') + '+09:00').getTime();
                 intervalMs = t2 - t1;
             }
             
             let matchedIndex = -1;
             rawDataList.forEach((item, idx) => {
                 if (item.時刻) {
-                    const itemTime = new Date(item.時刻.replace('T', ' ')).getTime();
+                    const isoStr = item.時刻.replace('T', ' ') + '+09:00';
+                    const itemTime = new Date(isoStr).getTime();
                     const nextTime = itemTime + intervalMs;
                     
-                    // 現在時刻がこの行の時間帯の範囲内（開始時刻以上、次の時刻未満）ならヒット
                     if (now >= itemTime && now < nextTime) {
                         matchedIndex = idx;
                     }
