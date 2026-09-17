@@ -314,7 +314,6 @@ def fetch_daily(lat, lon):
                         "月": dt_fields["月"],
                         "日": dt_fields["日"],
                         "曜日": dt_fields["曜日"],
-                        "時": dt_fields["時"],
                         "天気リスク": get_weather_risk_level(w_code),
                         "降水量": round(p_sum) if isinstance(p_sum, (int, float)) else p_sum,
                         "降水確率": pop_val,
@@ -340,12 +339,26 @@ def fetch_jma():
             raw_data = res.json()
             parser = JMAHyogoParser(raw_data)
 
+            kakogawa_warnings = parser.get_warnings_by_area("2821000")
+
+            # 加古川市の警報から最大レベルと名称のまとめ変数を生成
+            if kakogawa_warnings:
+                max_level = max(w.get("警報レベル", 0) for w in kakogawa_warnings)
+                max_names = "・".join(
+                    sorted(list(set(w.get("警報注意報名") for w in kakogawa_warnings if w.get("警報レベル") == max_level)))
+                )
+            else:
+                max_level = 0
+                max_names = "解除"
+
             return {
                 "debug_jma_warning": raw_data,
                 "my_jma_warning_hyogo": parser.get_prefecture_headers(),
                 "my_jma_warning_nanbu": parser.get_warnings_by_area("280010"),
                 "my_jma_warning_hokubu": parser.get_warnings_by_area("280020"),
-                "my_jma_warning_kakogawa": parser.get_warnings_by_area("2821000")
+                "my_jma_max_warning_level": max_level,
+                "my_jma_max_warning_names": max_names,
+                "my_jma_warning_kakogawa": kakogawa_warnings
             }
         else:
             print(f"JMA warning HTTP error: {res.status_code}")
@@ -357,6 +370,8 @@ def fetch_jma():
         "my_jma_warning_hyogo": [],
         "my_jma_warning_nanbu": [],
         "my_jma_warning_hokubu": [],
+        "my_jma_max_warning_level": 0,
+        "my_jma_max_warning_names": "解除",
         "my_jma_warning_kakogawa": []
     }
 
