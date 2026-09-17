@@ -32,6 +32,12 @@
             .table-style-1 th { background-color: #2d2d2d; color: #4ec9b0; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; padding: 6px 2px; height: 90px; vertical-align: bottom; }
             .table-style-1 th span { display: inline-block; }
 
+            /* 数値0の半透明 */
+            .val-zero {
+                color: #777777 !important;
+                opacity: 0.6;
+            }
+
             /* 3℃刻みの温度カラーマップ（5つずつ配置） */
             .temp-b3 { background-color: #0c1824; color: #9ac2ff; } .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; } .temp-b1 { background-color: #102334; color: #92b8ea; } .temp-b0 { background-color: #12283c; color: #9cdcfe; } .temp-g0 { background-color: #132a28; color: #9cdcfe; }
             .temp-g1 { background-color: #142d1e; color: #b5cea8; } .temp-g2 { background-color: #163116; color: #b5cea8; } .temp-g3 { background-color: #153722; color: #ffffff; } .temp-r0 { background-color: #282d12; color: #d4cc8c; } .temp-r1 { background-color: #332710; color: #d4cc8c; }
@@ -85,7 +91,13 @@
             const keys = Object.keys(data[0]);
             container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${data.map(h => `<tr>${keys.map(k => {
                 const val = h[k] ?? '-';
-                const cls = customClassFn ? customClassFn(k, val) : '';
+                let cls = customClassFn ? customClassFn(k, val) : '';
+                
+                // 値が「0」または数値の 0 の場合に val-zero クラスを追加
+                if (val === 0 || val === '0' || val === 0.0) {
+                    cls = cls ? `${cls} val-zero` : 'val-zero';
+                }
+
                 return `<td${cls ? ` class="${cls}"` : ''}>${val}</td>`;
             }).join('')}</tr>`).join('')}</tbody></table>`;
         };
