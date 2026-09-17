@@ -109,12 +109,18 @@
             return 'temp-r5';
         }
 
-        const renderTable = (data, container, highlightIndex = -1, customClassFn = null) => {
+        const renderTable = (data, container, highlightIndex = -1, customClassFn = null, enableMonthBoundary = false) => {
             if (!data.length) return;
             const keys = Object.keys(data[0]);
             
             const tbodyHtml = data.map((h, rowIndex) => {
-                const rowClass = (rowIndex === highlightIndex) ? 'current-time-row' : '';
+                let rowClass = (rowIndex === highlightIndex) ? 'current-time-row' : '';
+
+                // ページ3専用：月または日に値が入っている行（1行目以外）に枠線と同じ色（#333）の上線を引く
+                let rowStyle = '';
+                if (enableMonthBoundary && rowIndex > 0 && (h.月 || h.日)) {
+                    rowStyle = ' style="border-top: 1px solid #333;"';
+                }
 
                 const cellsHtml = keys.map(k => {
                     const val = h[k] ?? '-';
@@ -127,7 +133,8 @@
                     return `<td${cls ? ` class="${cls}"` : ''}>${val}</td>`;
                 }).join('');
 
-                return `<tr${rowClass ? ` class="${rowClass}"` : ''}>${cellsHtml}</tr>`;
+                const classAttr = rowClass ? ` class="${rowClass}"` : '';
+                return `<tr${classAttr}${rowStyle}>${cellsHtml}</tr>`;
             }).join('');
 
             container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${tbodyHtml}</tbody></table>`;
@@ -323,7 +330,7 @@
                 const container = document.createElement('div');
                 const targetIndex = findCurrentTimeIndex(data.my_weather_1h);
                 const detailsList = data.my_weather_1h.map(h => h.詳細 || {});
-                renderTable(detailsList, container, targetIndex, getTempClass);
+                renderTable(detailsList, container, targetIndex, getTempClass, false);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -343,7 +350,7 @@
                 const container = document.createElement('div');
                 const targetIndex = findCurrentTimeIndex(data.my_weather_3h);
                 const detailsList = data.my_weather_3h.map(h => h.詳細 || {});
-                renderTable(detailsList, container, targetIndex, getTempClass);
+                renderTable(detailsList, container, targetIndex, getTempClass, true);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -362,7 +369,7 @@
             if (data.my_weather_1day && data.my_weather_1day.length > 0) {
                 const container = document.createElement('div');
                 const detailsList = data.my_weather_1day.map(h => h.詳細 || {});
-                renderTable(detailsList, container, -1, getTempClass);
+                renderTable(detailsList, container, -1, getTempClass, false);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
