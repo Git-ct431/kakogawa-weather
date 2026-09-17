@@ -20,7 +20,10 @@
             .tab-btn.active { background-color: #0e639c; border-color: #1177bb; color: #ffffff; }
             .page-pane { display: none; }
             .page-pane.active { display: block; }
-            .fixed-size-pane { width: 1060px; height: 2180px; background-color: #252526; border: 1px solid #333; overflow: auto; box-sizing: border-box; padding: 20px; border-radius: 6px; }
+            
+            /* --- 固定サイズペインの設定を解除 --- */
+            .fixed-size-pane { width: auto; height: auto; border: 1px solid #333; overflow: auto; box-sizing: border-box; padding: 20px; }
+            
             .weather-section { margin-bottom: 20px; }
             .weather-section h2 { font-size: 1.2rem; color: #4ec9b0; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
             
@@ -328,10 +331,7 @@
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
                 const container = document.createElement('div');
-                
-                // ★ ページ2のみ：先頭から24行（24時間分）に絞り込み
                 const limitedList = data.my_weather_1h.slice(0, 24);
-                
                 const targetIndex = findCurrentTimeIndex(limitedList);
                 const detailsList = limitedList.map(h => h.詳細 || {});
                 renderTable(detailsList, container, targetIndex, getTempClass, false);
