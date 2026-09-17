@@ -6,9 +6,9 @@ import json
 import time
 import requests
 
-# 座標（兵庫県加古川市周辺）
-LATITUDE = 34.75803345356596
-LONGITUDE = 134.8150154875823
+# 座標（JR加古川駅周辺・小数点以下2桁）
+LATITUDE = 34.77
+LONGITUDE = 134.84
 JST = timezone(timedelta(hours=9))
 
 # 曜日の漢字変換用リスト
@@ -193,6 +193,7 @@ def fetch_hourly(lat, lon):
                     "weather_code_1h": weather_codes[i] if i < len(weather_codes) and weather_codes[i] is not None else 0,
                 })
 
+            # 1時間あたりの気象数値を独自変数に入れる
             my_weather_1h = []
             for i, item in enumerate(base_1h_list):
                 if i > 0:
@@ -224,6 +225,7 @@ def fetch_hourly(lat, lon):
                     }
                 })
 
+            # 3時間あたりの気象数値を独自変数に入れる
             my_weather_3h = []
             for i in range(0, len(my_weather_1h), 3):
                 chunk = my_weather_1h[i : i + 3]
@@ -286,6 +288,7 @@ def fetch_daily(lat, lon):
 
             today_str = datetime.now(JST).strftime("%Y-%m-%d")
 
+            # 1日あたりの気象数値を独自変数に入れる
             my_weather_1day = []
             for i, t in enumerate(d_times):
                 date_part = t.split("T")[0] if "T" in t else t
