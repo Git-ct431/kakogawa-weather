@@ -175,7 +175,6 @@ def fetch_hourly(lat, lon):
             weather_codes = hourly_raw.get("weather_code", [])
             pop_list = hourly_raw.get("precipitation_probability", [])
 
-            # 本日の日付を取得して過去分をスキップするための基準日を設定
             today_str = datetime.now(JST).strftime("%Y-%m-%d")
 
             base_1h_list = []
@@ -269,7 +268,7 @@ def fetch_daily(lat, lon):
     try:
         url = (
             f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
-            "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,pressure_msl_mean,wind_speed_10m_max,sunrise,sunset"
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,pressure_msl_mean,wind_speed_10m_max"
             "&wind_speed_unit=ms&timezone=Asia%2FTokyo"
             "&past_days=1"
             "&forecast_days=10"
@@ -284,10 +283,7 @@ def fetch_daily(lat, lon):
             d_precip_sum = daily_raw.get("precipitation_sum", [])
             d_pop_max = daily_raw.get("precipitation_probability_max", [])
             d_wind = daily_raw.get("wind_speed_10m_max", [])
-            d_sunrise = daily_raw.get("sunrise", [])
-            d_sunset = daily_raw.get("sunset", [])
 
-            # 本日の日付を取得して過去分をスキップするための基準日を設定
             today_str = datetime.now(JST).strftime("%Y-%m-%d")
 
             my_weather_1day = []
@@ -302,10 +298,11 @@ def fetch_daily(lat, lon):
                 p_sum = d_precip_sum[i] if i < len(d_precip_sum) and d_precip_sum[i] is not None else 0
                 p_max = d_pop_max[i] if i < len(d_pop_max) and d_pop_max[i] is not None else 0
                 wind = d_wind[i] if i < len(d_wind) and d_wind[i] is not None else 0
-                sr = d_sunrise[i] if i < len(d_sunrise) and d_sunrise[i] is not None else ""
-                ss = d_sunset[i] if i < len(d_sunset) and d_sunset[i] is not None else ""
 
                 dt_fields = parse_datetime_fields(t)
+
+                # 降水確率の下一桁を四捨五入して調整（例: 23 -> 2）
+                pop_val = round(p_max / 10) if isinstance(p_max, (int, float)) else 0
 
                 my_weather_1day.append({
                     "時刻": dt_fields["時刻"],
@@ -317,15 +314,12 @@ def fetch_daily(lat, lon):
                         "時": dt_fields["時"],
                         "天気リスク": get_weather_risk_level(w_code),
                         "降水量": round(p_sum) if isinstance(p_sum, (int, float)) else p_sum,
-                        "気温": round(tmax) if isinstance(tmax, (int, float)) else tmax,
+                        "降水確率": pop_val,
+                        "最低気温": round(tmin) if isinstance(tmin, (int, float)) else tmin,
+                        "最高気温": round(tmax) if isinstance(tmax, (int, float)) else tmax,
                         "風速": round(wind) if isinstance(wind, (int, float)) else wind,
                         "天気コード": w_code,
-                    },
-                    "最高気温": round(tmax) if isinstance(tmax, (int, float)) else tmax,
-                    "最低気温": round(tmin) if isinstance(tmin, (int, float)) else tmin,
-                    "降水確率": p_max,
-                    "日の出": sr,
-                    "日の入": ss,
+                    }
                 })
             return {"my_weather_1day": my_weather_1day}
     except Exception as e:
