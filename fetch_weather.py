@@ -210,10 +210,10 @@ def fetch_hourly(lat, lon):
                 my_weather_1h.append({
                     "時刻": dt_fields["時刻"],
                     "年": dt_fields["年"],
-                    "月": dt_fields["月"],
-                    "日": dt_fields["日"],
-                    "曜日": dt_fields["曜日"],
                     "詳細": {
+                        "月": dt_fields["月"],
+                        "日": dt_fields["日"],
+                        "曜日": dt_fields["曜日"],
                         "時": dt_fields["時"],
                         "天気リスク": get_weather_risk_level(w_code),
                         "降水量": round(item["precipitation_1h"]),
@@ -244,10 +244,10 @@ def fetch_hourly(lat, lon):
                 my_weather_3h.append({
                     "時刻": dt_fields["時刻"],
                     "年": dt_fields["年"],
-                    "月": dt_fields["月"],
-                    "日": dt_fields["日"],
-                    "曜日": dt_fields["曜日"],
                     "詳細": {
+                        "月": dt_fields["月"],
+                        "日": dt_fields["日"],
+                        "曜日": dt_fields["曜日"],
                         "時": dt_fields["時"],
                         "天気リスク": max_weather_risk,
                         "降水量": round(max_precip),
@@ -302,10 +302,10 @@ def fetch_daily(lat, lon):
                 my_weather_1day.append({
                     "時刻": dt_fields["時刻"],
                     "年": dt_fields["年"],
-                    "月": dt_fields["月"],
-                    "日": dt_fields["日"],
-                    "曜日": dt_fields["曜日"],
                     "詳細": {
+                        "月": dt_fields["月"],
+                        "日": dt_fields["日"],
+                        "曜日": dt_fields["曜日"],
                         "時": dt_fields["時"],
                         "天気リスク": get_weather_risk_level(w_code),
                         "降水量": round(p_sum) if isinstance(p_sum, (int, float)) else p_sum,
