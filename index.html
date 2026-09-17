@@ -26,7 +26,7 @@
             
             /* --- 共通のテーブルスタイル --- */
             .table-style-1 { width: auto; height: auto; border-collapse: collapse; background-color: #1e1e1e; border: 1px solid #333; font-size: 0.9rem; }
-            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: none; border-right: 1px solid #333; white-space: nowrap; padding: 2px 4px; }
+            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: none; border-right: 1px solid #333; white-space: nowrap; padding: 1px 4px; }
             .table-style-1 td { border-bottom: none; }
             .table-style-1 th:last-child, .table-style-1 td:last-child { border-right: none; }
             
@@ -40,12 +40,12 @@
                 padding: 6px 2px; 
                 height: 90px; 
                 vertical-align: bottom; 
-                position: relative; /* spanの絶対配置の基準 */
+                position: relative; 
             }
             .table-style-1 th span { 
                 display: inline-block; 
                 position: absolute;
-                bottom: 6px; /* セルの下からの余白 */
+                bottom: 6px; 
                 left: 50%;
                 transform: translateX(-50%);
             }
