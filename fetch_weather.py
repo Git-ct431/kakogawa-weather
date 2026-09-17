@@ -341,7 +341,7 @@ def fetch_jma():
 
             kakogawa_warnings = parser.get_warnings_by_area("2821000")
 
-            # 加古川市の警報から最大レベルと名称のまとめ変数を生成
+            # 加古川市の警報から最大レベルと名称のまとめを生成
             if kakogawa_warnings:
                 max_level = max(w.get("警報レベル", 0) for w in kakogawa_warnings)
                 max_names = "・".join(
@@ -349,16 +349,20 @@ def fetch_jma():
                 )
             else:
                 max_level = 0
-                max_names = "解除"
+                max_names = "発令なし"
+
+            my_jma_warning_kakogawa = {
+                "最大気象警報レベル": max_level,
+                "最大気象警報種類": max_names,
+                "詳細": kakogawa_warnings
+            }
 
             return {
                 "debug_jma_warning": raw_data,
                 "my_jma_warning_hyogo": parser.get_prefecture_headers(),
                 "my_jma_warning_nanbu": parser.get_warnings_by_area("280010"),
                 "my_jma_warning_hokubu": parser.get_warnings_by_area("280020"),
-                "my_jma_max_warning_level": max_level,
-                "my_jma_max_warning_names": max_names,
-                "my_jma_warning_kakogawa": kakogawa_warnings
+                "my_jma_warning_kakogawa": my_jma_warning_kakogawa
             }
         else:
             print(f"JMA warning HTTP error: {res.status_code}")
@@ -370,9 +374,11 @@ def fetch_jma():
         "my_jma_warning_hyogo": [],
         "my_jma_warning_nanbu": [],
         "my_jma_warning_hokubu": [],
-        "my_jma_max_warning_level": 0,
-        "my_jma_max_warning_names": "解除",
-        "my_jma_warning_kakogawa": []
+        "my_jma_warning_kakogawa": {
+            "最大気象警報レベル": 0,
+            "最大気象警報種類": "発令なし",
+            "詳細": []
+        }
     }
 
 
