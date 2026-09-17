@@ -301,8 +301,8 @@ def fetch_daily(lat, lon):
 
                 dt_fields = parse_datetime_fields(t)
 
-                # 降水確率の下一桁を四捨五入して調整（例: 23 -> 2）
-                pop_val = round(p_max / 10) if isinstance(p_max, (int, float)) else 0
+                # 降水確率の下一桁を四捨五入して10刻みに調整（例: 23 -> 20）
+                pop_val = int(round(p_max, -1)) if isinstance(p_max, (int, float)) else 0
 
                 my_weather_1day.append({
                     "時刻": dt_fields["時刻"],
