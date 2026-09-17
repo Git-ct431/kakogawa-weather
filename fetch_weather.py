@@ -1,4 +1,4 @@
-# 1時間および3時間ごとの気象データに加え、過去分を除外した1日ごとの気象データを取得・整形するスクリプト
+# 1時間ごとのデータを本日1日分のみに絞り込み、3時間ごとおよび1日ごとの気象データを整形するスクリプト
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
@@ -180,7 +180,8 @@ def fetch_hourly(lat, lon):
             base_1h_list = []
             for i, t in enumerate(times):
                 date_part = t.split("T")[0]
-                if date_part < today_str:
+                # 本日のデータだけを残す（過去分および明日以降の分を除外）
+                if date_part != today_str:
                     continue
 
                 base_1h_list.append({
@@ -300,8 +301,6 @@ def fetch_daily(lat, lon):
                 wind = d_wind[i] if i < len(d_wind) and d_wind[i] is not None else 0
 
                 dt_fields = parse_datetime_fields(t)
-
-                # 降水確率の整数化および下一桁の四捨五入処理
                 rounded_pop = int(round(float(p_max), -1)) if isinstance(p_max, (int, float)) else 0
 
                 my_weather_1day.append({
