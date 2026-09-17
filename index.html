@@ -32,6 +32,11 @@
             .table-style-1 th { background-color: #2d2d2d; color: #4ec9b0; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; padding: 6px 2px; height: 90px; vertical-align: bottom; }
             .table-style-1 th span { display: inline-block; }
 
+            /* 現在時刻が含まれる行の下線スタイル */
+            .table-style-1 tr.current-time-row td {
+                border-bottom: 2px solid #4ec9b0 !important;
+            }
+
             /* 数値0の半透明 */
             .val-zero {
                 color: #777777 !important;
@@ -86,21 +91,46 @@
             return 'temp-r5';
         }
 
-        const renderTable = (data, container, customClassFn = null) => {
+        // テーブル生成関数（ハイライトする行のインデックスを受け取るように拡張）
+        const renderTable = (data, container, highlightIndex = -1, customClassFn = null) => {
             if (!data.length) return;
             const keys = Object.keys(data[0]);
-            container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${data.map(h => `<tr>${keys.map(k => {
-                const val = h[k] ?? '-';
-                let cls = customClassFn ? customClassFn(k, val) : '';
-                
-                // 値が「0」または数値の 0 の場合に val-zero クラスを追加
-                if (val === 0 || val === '0' || val === 0.0) {
-                    cls = cls ? `${cls} val-zero` : 'val-zero';
-                }
+            
+            const tbodyHtml = data.map((h, rowIndex) => {
+                // 事前判定されたインデックスと一致する場合に行のクラスを指定
+                const rowClass = (rowIndex === highlightIndex) ? 'current-time-row' : '';
 
-                return `<td${cls ? ` class="${cls}"` : ''}>${val}</td>`;
-            }).join('')}</tr>`).join('')}</tbody></table>`;
+                const cellsHtml = keys.map(k => {
+                    const val = h[k] ?? '-';
+                    let cls = customClassFn ? customClassFn(k, val) : '';
+                    
+                    if (val === 0 || val === '0' || val === 0.0) {
+                        cls = cls ? `${cls} val-zero` : 'val-zero';
+                    }
+
+                    return `<td${cls ? ` class="${cls}"` : ''}>${val}</td>`;
+                }).join('');
+
+                return `<tr${rowClass ? ` class="${rowClass}"` : ''}>${cellsHtml}</tr>`;
+            }).join('');
+
+            container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${tbodyHtml}</tbody></table>`;
         };
+
+        // 現在時刻に該当する行のインデックスを事前に取得するヘルパー関数
+        function findCurrentTimeIndex(rawDataList) {
+            if (!rawDataList || !rawDataList.length) return -1;
+            const now = new Date();
+            const targetHourStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}`;
+            
+            let matchedIndex = -1;
+            rawDataList.forEach((item, idx) => {
+                if (item.時刻 && item.時刻.startsWith(targetHourStr)) {
+                    matchedIndex = idx;
+                }
+            });
+            return matchedIndex;
+        }
 
         async function fetchAndUpdateViewer() {
             if (isFetching) return;
@@ -276,8 +306,13 @@
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
                 const container = document.createElement('div');
+                
+                // ★ 表の生成前に、データ構造から現在時刻の行インデックスを事前取得
+                const targetIndex = findCurrentTimeIndex(data.my_weather_1h);
+                
                 const detailsList = data.my_weather_1h.map(h => h.詳細 || {});
-                renderTable(detailsList, container, getTempClass);
+                // ★ インデックスを渡してテーブルを生成
+                renderTable(detailsList, container, targetIndex, getTempClass);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -295,8 +330,13 @@
 
             if (data.my_weather_3h && data.my_weather_3h.length > 0) {
                 const container = document.createElement('div');
+                
+                // ★ 表の生成前に、データ構造から現在時刻の行インデックスを事前取得
+                const targetIndex = findCurrentTimeIndex(data.my_weather_3h);
+
                 const detailsList = data.my_weather_3h.map(h => h.詳細 || {});
-                renderTable(detailsList, container, getTempClass);
+                // ★ インデックスを渡してテーブルを生成
+                renderTable(detailsList, container, targetIndex, getTempClass);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
@@ -329,7 +369,7 @@
                     日の出: h.日の出,
                     日の入: h.日の入
                 }));
-                renderTable(tableData, container, getTempClass);
+                renderTable(tableData, container, -1, getTempClass);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
