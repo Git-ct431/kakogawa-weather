@@ -24,13 +24,13 @@
             .weather-section { margin-bottom: 20px; }
             .weather-section h2 { font-size: 1.2rem; color: #4ec9b0; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
             
-            /* --- 共通のテーブルスタイル --- */
+            /* --- 共通のテーブルスタイル（余白を詰める設定） --- */
             .table-style-1 { width: max-content; height: auto; border-collapse: collapse; background-color: #1e1e1e; border: 1px solid #333; font-size: 0.9rem; }
-            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; padding: 0; }
+            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: 1px solid #333; border-right: 1px solid #333; white-space: nowrap; padding: 2px 5px; }
             .table-style-1 tr:last-child td { border-bottom: none; }
             .table-style-1 th:last-child, .table-style-1 td:last-child { border-right: none; }
-            .table-style-1 th { background-color: #2d2d2d; color: #4ec9b0; font-weight: bold; writing-mode: vertical-rl; text-orientation: upright; padding: 0; }
-            .table-style-1 th span { display: flex; align-items: center; justify-content: flex-end; height: 100%; width: 100%; box-sizing: border-box; padding: 4px; }
+            .table-style-1 th { background-color: #2d2d2d; color: #4ec9b0; font-weight: bold; padding: 2px 5px; }
+            .table-style-1 th span { display: inline-block; }
             .table-style-1 tr:hover { background-color: #252526; }
 
             /* 3℃刻みの温度カラーマップ（5つずつ配置） */
@@ -61,7 +61,7 @@
         let isFetching = false;
 
         function getTempClass(key, val) {
-            if (!key.includes('気温') && !key.includes('気温')) return '';
+            if (!key.includes('気温')) return '';
             const num = parseFloat(val);
             if (isNaN(num)) return '';
             const idx = Math.floor(num / 3);
