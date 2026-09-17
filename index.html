@@ -52,7 +52,7 @@
                 transform: translateX(-50%);
             }
 
-            /* 現在時刻が含まれる行の下線スタイル（0.2emに変更） */
+            /* 現在時刻が含まれる行の下線スタイル（0.2em） */
             .table-style-1 tr.current-time-row td {
                 border-bottom: 0.2em solid #4ec9b0 !important;
             }
@@ -141,15 +141,29 @@
             container.innerHTML = `<table class="table-style-1"><thead><tr>${keys.map(k => `<th><span>${k}</span></th>`).join('')}</tr></thead><tbody>${tbodyHtml}</tbody></table>`;
         };
 
+        // データの間隔（1時間か3時間か）を自動判別し、現在時刻がその範囲内にある行を探す
         function findCurrentTimeIndex(rawDataList) {
             if (!rawDataList || !rawDataList.length) return -1;
-            const now = new Date();
-            const targetHourStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}`;
+            const now = new Date().getTime();
+            
+            // データの間隔を算出（デフォルトは3時間）
+            let intervalMs = 3 * 60 * 60 * 1000;
+            if (rawDataList.length > 1 && rawDataList[0].時刻 && rawDataList[1].時刻) {
+                const t1 = new Date(rawDataList[0].時刻.replace('T', ' ')).getTime();
+                const t2 = new Date(rawDataList[1].時刻.replace('T', ' ')).getTime();
+                intervalMs = t2 - t1;
+            }
             
             let matchedIndex = -1;
             rawDataList.forEach((item, idx) => {
-                if (item.時刻 && item.時刻.startsWith(targetHourStr)) {
-                    matchedIndex = idx;
+                if (item.時刻) {
+                    const itemTime = new Date(item.時刻.replace('T', ' ')).getTime();
+                    const nextTime = itemTime + intervalMs;
+                    
+                    // 現在時刻がこの行の時間帯の範囲内（開始時刻以上、次の時刻未満）ならヒット
+                    if (now >= itemTime && now < nextTime) {
+                        matchedIndex = idx;
+                    }
                 }
             });
             return matchedIndex;
