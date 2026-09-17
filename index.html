@@ -361,22 +361,9 @@
 
             if (data.my_weather_1day && data.my_weather_1day.length > 0) {
                 const container = document.createElement('div');
-                const tableData = data.my_weather_1day.map(h => ({
-                    月: h.詳細?.月 || '',
-                    日: h.詳細?.日 || '',
-                    曜日: h.詳細?.曜日 || '',
-                    天気リスク: h.詳細?.天気リスク ?? 0,
-                    降水量: h.詳細?.降水量 ?? 0,
-                    気温: h.詳細?.気温 ?? 0,
-                    風速: h.詳細?.風速 ?? 0,
-                    天気コード: h.詳細?.天気コード ?? 0,
-                    最高気温: h.最高気温,
-                    最低気温: h.最低気温,
-                    降水確率: h.降水確率,
-                    日の出: h.日の出,
-                    日の入: h.日の入
-                }));
-                renderTable(tableData, container, -1, getTempClass);
+                // ページ2（1時間天気）の処理を流用
+                const detailsList = data.my_weather_1day.map(h => h.詳細 || {});
+                renderTable(detailsList, container, -1, getTempClass);
                 sec.appendChild(container);
             } else {
                 sec.innerHTML += '<p>データがありません。</p>';
