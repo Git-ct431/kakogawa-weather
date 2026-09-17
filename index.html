@@ -328,8 +328,12 @@
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
                 const container = document.createElement('div');
-                const targetIndex = findCurrentTimeIndex(data.my_weather_1h);
-                const detailsList = data.my_weather_1h.map(h => h.詳細 || {});
+                
+                // ★ ページ2のみ：先頭から24行（24時間分）に絞り込み
+                const limitedList = data.my_weather_1h.slice(0, 24);
+                
+                const targetIndex = findCurrentTimeIndex(limitedList);
+                const detailsList = limitedList.map(h => h.詳細 || {});
                 renderTable(detailsList, container, targetIndex, getTempClass, false);
                 sec.appendChild(container);
             } else {
