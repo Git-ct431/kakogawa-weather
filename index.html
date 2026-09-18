@@ -13,7 +13,10 @@
         style.textContent = `
             body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 2px; margin: 0; }
             header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 0px; margin-bottom: 15px; }
+            .header-left { display: flex; align-items: center; gap: 15px; }
             h1 { font-size: 1.2rem; color: #4ec9b0; margin: 0; border: none; padding: 0; }
+            .warning-badge { font-size: 0.9rem; color: #ffffff; background-color: #333333; padding: 2px 8px; border-radius: 4px; border: 1px solid #555; }
+            .warning-level-high { background-color: #a31515; border-color: #f44747; }
             .update-info { font-size: 0.85rem; color: #9cdcfe; }
             .tab-nav { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
             .tab-btn { background-color: #2d2d2d; color: #d4d4d4; border: 1px solid #404040; padding: 6px 14px; cursor: pointer; font-family: monospace; border-radius: 4px; }
@@ -175,9 +178,21 @@
             
             if (isFirstLoad) {
                 const header = document.createElement('header');
+                
+                const headerLeft = document.createElement('div');
+                headerLeft.className = 'header-left';
+
+                const warningBadge = document.createElement('div');
+                warningBadge.id = 'warning-badge';
+                warningBadge.className = 'warning-badge';
+                warningBadge.textContent = '警報LV: -';
+                headerLeft.appendChild(warningBadge);
+
                 const title = document.createElement('h1');
                 title.textContent = '天気ツール';
-                header.appendChild(title);
+                headerLeft.appendChild(title);
+
+                header.appendChild(headerLeft);
 
                 const updateInfo = document.createElement('div');
                 updateInfo.id = 'update-info';
@@ -270,6 +285,18 @@
                 const currentUpdateTime = jsonData.my_json_updatetime || '不明';
                 const updateInfoEl = document.getElementById('update-info');
                 if (updateInfoEl) updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
+
+                // 加古川の最大気象警報レベルをヘッダーに反映
+                const warningBadgeEl = document.getElementById('warning-badge');
+                if (warningBadgeEl && jsonData.my_jma_warning_kakogawa) {
+                    const warningLevel = jsonData.my_jma_warning_kakogawa["最大気象警報レベル"] ?? 0;
+                    warningBadgeEl.textContent = `警報LV: ${warningLevel}`;
+                    if (warningLevel > 0) {
+                        warningBadgeEl.classList.add('warning-level-high');
+                    } else {
+                        warningBadgeEl.classList.remove('warning-level-high');
+                    }
+                }
 
                 if (isFirstLoad || lastKnownUpdateTime !== currentUpdateTime) {
                     lastKnownUpdateTime = currentUpdateTime;
