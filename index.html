@@ -26,8 +26,44 @@
             
             .fixed-size-pane { width: auto; height: auto; border: 1px solid #333; overflow: auto; box-sizing: border-box; padding: 20px; }
             
-            .weather-section { margin-bottom: 20px; }
-            .weather-section h2 { font-size: 1.2rem; color: #4ec9b0; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+            /* ページ6（テスト）専用の全画面・スクロールなし拡大縮小ペイン */
+            #pane-page6.page-pane {
+                position: absolute;
+                top: 75px;
+                left: 0;
+                width: 100vw;
+                height: calc(100vh - 75px);
+                border: none;
+                padding: 0;
+                box-sizing: border-box;
+                background-color: #1e1e1e;
+                z-index: 100;
+                overflow: hidden; /* スクロールを完全になくす */
+                display: none;
+            }
+            #pane-page6.page-pane.active {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            /* スケーリングコンテナ */
+            #weather-test-scale-wrapper {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: relative;
+                overflow: hidden;
+            }
+            #weather-test-inner {
+                transform-origin: center center;
+                display: inline-block;
+            }
+
+            .weather-section { margin-bottom: 0; }
+            .weather-section h2 { font-size: 1.2rem; color: #4ec9b0; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 6px; text-align: center; }
             
             /* --- 共通のテーブルスタイル --- */
             .table-style-1 { width: auto; height: auto; border-collapse: collapse; background-color: #1e1e1e; border: 0.1em solid #333; font-size: 0.9rem; }
@@ -234,6 +270,12 @@
                 btnPage5.onclick = () => switchTab('page5', btnPage5);
                 tabNav.appendChild(btnPage5);
 
+                const btnPage6 = document.createElement('button');
+                btnPage6.className = 'tab-btn';
+                btnPage6.textContent = 'ページ6: テスト';
+                btnPage6.onclick = () => switchTab('page6', btnPage6);
+                tabNav.appendChild(btnPage6);
+
                 app.appendChild(tabNav);
 
                 const pane1 = document.createElement('div');
@@ -275,6 +317,17 @@
                 container5.id = 'weather-warnings-container';
                 pane5.appendChild(container5);
                 app.appendChild(pane5);
+
+                const pane6 = document.createElement('div');
+                pane6.id = 'pane-page6';
+                pane6.className = 'page-pane';
+                const wrapper6 = document.createElement('div');
+                wrapper6.id = 'weather-test-scale-wrapper';
+                const inner6 = document.createElement('div');
+                inner6.id = 'weather-test-inner';
+                wrapper6.appendChild(inner6);
+                pane6.appendChild(wrapper6);
+                app.appendChild(pane6);
             }
 
             try {
@@ -286,7 +339,6 @@
                 const updateInfoEl = document.getElementById('update-info');
                 if (updateInfoEl) updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
 
-                // 加古川の最大気象警報レベルをヘッダーに反映
                 const warningBadgeEl = document.getElementById('warning-badge');
                 if (warningBadgeEl && jsonData.my_jma_warning_kakogawa) {
                     const warningLevel = jsonData.my_jma_warning_kakogawa["最大気象警報レベル"] ?? 0;
@@ -316,6 +368,14 @@
                     document.getElementById('weather-warnings-container').innerHTML = '';
                     document.getElementById('weather-warnings-container').appendChild(createWeatherWarningsView(jsonData));
 
+                    const testInner = document.getElementById('weather-test-inner');
+                    if (testInner) {
+                        testInner.innerHTML = '';
+                        testInner.appendChild(createTestView(jsonData));
+                        // 描画後にスケールを計算して適用
+                        setTimeout(updateTestScale, 50);
+                    }
+
                     isFirstLoad = false;
                 }
             } catch (error) {
@@ -330,13 +390,47 @@
             }
         }
 
+        function updateTestScale() {
+            const pane6 = document.getElementById('pane-page6');
+            const wrapper = document.getElementById('weather-test-scale-wrapper');
+            const inner = document.getElementById('weather-test-inner');
+            if (!pane6 || !wrapper || !inner || !pane6.classList.contains('active')) return;
+
+            // 一度スケールをリセットして元の自然なサイズを取得
+            inner.style.transform = 'none';
+            const wrapperWidth = wrapper.clientWidth;
+            const wrapperHeight = wrapper.clientHeight;
+            const innerWidth = inner.scrollWidth;
+            const innerHeight = inner.scrollHeight;
+
+            if (innerWidth === 0 || innerHeight === 0) return;
+
+            const scaleX = wrapperWidth / innerWidth;
+            const scaleY = wrapperHeight / innerHeight;
+            const scale = Math.min(scaleX, scaleY); // 縦横比を保ちつつ画面内に収める
+
+            inner.style.transform = `scale(${scale})`;
+        }
+
         function switchTab(targetId, activeBtn) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-pane').forEach(pane => pane.classList.remove('active'));
 
             activeBtn.classList.add('active');
-            document.getElementById(`pane-${targetId}`).classList.add('active');
+            const targetPane = document.getElementById(`pane-${targetId}`);
+            targetPane.classList.add('active');
+
+            if (targetId === 'page6') {
+                setTimeout(updateTestScale, 50);
+            }
         }
+
+        window.addEventListener('resize', () => {
+            const pane6 = document.getElementById('pane-page6');
+            if (pane6 && pane6.classList.contains('active')) {
+                updateTestScale();
+            }
+        });
 
         function scheduleNextCheck() {
             if (pollTimer) clearTimeout(pollTimer);
@@ -460,6 +554,27 @@
 
                 sec.appendChild(regionBlock);
             });
+
+            wrapper.appendChild(sec);
+            return wrapper;
+        }
+
+        function createTestView(data) {
+            const wrapper = document.createElement('div');
+            const sec = document.createElement('div');
+            sec.className = 'weather-section';
+            sec.innerHTML = '<h2>全画面・自動拡大縮小テスト</h2>';
+
+            if (data.my_weather_1h && data.my_weather_1h.length > 0) {
+                const container = document.createElement('div');
+                const limitedList = data.my_weather_1h.slice(0, 24);
+                const targetIndex = findCurrentTimeIndex(limitedList);
+                const detailsList = limitedList.map(h => h.詳細 || {});
+                renderTable(detailsList, container, targetIndex, getTempClass, false);
+                sec.appendChild(container);
+            } else {
+                sec.innerHTML += '<p>テスト用データがありません。</p>';
+            }
 
             wrapper.appendChild(sec);
             return wrapper;
