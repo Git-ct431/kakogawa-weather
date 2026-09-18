@@ -38,7 +38,7 @@
                 box-sizing: border-box;
                 background-color: #1e1e1e;
                 z-index: 100;
-                overflow: hidden; /* スクロールを完全になくす */
+                overflow: hidden;
                 display: none;
             }
             #pane-page6.page-pane.active {
@@ -372,7 +372,6 @@
                     if (testInner) {
                         testInner.innerHTML = '';
                         testInner.appendChild(createTestView(jsonData));
-                        // 描画後にスケールを計算して適用
                         setTimeout(updateTestScale, 50);
                     }
 
@@ -396,7 +395,6 @@
             const inner = document.getElementById('weather-test-inner');
             if (!pane6 || !wrapper || !inner || !pane6.classList.contains('active')) return;
 
-            // 一度スケールをリセットして元の自然なサイズを取得
             inner.style.transform = 'none';
             const wrapperWidth = wrapper.clientWidth;
             const wrapperHeight = wrapper.clientHeight;
@@ -407,7 +405,7 @@
 
             const scaleX = wrapperWidth / innerWidth;
             const scaleY = wrapperHeight / innerHeight;
-            const scale = Math.min(scaleX, scaleY); // 縦横比を保ちつつ画面内に収める
+            const scale = Math.min(scaleX, scaleY);
 
             inner.style.transform = `scale(${scale})`;
         }
@@ -563,11 +561,11 @@
             const wrapper = document.createElement('div');
             const sec = document.createElement('div');
             sec.className = 'weather-section';
-            sec.innerHTML = '<h2>全画面・自動拡大縮小テスト</h2>';
+            sec.innerHTML = '<h2>全画面・自動拡大縮小テスト (48行)</h2>';
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
                 const container = document.createElement('div');
-                const limitedList = data.my_weather_1h.slice(0, 24);
+                const limitedList = data.my_weather_1h.slice(0, 48); // ここを48行に指定
                 const targetIndex = findCurrentTimeIndex(limitedList);
                 const detailsList = limitedList.map(h => h.詳細 || {});
                 renderTable(detailsList, container, targetIndex, getTempClass, false);
