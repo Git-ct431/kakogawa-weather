@@ -72,15 +72,14 @@
             .header-left { display: flex; align-items: center; gap: 15px; }
             .header-right { display: flex; align-items: center; gap: 10px; }
             h1 { font-size: 1.2rem; color: var(--th-color); margin: 0; border: none; padding: 0; }
-            .warning-badge { font-size: 0.9rem; color: var(--badge-color); background-color: var(--badge-bg); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--badge-border); }
-            .warning-level-high { background-color: #a31515 !important; border-color: #f44747 !important; color: #ffffff !important; }
+            .warning-badge { display: none; } /* 独立したバッジは非表示にし、タブボタン側に統合 */
             .update-info { font-size: 0.85rem; color: var(--update-color); }
-            
-            .theme-toggle-btn { background-color: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--btn-border); padding: 6px 10px; cursor: pointer; font-family: monospace; border-radius: 4px; font-size: 0.9rem; }
             
             .tab-nav { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
             .tab-btn { background-color: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--btn-border); padding: 6px 14px; cursor: pointer; font-family: monospace; border-radius: 4px; }
             .tab-btn.active { background-color: var(--btn-active-bg); border-color: var(--btn-active-border); color: var(--btn-active-color); }
+            .warning-level-high-tab { background-color: #a31515 !important; border-color: #f44747 !important; color: #ffffff !important; }
+
             .page-pane { display: none; }
             .page-pane.active { display: block; }
             
@@ -106,7 +105,7 @@
                 width: 100%;
                 height: 100%;
                 display: flex;
-                justify-content: center;
+                justify-content: flex-start;
                 align-items: center;
                 position: relative;
                 overflow: hidden;
@@ -116,45 +115,12 @@
                 padding: 5px;
             }
             #fullscreen-content-scale {
-                transform-origin: center center;
+                transform-origin: left center;
                 display: inline-block;
+                margin-left: 5px;
             }
             #fullscreen-content-scale .weather-section h2 {
                 display: none;
-            }
-            
-            #pane-page6.page-pane {
-                position: absolute;
-                top: 75px;
-                left: 0;
-                width: 100vw;
-                height: calc(100dvh - 75px);
-                border: none;
-                padding: 0;
-                box-sizing: border-box;
-                background-color: var(--bg-color);
-                z-index: 100;
-                overflow: hidden;
-                display: none;
-            }
-            #pane-page6.page-pane.active {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            
-            #weather-test-scale-wrapper {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                position: relative;
-                overflow: hidden;
-            }
-            #weather-test-inner {
-                transform-origin: center center;
-                display: inline-block;
             }
 
             .weather-section { margin-bottom: 0; }
@@ -193,7 +159,6 @@
                 opacity: 0.6;
             }
 
-            /* 温度カラーマップ（ライトテーマ調整版・優しい黄色＆明るめ） */
             body:not(.dark-mode) .temp-b3 { background-color: #cfe2f3; color: #0b3954; }
             body:not(.dark-mode) .temp-b2 { background-color: #d9eaf7; color: #0b3954; }
             body:not(.dark-mode) .temp-b1 { background-color: #e2f0fb; color: #1d4ed8; }
@@ -209,7 +174,6 @@
             body:not(.dark-mode) .temp-r4 { background-color: #fecaca; color: #7f1d1d; }
             body:not(.dark-mode) .temp-r5 { background-color: #fbcfe8; color: #831843; }
 
-            /* ダークテーマ用温度カラーマップ（ページ背景とのコントラストを強化） */
             body.dark-mode .temp-b3 { background-color: #17324f; color: #9ac2ff; }
             body.dark-mode .temp-b2 { background-color: #1a3c5a; color: #9ac2ff; }
             body.dark-mode .temp-b1 { background-color: #1d4666; color: #92b8ea; }
@@ -260,9 +224,9 @@
         function toggleTheme() {
             const isDark = document.body.classList.toggle('dark-mode');
             localStorage.setItem('weather_tool_theme', isDark ? 'dark' : 'light');
-            const themeBtn = document.getElementById('theme-toggle-btn');
+            const themeBtn = document.getElementById('theme-toggle-tab-btn');
             if (themeBtn) {
-                themeBtn.textContent = isDark ? '☀️ ライトモード' : '🌙 ダークモード';
+                themeBtn.textContent = isDark ? 'テーマ：ライト' : 'テーマ：ダーク';
             }
         }
 
@@ -355,12 +319,6 @@
                 const headerLeft = document.createElement('div');
                 headerLeft.className = 'header-left';
 
-                const warningBadge = document.createElement('div');
-                warningBadge.id = 'warning-badge';
-                warningBadge.className = 'warning-badge';
-                warningBadge.textContent = '警報LV: -';
-                headerLeft.appendChild(warningBadge);
-
                 const title = document.createElement('h1');
                 title.textContent = '天気ツール';
                 headerLeft.appendChild(title);
@@ -376,14 +334,6 @@
                 updateInfo.textContent = '更新時刻を確認中...';
                 headerRight.appendChild(updateInfo);
 
-                const themeBtn = document.createElement('button');
-                themeBtn.id = 'theme-toggle-btn';
-                themeBtn.className = 'theme-toggle-btn';
-                const isCurrentDark = document.body.classList.contains('dark-mode');
-                themeBtn.textContent = isCurrentDark ? '☀️ ライトモード' : '🌙 ダークモード';
-                themeBtn.onclick = toggleTheme;
-                headerRight.appendChild(themeBtn);
-
                 header.appendChild(headerRight);
                 app.appendChild(header);
 
@@ -392,57 +342,42 @@
                 
                 const btnPage1 = document.createElement('button');
                 btnPage1.className = 'tab-btn active';
-                btnPage1.textContent = 'ページ1: JSONデバッグ';
+                btnPage1.textContent = 'P1: JSONデバッグ';
                 btnPage1.onclick = () => switchTab('page1', btnPage1);
                 tabNav.appendChild(btnPage1);
 
                 const btnPage2 = document.createElement('button');
                 btnPage2.className = 'tab-btn';
-                btnPage2.textContent = 'ページ2: 1時間天気';
+                btnPage2.textContent = 'P2: 1時間天気';
                 btnPage2.onclick = () => switchTab('page2', btnPage2);
                 tabNav.appendChild(btnPage2);
 
                 const btnPage3 = document.createElement('button');
                 btnPage3.className = 'tab-btn';
-                btnPage3.textContent = 'ページ3: 3時間天気';
+                btnPage3.textContent = 'P3: 3時間天気';
                 btnPage3.onclick = () => switchTab('page3', btnPage3);
                 tabNav.appendChild(btnPage3);
 
                 const btnPage4 = document.createElement('button');
                 btnPage4.className = 'tab-btn';
-                btnPage4.textContent = 'ページ4: 10日天気';
+                btnPage4.textContent = 'P4: 10日天気';
                 btnPage4.onclick = () => switchTab('page4', btnPage4);
                 tabNav.appendChild(btnPage4);
 
                 const btnPage5 = document.createElement('button');
+                btnPage5.id = 'btn-page5';
                 btnPage5.className = 'tab-btn';
-                btnPage5.textContent = 'ページ5: 気象警報';
+                btnPage5.textContent = 'P5: 気象警報 (LV: -)';
                 btnPage5.onclick = () => switchTab('page5', btnPage5);
                 tabNav.appendChild(btnPage5);
 
-                const btnPage6 = document.createElement('button');
-                btnPage6.className = 'tab-btn';
-                btnPage6.textContent = 'ページ6: テスト';
-                btnPage6.onclick = () => {
-                    switchTab('page6', btnPage6);
-                    const container6 = document.getElementById('weather-test-inner');
-                    if (container6 && container6.innerHTML) {
-                        openFullscreenOverlay(container6);
-                    }
-                };
-                tabNav.appendChild(btnPage6);
-
-                const btnPage7 = document.createElement('button');
-                btnPage7.className = 'tab-btn';
-                btnPage7.textContent = 'ページ7: テスト2';
-                btnPage7.onclick = () => {
-                    switchTab('page7', btnPage7);
-                    const container7 = document.getElementById('weather-10d-container-2');
-                    if (container7 && container7.innerHTML) {
-                        openFullscreenOverlay(container7);
-                    }
-                };
-                tabNav.appendChild(btnPage7);
+                const themeToggleTabBtn = document.createElement('button');
+                themeToggleTabBtn.id = 'theme-toggle-tab-btn';
+                themeToggleTabBtn.className = 'tab-btn';
+                const isCurrentDark = document.body.classList.contains('dark-mode');
+                themeToggleTabBtn.textContent = isCurrentDark ? 'テーマ：ライト' : 'テーマ：ダーク';
+                themeToggleTabBtn.onclick = toggleTheme;
+                tabNav.appendChild(themeToggleTabBtn);
 
                 app.appendChild(tabNav);
 
@@ -488,26 +423,6 @@
                 container5.id = 'weather-warnings-container';
                 pane5.appendChild(container5);
                 app.appendChild(pane5);
-
-                const pane6 = document.createElement('div');
-                pane6.id = 'pane-page6';
-                pane6.className = 'page-pane';
-                const wrapper6 = document.createElement('div');
-                wrapper6.id = 'weather-test-scale-wrapper';
-                const inner6 = document.createElement('div');
-                inner6.id = 'weather-test-inner';
-                wrapper6.appendChild(inner6);
-                pane6.appendChild(wrapper6);
-                app.appendChild(pane6);
-
-                const pane7 = document.createElement('div');
-                pane7.id = 'pane-page7';
-                pane7.className = 'page-pane fixed-size-pane';
-                const container7 = document.createElement('div');
-                container7.id = 'weather-10d-container-2';
-                pane7.appendChild(container7);
-                pane7.onclick = () => openFullscreenOverlay(container7);
-                app.appendChild(pane7);
             }
 
             try {
@@ -519,14 +434,14 @@
                 const updateInfoEl = document.getElementById('update-info');
                 if (updateInfoEl) updateInfoEl.textContent = `データ更新時刻: ${currentUpdateTime}`;
 
-                const warningBadgeEl = document.getElementById('warning-badge');
-                if (warningBadgeEl && jsonData.my_jma_warning_kakogawa) {
+                const btnPage5 = document.getElementById('btn-page5');
+                if (btnPage5 && jsonData.my_jma_warning_kakogawa) {
                     const warningLevel = jsonData.my_jma_warning_kakogawa["最大気象警報レベル"] ?? 0;
-                    warningBadgeEl.textContent = `警報LV: ${warningLevel}`;
+                    btnPage5.textContent = `P5: 気象警報 (LV: ${warningLevel})`;
                     if (warningLevel > 0) {
-                        warningBadgeEl.classList.add('warning-level-high');
+                        btnPage5.classList.add('warning-level-high-tab');
                     } else {
-                        warningBadgeEl.classList.remove('warning-level-high');
+                        btnPage5.classList.remove('warning-level-high-tab');
                     }
                 }
 
@@ -545,21 +460,8 @@
                     document.getElementById('weather-10d-container').innerHTML = '';
                     document.getElementById('weather-10d-container').appendChild(create10DayWeatherView(jsonData));
 
-                    const c10d2 = document.getElementById('weather-10d-container-2');
-                    if (c10d2) {
-                        c10d2.innerHTML = '';
-                        c10d2.appendChild(create10DayWeatherView(jsonData));
-                    }
-
                     document.getElementById('weather-warnings-container').innerHTML = '';
                     document.getElementById('weather-warnings-container').appendChild(createWeatherWarningsView(jsonData));
-
-                    const testInner = document.getElementById('weather-test-inner');
-                    if (testInner) {
-                        testInner.innerHTML = '';
-                        testInner.appendChild(createTestView(jsonData));
-                        setTimeout(updateTestScale, 50);
-                    }
 
                     isFirstLoad = false;
                 }
@@ -612,45 +514,16 @@
             }, 30);
         }
 
-        function updateTestScale() {
-            const pane6 = document.getElementById('pane-page6');
-            const wrapper = document.getElementById('weather-test-scale-wrapper');
-            const inner = document.getElementById('weather-test-inner');
-            if (!pane6 || !wrapper || !inner || !pane6.classList.contains('active')) return;
-
-            inner.style.transform = 'none';
-            const wrapperWidth = wrapper.clientWidth;
-            const wrapperHeight = wrapper.clientHeight;
-            const innerWidth = inner.scrollWidth;
-            const innerHeight = inner.scrollHeight;
-
-            if (innerWidth === 0 || innerHeight === 0) return;
-
-            const scaleX = wrapperWidth / innerWidth;
-            const scaleY = wrapperHeight / innerHeight;
-            const scale = Math.min(scaleX, scaleY) * 0.99;
-
-            inner.style.transform = `scale(${scale})`;
-        }
-
         function switchTab(targetId, activeBtn) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-btn:not(#theme-toggle-tab-btn)').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.page-pane').forEach(pane => pane.classList.remove('active'));
 
             activeBtn.classList.add('active');
             const targetPane = document.getElementById(`pane-${targetId}`);
             targetPane.classList.add('active');
-
-            if (targetId === 'page6') {
-                setTimeout(updateTestScale, 50);
-            }
         }
 
         window.addEventListener('resize', () => {
-            const pane6 = document.getElementById('pane-page6');
-            if (pane6 && pane6.classList.contains('active')) {
-                updateTestScale();
-            }
             const overlayScale = document.getElementById('fullscreen-content-scale');
             const overlayWrapper = document.getElementById('fullscreen-inner-wrapper');
             if (overlayScale && overlayWrapper) {
@@ -788,27 +661,6 @@
 
                 sec.appendChild(regionBlock);
             });
-
-            wrapper.appendChild(sec);
-            return wrapper;
-        }
-
-        function createTestView(data) {
-            const wrapper = document.createElement('div');
-            const sec = document.createElement('div');
-            sec.className = 'weather-section';
-            sec.innerHTML = '<h2>全画面・自動拡大縮小テスト (48行)</h2>';
-
-            if (data.my_weather_1h && data.my_weather_1h.length > 0) {
-                const container = document.createElement('div');
-                const limitedList = data.my_weather_1h.slice(0, 48);
-                const targetIndex = findCurrentTimeIndex(limitedList);
-                const detailsList = limitedList.map(h => h.詳細 || {});
-                renderTable(detailsList, container, targetIndex, getTempClass, false);
-                sec.appendChild(container);
-            } else {
-                sec.innerHTML += '<p>テスト用データがありません。</p>';
-            }
 
             wrapper.appendChild(sec);
             return wrapper;
