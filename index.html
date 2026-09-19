@@ -11,32 +11,138 @@
     <script>
         const style = document.createElement('style');
         style.textContent = `
-            body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 2px; margin: 0; }
-            header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 0px; margin-bottom: 15px; }
+            :root {
+                --bg-color: #ffffff;
+                --text-color: #333333;
+                --header-border: #cccccc;
+                --panel-border: #dddddd;
+                --btn-bg: #f0f0f0;
+                --btn-color: #333333;
+                --btn-border: #cccccc;
+                --btn-active-bg: #007acc;
+                --btn-active-border: #005999;
+                --btn-active-color: #ffffff;
+                --th-bg: #e6e6e6;
+                --th-color: #005fb8;
+                --table-border: #cccccc;
+                --badge-bg: #e1e1e1;
+                --badge-color: #333333;
+                --badge-border: #cccccc;
+                --update-color: #005fb8;
+                --key-color: #001080;
+                --string-color: #a31515;
+                --number-color: #098658;
+                --boolean-color: #0000ff;
+                --type-tag-color: #717171;
+                --toggle-color: #005fb8;
+                --zero-color: #777777;
+                --warning-block-bg: #f9f9f9;
+            }
+
+            body.dark-mode {
+                --bg-color: #1e1e1e;
+                --text-color: #d4d4d4;
+                --header-border: #333333;
+                --panel-border: #333333;
+                --btn-bg: #2d2d2d;
+                --btn-color: #d4d4d4;
+                --btn-border: #404040;
+                --btn-active-bg: #0e639c;
+                --btn-active-border: #1177bb;
+                --btn-active-color: #ffffff;
+                --th-bg: #2d2d2d;
+                --th-color: #4ec9b0;
+                --table-border: #333333;
+                --badge-bg: #333333;
+                --badge-color: #ffffff;
+                --badge-border: #555555;
+                --update-color: #9cdcfe;
+                --key-color: #9cdcfe;
+                --string-color: #ce9178;
+                --number-color: #b5cea8;
+                --boolean-color: #569cd6;
+                --type-tag-color: #858585;
+                --toggle-color: #4ec9b0;
+                --zero-color: #777777;
+                --warning-block-bg: #1e1e1e;
+            }
+
+            body { font-family: monospace; background-color: var(--bg-color); color: var(--text-color); padding: 2px; margin: 0; transition: background-color 0.2s, color 0.2s; }
+            header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--header-border); padding-bottom: 0px; margin-bottom: 15px; }
             .header-left { display: flex; align-items: center; gap: 15px; }
-            h1 { font-size: 1.2rem; color: #4ec9b0; margin: 0; border: none; padding: 0; }
-            .warning-badge { font-size: 0.9rem; color: #ffffff; background-color: #333333; padding: 2px 8px; border-radius: 4px; border: 1px solid #555; }
-            .warning-level-high { background-color: #a31515; border-color: #f44747; }
-            .update-info { font-size: 0.85rem; color: #9cdcfe; }
+            .header-right { display: flex; align-items: center; gap: 10px; }
+            h1 { font-size: 1.2rem; color: var(--th-color); margin: 0; border: none; padding: 0; }
+            .warning-badge { font-size: 0.9rem; color: var(--badge-color); background-color: var(--badge-bg); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--badge-border); }
+            .warning-level-high { background-color: #a31515 !important; border-color: #f44747 !important; color: #ffffff !important; }
+            .update-info { font-size: 0.85rem; color: var(--update-color); }
+            
+            .theme-toggle-btn { background-color: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--btn-border); padding: 6px 10px; cursor: pointer; font-family: monospace; border-radius: 4px; font-size: 0.9rem; }
+            
             .tab-nav { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-            .tab-btn { background-color: #2d2d2d; color: #d4d4d4; border: 1px solid #404040; padding: 6px 14px; cursor: pointer; font-family: monospace; border-radius: 4px; }
-            .tab-btn.active { background-color: #0e639c; border-color: #1177bb; color: #ffffff; }
+            .tab-btn { background-color: var(--btn-bg); color: var(--btn-color); border: 1px solid var(--btn-border); padding: 6px 14px; cursor: pointer; font-family: monospace; border-radius: 4px; }
+            .tab-btn.active { background-color: var(--btn-active-bg); border-color: var(--btn-active-border); color: var(--btn-active-color); }
             .page-pane { display: none; }
             .page-pane.active { display: block; }
             
-            .fixed-size-pane { width: auto; height: auto; border: 1px solid #333; overflow: auto; box-sizing: border-box; padding: 20px; }
+            .fixed-size-pane { width: auto; height: auto; border: 1px solid var(--panel-border); overflow: auto; box-sizing: border-box; padding: 20px; cursor: pointer; position: relative; }
+            .fixed-size-pane::after { content: "クリックで最大表示"; position: absolute; top: 5px; right: 8px; font-size: 0.75rem; color: var(--type-tag-color); opacity: 0.7; pointer-events: none; }
+
+            /* 全画面オーバーレイ最大表示用モーダル（100dvhに対応） */
+            #fullscreen-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100dvh;
+                background-color: rgba(0, 0, 0, 0.85);
+                z-index: 9999;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                box-sizing: border-box;
+            }
+            #fullscreen-inner-wrapper {
+                width: 96%;
+                height: 96%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: relative;
+                overflow: hidden;
+                background-color: var(--bg-color);
+                border-radius: 6px;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+            #fullscreen-content-scale {
+                transform-origin: center center;
+                display: inline-block;
+            }
+            .fullscreen-close-tip {
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                font-size: 0.85rem;
+                color: var(--text-color);
+                background-color: var(--btn-bg);
+                border: 1px solid var(--btn-border);
+                padding: 4px 8px;
+                border-radius: 4px;
+                z-index: 10000;
+                pointer-events: none;
+            }
             
-            /* ページ6（テスト）専用の全画面・スクロールなし拡大縮小ペイン */
+            /* ページ6（テスト）専用の全画面・スクロールなし拡大縮小ペイン（100dvhに対応） */
             #pane-page6.page-pane {
                 position: absolute;
                 top: 75px;
                 left: 0;
                 width: 100vw;
-                height: calc(100vh - 75px);
+                height: calc(100dvh - 75px);
                 border: none;
                 padding: 0;
                 box-sizing: border-box;
-                background-color: #1e1e1e;
+                background-color: var(--bg-color);
                 z-index: 100;
                 overflow: hidden;
                 display: none;
@@ -47,7 +153,6 @@
                 align-items: center;
             }
             
-            /* スケーリングコンテナ */
             #weather-test-scale-wrapper {
                 width: 100%;
                 height: 100%;
@@ -63,18 +168,17 @@
             }
 
             .weather-section { margin-bottom: 0; }
-            .weather-section h2 { font-size: 1.2rem; color: #4ec9b0; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 6px; text-align: center; }
+            .weather-section h2 { font-size: 1.2rem; color: var(--th-color); margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid var(--panel-border); padding-bottom: 6px; text-align: center; }
             
-            /* --- 共通のテーブルスタイル --- */
-            .table-style-1 { width: auto; height: auto; border-collapse: collapse; background-color: #1e1e1e; border: 0.1em solid #333; font-size: 0.9rem; }
-            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: none; border-right: 0.1em solid #333; white-space: nowrap; padding: 0px 0.5em 0px 0.5em; }
+            /* 共通のテーブルスタイル */
+            .table-style-1 { width: auto; height: auto; border-collapse: collapse; background-color: var(--bg-color); border: 0.1em solid var(--table-border); font-size: 0.9rem; }
+            .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: none; border-right: 0.1em solid var(--table-border); white-space: nowrap; padding: 0px 0.5em 0px 0.5em; color: var(--text-color); }
             .table-style-1 td { border-bottom: none; }
             .table-style-1 th:last-child, .table-style-1 td:last-child { border-right: none; }
             
-            /* ヘッダーの文字を下揃えに修正 */
             .table-style-1 th { 
-                background-color: #2d2d2d; 
-                color: #4ec9b0; 
+                background-color: var(--th-bg); 
+                color: var(--th-color); 
                 font-weight: bold; 
                 writing-mode: vertical-rl; 
                 text-orientation: upright; 
@@ -91,35 +195,33 @@
                 transform: translateX(-50%);
             }
 
-            /* 現在時刻が含まれる行の下線スタイル（0.2em） */
             .table-style-1 tr.current-time-row td {
-                border-bottom: 0.2em solid #4ec9b0 !important;
+                border-bottom: 0.2em solid var(--th-color) !important;
             }
 
-            /* 数値0の半透明 */
             .val-zero {
-                color: #777777 !important;
+                color: var(--zero-color) !important;
                 opacity: 0.6;
             }
 
-            /* 3℃刻みの温度カラーマップ */
+            /* 温度カラーマップ */
             .temp-b3 { background-color: #0c1824; color: #9ac2ff; } .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; } .temp-b1 { background-color: #102334; color: #92b8ea; } .temp-b0 { background-color: #12283c; color: #9cdcfe; } .temp-g0 { background-color: #132a28; color: #9cdcfe; }
             .temp-g1 { background-color: #142d1e; color: #b5cea8; } .temp-g2 { background-color: #163116; color: #b5cea8; } .temp-g3 { background-color: #153722; color: #ffffff; } .temp-r0 { background-color: #282d12; color: #d4cc8c; } .temp-r1 { background-color: #332710; color: #d4cc8c; }
             .temp-r2 { background-color: #331e10; color: #e8b894; } .temp-r3 { background-color: #331310; color: #e89494; } .temp-r4 { background-color: #330e0e; color: #e89494; } .temp-r5 { background-color: #2c0919; color: #e894c7; }
 
-            .warning-region-block { margin-bottom: 8px; background-color: #1e1e1e; border: 1px solid #333; padding: 6px 12px; border-radius: 4px; }
-            .warning-region-title { font-size: 1.05rem; color: #9cdcfe; font-weight: bold; margin-bottom: 2px; border-bottom: 1px dotted #404040; padding-bottom: 2px; }
+            .warning-region-block { margin-bottom: 8px; background-color: var(--warning-block-bg); border: 1px solid var(--panel-border); padding: 6px 12px; border-radius: 4px; }
+            .warning-region-title { font-size: 1.05rem; color: var(--update-color); font-weight: bold; margin-bottom: 2px; border-bottom: 1px dotted var(--panel-border); padding-bottom: 2px; }
             .warning-item-row { display: flex; gap: 15px; margin: 1px 0; font-size: 0.95rem; }
             .warning-none { color: #858585; margin: 1px 0; }
-            ul { list-style-type: none; padding-left: 20px; margin: 4px 0; border-left: 1px dotted #404040; }
+            ul { list-style-type: none; padding-left: 20px; margin: 4px 0; border-left: 1px dotted var(--panel-border); }
             li.collapsed > ul { display: none; }
             li { margin: 2px 0; }
-            .key { color: #9cdcfe; font-weight: bold; }
-            .string { color: #ce9178; }
-            .number { color: #b5cea8; }
-            .boolean, .null { color: #569cd6; }
-            .type-tag { font-size: 0.8rem; color: #858585; margin-left: 6px; cursor: pointer; user-select: none; }
-            .toggle-btn { background: none; border: none; color: #4ec9b0; cursor: pointer; font-family: monospace; font-size: 0.9rem; padding: 0 4px 0 0; }
+            .key { color: var(--key-color); font-weight: bold; }
+            .string { color: var(--string-color); }
+            .number { color: var(--number-color); }
+            .boolean, .null { color: var(--boolean-color); }
+            .type-tag { font-size: 0.8rem; color: var(--type-tag-color); margin-left: 6px; cursor: pointer; user-select: none; }
+            .toggle-btn { background: none; border: none; color: var(--toggle-color); cursor: pointer; font-family: monospace; font-size: 0.9rem; padding: 0 4px 0 0; }
             .error { color: #f44747; }
         `;
         document.head.appendChild(style);
@@ -128,6 +230,25 @@
         let isFirstLoad = true;
         let pollTimer = null;
         let isFetching = false;
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('weather_tool_theme');
+            if (savedTheme === 'light') {
+                document.body.classList.remove('dark-mode');
+            } else {
+                document.body.classList.add('dark-mode');
+            }
+        }
+        initTheme();
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('weather_tool_theme', isDark ? 'dark' : 'light');
+            const themeBtn = document.getElementById('theme-toggle-btn');
+            if (themeBtn) {
+                themeBtn.textContent = isDark ? '☀️ ライトモード' : '🌙 ダークモード';
+            }
+        }
 
         function getTempClass(key, val) {
             if (!key.includes('気温')) return '';
@@ -159,7 +280,7 @@
 
                 let rowStyle = '';
                 if (enableMonthBoundary && rowIndex > 0 && (h.月 || h.日)) {
-                    rowStyle = ' style="border-top: 0.2em solid #333;"';
+                    rowStyle = ` style="border-top: 0.2em solid var(--table-border);"`;
                 }
 
                 const cellsHtml = keys.map(k => {
@@ -230,11 +351,24 @@
 
                 header.appendChild(headerLeft);
 
+                const headerRight = document.createElement('div');
+                headerRight.className = 'header-right';
+
                 const updateInfo = document.createElement('div');
                 updateInfo.id = 'update-info';
                 updateInfo.className = 'update-info';
                 updateInfo.textContent = '更新時刻を確認中...';
-                header.appendChild(updateInfo);
+                headerRight.appendChild(updateInfo);
+
+                const themeBtn = document.createElement('button');
+                themeBtn.id = 'theme-toggle-btn';
+                themeBtn.className = 'theme-toggle-btn';
+                const isCurrentDark = document.body.classList.contains('dark-mode');
+                themeBtn.textContent = isCurrentDark ? '☀️ ライトモード' : '🌙 ダークモード';
+                themeBtn.onclick = toggleTheme;
+                headerRight.appendChild(themeBtn);
+
+                header.appendChild(headerRight);
                 app.appendChild(header);
 
                 const tabNav = document.createElement('div');
@@ -273,8 +407,26 @@
                 const btnPage6 = document.createElement('button');
                 btnPage6.className = 'tab-btn';
                 btnPage6.textContent = 'ページ6: テスト';
-                btnPage6.onclick = () => switchTab('page6', btnPage6);
+                btnPage6.onclick = () => {
+                    switchTab('page6', btnPage6);
+                    const container6 = document.getElementById('weather-test-inner');
+                    if (container6 && container6.innerHTML) {
+                        openFullscreenOverlay(container6);
+                    }
+                };
                 tabNav.appendChild(btnPage6);
+
+                const btnPage7 = document.createElement('button');
+                btnPage7.className = 'tab-btn';
+                btnPage7.textContent = 'ページ7: テスト2';
+                btnPage7.onclick = () => {
+                    switchTab('page7', btnPage7);
+                    const container7 = document.getElementById('weather-10d-container-2');
+                    if (container7 && container7.innerHTML) {
+                        openFullscreenOverlay(container7);
+                    }
+                };
+                tabNav.appendChild(btnPage7);
 
                 app.appendChild(tabNav);
 
@@ -292,6 +444,7 @@
                 const container2 = document.createElement('div');
                 container2.id = 'weather-1h-container';
                 pane2.appendChild(container2);
+                pane2.onclick = () => openFullscreenOverlay(container2);
                 app.appendChild(pane2);
 
                 const pane3 = document.createElement('div');
@@ -300,6 +453,7 @@
                 const container3 = document.createElement('div');
                 container3.id = 'weather-3h-container';
                 pane3.appendChild(container3);
+                pane3.onclick = () => openFullscreenOverlay(container3);
                 app.appendChild(pane3);
 
                 const pane4 = document.createElement('div');
@@ -308,6 +462,7 @@
                 const container4 = document.createElement('div');
                 container4.id = 'weather-10d-container';
                 pane4.appendChild(container4);
+                pane4.onclick = () => openFullscreenOverlay(container4);
                 app.appendChild(pane4);
 
                 const pane5 = document.createElement('div');
@@ -328,6 +483,15 @@
                 wrapper6.appendChild(inner6);
                 pane6.appendChild(wrapper6);
                 app.appendChild(pane6);
+
+                const pane7 = document.createElement('div');
+                pane7.id = 'pane-page7';
+                pane7.className = 'page-pane fixed-size-pane';
+                const container7 = document.createElement('div');
+                container7.id = 'weather-10d-container-2';
+                pane7.appendChild(container7);
+                pane7.onclick = () => openFullscreenOverlay(container7);
+                app.appendChild(pane7);
             }
 
             try {
@@ -365,6 +529,12 @@
                     document.getElementById('weather-10d-container').innerHTML = '';
                     document.getElementById('weather-10d-container').appendChild(create10DayWeatherView(jsonData));
 
+                    const c10d2 = document.getElementById('weather-10d-container-2');
+                    if (c10d2) {
+                        c10d2.innerHTML = '';
+                        c10d2.appendChild(create10DayWeatherView(jsonData));
+                    }
+
                     document.getElementById('weather-warnings-container').innerHTML = '';
                     document.getElementById('weather-warnings-container').appendChild(createWeatherWarningsView(jsonData));
 
@@ -387,6 +557,48 @@
                 isFetching = false;
                 if (!document.hidden) scheduleNextCheck();
             }
+        }
+
+        function openFullscreenOverlay(sourceContainer) {
+            if (document.getElementById('fullscreen-overlay')) return;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'fullscreen-overlay';
+
+            const tip = document.createElement('div');
+            tip.className = 'fullscreen-close-tip';
+            tip.textContent = 'ダブルクリックで元に戻る';
+            overlay.appendChild(tip);
+
+            const innerWrapper = document.createElement('div');
+            innerWrapper.id = 'fullscreen-inner-wrapper';
+
+            const contentScale = document.createElement('div');
+            contentScale.id = 'fullscreen-content-scale';
+            
+            contentScale.innerHTML = sourceContainer.innerHTML;
+            innerWrapper.appendChild(contentScale);
+            overlay.appendChild(innerWrapper);
+
+            overlay.ondblclick = () => {
+                document.body.removeChild(overlay);
+            };
+
+            document.body.appendChild(overlay);
+
+            setTimeout(() => {
+                const wWidth = innerWrapper.clientWidth;
+                const wHeight = innerWrapper.clientHeight;
+                const iWidth = contentScale.scrollWidth;
+                const iHeight = contentScale.scrollHeight;
+
+                if (iWidth > 0 && iHeight > 0) {
+                    const scaleX = wWidth / iWidth;
+                    const scaleY = wHeight / iHeight;
+                    const scale = Math.min(scaleX, scaleY);
+                    contentScale.style.transform = `scale(${scale})`;
+                }
+            }, 30);
         }
 
         function updateTestScale() {
@@ -427,6 +639,19 @@
             const pane6 = document.getElementById('pane-page6');
             if (pane6 && pane6.classList.contains('active')) {
                 updateTestScale();
+            }
+            const overlayScale = document.getElementById('fullscreen-content-scale');
+            const overlayWrapper = document.getElementById('fullscreen-inner-wrapper');
+            if (overlayScale && overlayWrapper) {
+                overlayScale.style.transform = 'none';
+                const wWidth = overlayWrapper.clientWidth;
+                const wHeight = overlayWrapper.clientHeight;
+                const iWidth = overlayScale.scrollWidth;
+                const iHeight = overlayScale.scrollHeight;
+                if (iWidth > 0 && iHeight > 0) {
+                    const scale = Math.min(wWidth / iWidth, wHeight / iHeight);
+                    overlayScale.style.transform = `scale(${scale})`;
+                }
             }
         });
 
@@ -565,7 +790,7 @@
 
             if (data.my_weather_1h && data.my_weather_1h.length > 0) {
                 const container = document.createElement('div');
-                const limitedList = data.my_weather_1h.slice(0, 48); // ここを48行に指定
+                const limitedList = data.my_weather_1h.slice(0, 48);
                 const targetIndex = findCurrentTimeIndex(limitedList);
                 const detailsList = limitedList.map(h => h.詳細 || {});
                 renderTable(detailsList, container, targetIndex, getTempClass, false);
