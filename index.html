@@ -197,10 +197,36 @@
                 opacity: 0.6;
             }
 
-            /* 温度カラーマップ */
-            .temp-b3 { background-color: #0c1824; color: #9ac2ff; } .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; } .temp-b1 { background-color: #102334; color: #92b8ea; } .temp-b0 { background-color: #12283c; color: #9cdcfe; } .temp-g0 { background-color: #132a28; color: #9cdcfe; }
-            .temp-g1 { background-color: #142d1e; color: #b5cea8; } .temp-g2 { background-color: #163116; color: #b5cea8; } .temp-g3 { background-color: #153722; color: #ffffff; } .temp-r0 { background-color: #282d12; color: #d4cc8c; } .temp-r1 { background-color: #332710; color: #d4cc8c; }
-            .temp-r2 { background-color: #331e10; color: #e8b894; } .temp-r3 { background-color: #331310; color: #e89494; } .temp-r4 { background-color: #330e0e; color: #e89494; } .temp-r5 { background-color: #2c0919; color: #e894c7; }
+            /* 温度カラーマップ（ライトテーマ調整版 ＆ ダークテーマ） */
+            body:not(.dark-mode) .temp-b3 { background-color: #0b1c2d; color: #bfe3ff; }
+            body:not(.dark-mode) .temp-b2 { background-color: #10263c; color: #bfe3ff; }
+            body:not(.dark-mode) .temp-b1 { background-color: #16324c; color: #cfe2ff; }
+            body:not(.dark-mode) .temp-b0 { background-color: #1d4060; color: #ffffff; }
+            body:not(.dark-mode) .temp-g0 { background-color: #1b453f; color: #ffffff; }
+            body:not(.dark-mode) .temp-g1 { background-color: #1a482b; color: #d4edbc; }
+            body:not(.dark-mode) .temp-g2 { background-color: #215622; color: #d4edbc; }
+            body:not(.dark-mode) .temp-g3 { background-color: #1c5e37; color: #ffffff; }
+            body:not(.dark-mode) .temp-r0 { background-color: #48521c; color: #f2eab5; }
+            body:not(.dark-mode) .temp-r1 { background-color: #59421a; color: #f2eab5; }
+            body:not(.dark-mode) .temp-r2 { background-color: #5c3217; color: #fcd5bc; }
+            body:not(.dark-mode) .temp-r3 { background-color: #5c1f1b; color: #fcd5bc; }
+            body:not(.dark-mode) .temp-r4 { background-color: #5c1717; color: #ffcccc; }
+            body:not(.dark-mode) .temp-r5 { background-color: #4c1232; color: #ffcceb; }
+
+            body.dark-mode .temp-b3 { background-color: #0c1824; color: #9ac2ff; }
+            body.dark-mode .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; }
+            body.dark-mode .temp-b1 { background-color: #102334; color: #92b8ea; }
+            body.dark-mode .temp-b0 { background-color: #12283c; color: #9cdcfe; }
+            body.dark-mode .temp-g0 { background-color: #132a28; color: #9cdcfe; }
+            body.dark-mode .temp-g1 { background-color: #142d1e; color: #b5cea8; }
+            body.dark-mode .temp-g2 { background-color: #163116; color: #b5cea8; }
+            body.dark-mode .temp-g3 { background-color: #153722; color: #ffffff; }
+            body.dark-mode .temp-r0 { background-color: #282d12; color: #d4cc8c; }
+            body.dark-mode .temp-r1 { background-color: #332710; color: #d4cc8c; }
+            body.dark-mode .temp-r2 { background-color: #331e10; color: #e8b894; }
+            body.dark-mode .temp-r3 { background-mode: #331310; color: #e89494; }
+            body.dark-mode .temp-r4 { background-color: #330e0e; color: #e89494; }
+            body.dark-mode .temp-r5 { background-color: #2c0919; color: #e894c7; }
 
             .warning-region-block { margin-bottom: 8px; background-color: var(--warning-block-bg); border: 1px solid var(--panel-border); padding: 6px 12px; border-radius: 4px; }
             .warning-region-title { font-size: 1.05rem; color: var(--update-color); font-weight: bold; margin-bottom: 2px; border-bottom: 1px dotted var(--panel-border); padding-bottom: 2px; }
