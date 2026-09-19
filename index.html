@@ -87,7 +87,7 @@
             .fixed-size-pane { width: auto; height: auto; border: 1px solid var(--panel-border); overflow: auto; box-sizing: border-box; padding: 20px; cursor: pointer; position: relative; }
             .fixed-size-pane::after { content: "クリックで最大表示"; position: absolute; top: 5px; right: 8px; font-size: 0.75rem; color: var(--type-tag-color); opacity: 0.7; pointer-events: none; }
 
-            /* 全画面オーバーレイ最大表示用モーダル（100dvhに対応） */
+            /* 全画面オーバーレイ最大表示用モーダル（ボーダーの色をテーブル枠線色に変更し、スクロールを完全に無効化） */
             #fullscreen-overlay {
                 position: fixed;
                 top: 0;
@@ -100,36 +100,29 @@
                 justify-content: center;
                 align-items: center;
                 box-sizing: border-box;
+                cursor: pointer;
+                overflow: hidden;
             }
             #fullscreen-inner-wrapper {
-                width: 96%;
-                height: 96%;
+                width: 100%;
+                height: 100%;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 position: relative;
                 overflow: hidden;
                 background-color: var(--bg-color);
-                border-radius: 6px;
-                padding: 10px;
+                border: 3px solid var(--table-border);
                 box-sizing: border-box;
+                padding: 5px;
             }
             #fullscreen-content-scale {
                 transform-origin: center center;
                 display: inline-block;
             }
-            .fullscreen-close-tip {
-                position: absolute;
-                top: 10px;
-                right: 15px;
-                font-size: 0.85rem;
-                color: var(--text-color);
-                background-color: var(--btn-bg);
-                border: 1px solid var(--btn-border);
-                padding: 4px 8px;
-                border-radius: 4px;
-                z-index: 10000;
-                pointer-events: none;
+            /* 全画面モード時は見出し（h2）を非表示にして大きく見せる */
+            #fullscreen-content-scale .weather-section h2 {
+                display: none;
             }
             
             /* ページ6（テスト）専用の全画面・スクロールなし拡大縮小ペイン（100dvhに対応） */
@@ -565,11 +558,6 @@
             const overlay = document.createElement('div');
             overlay.id = 'fullscreen-overlay';
 
-            const tip = document.createElement('div');
-            tip.className = 'fullscreen-close-tip';
-            tip.textContent = 'ダブルクリックで元に戻る';
-            overlay.appendChild(tip);
-
             const innerWrapper = document.createElement('div');
             innerWrapper.id = 'fullscreen-inner-wrapper';
 
@@ -580,7 +568,8 @@
             innerWrapper.appendChild(contentScale);
             overlay.appendChild(innerWrapper);
 
-            overlay.ondblclick = () => {
+            // シングルクリックで元に戻す挙動
+            overlay.onclick = () => {
                 document.body.removeChild(overlay);
             };
 
@@ -593,9 +582,10 @@
                 const iHeight = contentScale.scrollHeight;
 
                 if (iWidth > 0 && iHeight > 0) {
+                    // スクロールが発生しないよう少しだけ安全マージン（0.98倍など）を考慮するか、そのまま厳密に計算
                     const scaleX = wWidth / iWidth;
                     const scaleY = wHeight / iHeight;
-                    const scale = Math.min(scaleX, scaleY);
+                    const scale = Math.min(scaleX, scaleY) * 0.99; 
                     contentScale.style.transform = `scale(${scale})`;
                 }
             }, 30);
@@ -617,7 +607,7 @@
 
             const scaleX = wrapperWidth / innerWidth;
             const scaleY = wrapperHeight / innerHeight;
-            const scale = Math.min(scaleX, scaleY);
+            const scale = Math.min(scaleX, scaleY) * 0.99;
 
             inner.style.transform = `scale(${scale})`;
         }
@@ -649,7 +639,7 @@
                 const iWidth = overlayScale.scrollWidth;
                 const iHeight = overlayScale.scrollHeight;
                 if (iWidth > 0 && iHeight > 0) {
-                    const scale = Math.min(wWidth / iWidth, wHeight / iHeight);
+                    const scale = Math.min(wWidth / iWidth, wHeight / iHeight) * 0.99;
                     overlayScale.style.transform = `scale(${scale})`;
                 }
             }
