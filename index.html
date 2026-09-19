@@ -12,7 +12,7 @@
         const style = document.createElement('style');
         style.textContent = `
             :root {
-                --bg-color: #dee2e6; /* レベル1（下限の明るさ）に設定 */
+                --bg-color: #dee2e6;
                 --text-color: #333333;
                 --header-border: #cccccc;
                 --panel-border: #cccccc;
@@ -87,7 +87,6 @@
             .fixed-size-pane { width: auto; height: auto; border: 1px solid var(--panel-border); overflow: auto; box-sizing: border-box; padding: 20px; cursor: pointer; position: relative; background-color: var(--bg-color); }
             .fixed-size-pane::after { content: "クリックで最大表示"; position: absolute; top: 5px; right: 8px; font-size: 0.75rem; color: var(--type-tag-color); opacity: 0.7; pointer-events: none; }
 
-            /* 全画面オーバーレイ最大表示用モーダル（ボーダーの色をテーブル枠線色に変更し、スクロールを完全に無効化） */
             #fullscreen-overlay {
                 position: fixed;
                 top: 0;
@@ -120,12 +119,10 @@
                 transform-origin: center center;
                 display: inline-block;
             }
-            /* 全画面モード時は見出し（h2）を非表示にして大きく見せる */
             #fullscreen-content-scale .weather-section h2 {
                 display: none;
             }
             
-            /* ページ6（テスト）専用の全画面・スクロールなし拡大縮小ペイン（100dvhに対応） */
             #pane-page6.page-pane {
                 position: absolute;
                 top: 75px;
@@ -163,7 +160,6 @@
             .weather-section { margin-bottom: 0; }
             .weather-section h2 { font-size: 1.2rem; color: var(--th-color); margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid var(--panel-border); padding-bottom: 6px; text-align: center; }
             
-            /* 共通のテーブルスタイル */
             .table-style-1 { width: auto; height: auto; border-collapse: collapse; background-color: var(--bg-color); border: 0.1em solid var(--table-border); font-size: 0.9rem; }
             .table-style-1 th, .table-style-1 td { text-align: center; border-bottom: none; border-right: 0.1em solid var(--table-border); white-space: nowrap; padding: 0px 0.5em 0px 0.5em; color: var(--text-color); }
             .table-style-1 td { border-bottom: none; }
@@ -197,21 +193,21 @@
                 opacity: 0.6;
             }
 
-            /* 温度カラーマップ（ライトテーマ調整版 ＆ ダークテーマ） */
-            body:not(.dark-mode) .temp-b3 { background-color: #0b1c2d; color: #bfe3ff; }
-            body:not(.dark-mode) .temp-b2 { background-color: #10263c; color: #bfe3ff; }
-            body:not(.dark-mode) .temp-b1 { background-color: #16324c; color: #cfe2ff; }
-            body:not(.dark-mode) .temp-b0 { background-color: #1d4060; color: #ffffff; }
-            body:not(.dark-mode) .temp-g0 { background-color: #1b453f; color: #ffffff; }
-            body:not(.dark-mode) .temp-g1 { background-color: #1a482b; color: #d4edbc; }
-            body:not(.dark-mode) .temp-g2 { background-color: #215622; color: #d4edbc; }
-            body:not(.dark-mode) .temp-g3 { background-color: #1c5e37; color: #ffffff; }
-            body:not(.dark-mode) .temp-r0 { background-color: #48521c; color: #f2eab5; }
-            body:not(.dark-mode) .temp-r1 { background-color: #59421a; color: #f2eab5; }
-            body:not(.dark-mode) .temp-r2 { background-color: #5c3217; color: #fcd5bc; }
-            body:not(.dark-mode) .temp-r3 { background-color: #5c1f1b; color: #fcd5bc; }
-            body:not(.dark-mode) .temp-r4 { background-color: #5c1717; color: #ffcccc; }
-            body:not(.dark-mode) .temp-r5 { background-color: #4c1232; color: #ffcceb; }
+            /* 温度カラーマップ（ライトテーマ調整版・優しい黄色＆明るめ） */
+            body:not(.dark-mode) .temp-b3 { background-color: #cfe2f3; color: #0b3954; }
+            body:not(.dark-mode) .temp-b2 { background-color: #d9eaf7; color: #0b3954; }
+            body:not(.dark-mode) .temp-b1 { background-color: #e2f0fb; color: #1d4ed8; }
+            body:not(.dark-mode) .temp-b0 { background-color: #edf5fe; color: #1d4ed8; }
+            body:not(.dark-mode) .temp-g0 { background-color: #e2f4ed; color: #065f46; }
+            body:not(.dark-mode) .temp-g1 { background-color: #d1f2e1; color: #065f46; }
+            body:not(.dark-mode) .temp-g2 { background-color: #bbf7d0; color: #14532d; }
+            body:not(.dark-mode) .temp-g3 { background-color: #a7f3d0; color: #14532d; }
+            body:not(.dark-mode) .temp-r0 { background-color: #fef9c3; color: #713f12; }
+            body:not(.dark-mode) .temp-r1 { background-color: #fef08a; color: #713f12; }
+            body:not(.dark-mode) .temp-r2 { background-color: #fed7aa; color: #7c2d12; }
+            body:not(.dark-mode) .temp-r3 { background-color: #fdba74; color: #7c2d12; }
+            body:not(.dark-mode) .temp-r4 { background-color: #fecaca; color: #7f1d1d; }
+            body:not(.dark-mode) .temp-r5 { background-color: #fbcfe8; color: #831843; }
 
             body.dark-mode .temp-b3 { background-color: #0c1824; color: #9ac2ff; }
             body.dark-mode .temp-b2 { background-color: #0e1d2c; color: #9ac2ff; }
@@ -224,7 +220,7 @@
             body.dark-mode .temp-r0 { background-color: #282d12; color: #d4cc8c; }
             body.dark-mode .temp-r1 { background-color: #332710; color: #d4cc8c; }
             body.dark-mode .temp-r2 { background-color: #331e10; color: #e8b894; }
-            body.dark-mode .temp-r3 { background-mode: #331310; color: #e89494; }
+            body.dark-mode .temp-r3 { background-color: #331310; color: #e89494; }
             body.dark-mode .temp-r4 { background-color: #330e0e; color: #e89494; }
             body.dark-mode .temp-r5 { background-color: #2c0919; color: #e894c7; }
 
@@ -594,7 +590,6 @@
             innerWrapper.appendChild(contentScale);
             overlay.appendChild(innerWrapper);
 
-            // シングルクリックで元に戻す挙動
             overlay.onclick = () => {
                 document.body.removeChild(overlay);
             };
