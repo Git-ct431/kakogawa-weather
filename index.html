@@ -12,22 +12,22 @@
         const style = document.createElement('style');
         style.textContent = `
             :root {
-                --bg-color: #ffffff;
+                --bg-color: #dee2e6; /* レベル1（下限の明るさ）に設定 */
                 --text-color: #333333;
                 --header-border: #cccccc;
-                --panel-border: #dddddd;
-                --btn-bg: #f0f0f0;
+                --panel-border: #cccccc;
+                --btn-bg: #e9ecef;
                 --btn-color: #333333;
-                --btn-border: #cccccc;
+                --btn-border: #ced4da;
                 --btn-active-bg: #007acc;
                 --btn-active-border: #005999;
                 --btn-active-color: #ffffff;
-                --th-bg: #e6e6e6;
+                --th-bg: #ced4da;
                 --th-color: #005fb8;
                 --table-border: #cccccc;
-                --badge-bg: #e1e1e1;
+                --badge-bg: #ced4da;
                 --badge-color: #333333;
-                --badge-border: #cccccc;
+                --badge-border: #adb5bd;
                 --update-color: #005fb8;
                 --key-color: #001080;
                 --string-color: #a31515;
@@ -36,7 +36,7 @@
                 --type-tag-color: #717171;
                 --toggle-color: #005fb8;
                 --zero-color: #777777;
-                --warning-block-bg: #f9f9f9;
+                --warning-block-bg: #e9ecef;
             }
 
             body.dark-mode {
@@ -84,7 +84,7 @@
             .page-pane { display: none; }
             .page-pane.active { display: block; }
             
-            .fixed-size-pane { width: auto; height: auto; border: 1px solid var(--panel-border); overflow: auto; box-sizing: border-box; padding: 20px; cursor: pointer; position: relative; }
+            .fixed-size-pane { width: auto; height: auto; border: 1px solid var(--panel-border); overflow: auto; box-sizing: border-box; padding: 20px; cursor: pointer; position: relative; background-color: var(--bg-color); }
             .fixed-size-pane::after { content: "クリックで最大表示"; position: absolute; top: 5px; right: 8px; font-size: 0.75rem; color: var(--type-tag-color); opacity: 0.7; pointer-events: none; }
 
             /* 全画面オーバーレイ最大表示用モーダル（ボーダーの色をテーブル枠線色に変更し、スクロールを完全に無効化） */
@@ -582,7 +582,6 @@
                 const iHeight = contentScale.scrollHeight;
 
                 if (iWidth > 0 && iHeight > 0) {
-                    // スクロールが発生しないよう少しだけ安全マージン（0.98倍など）を考慮するか、そのまま厳密に計算
                     const scaleX = wWidth / iWidth;
                     const scaleY = wHeight / iHeight;
                     const scale = Math.min(scaleX, scaleY) * 0.99; 
